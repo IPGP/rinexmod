@@ -1,8 +1,9 @@
+
 #  rinexmod
 
 Tool to batch modify headers of RINEX Hatakana compressed files.
 
-* 2019-12-13 Félix Léger - leger@ipgp.fr
+2019-12-13 Félix Léger - leger@ipgp.fr
 
 # Project Overview
 
@@ -10,8 +11,8 @@ This script takes a list of RINEX Hanakata compressed files (.d.Z), extract the 
 
 USAGE :
 
-- RINEXLIST : Rinex list file
-- OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory argument, you can not modify files inplace.
+* RINEXLIST : Rinex list file
+* OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory argument, you can not modify files inplace.
 
 OPTIONS :
 
@@ -23,14 +24,12 @@ OPTIONS :
 
 EXAMPLE:
 
-./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL)  (-s) (-r /ROOTFOLDER/) (-vv)
+	./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL)  (-s) (-r /ROOTFOLDER/) (-vv)
 
 # Requirements
 
-You have to have RNX2CRZ and CRZ2RNX installed and declared in your path.
-The program must be present on the machine, if not, available there :
+You have to have RNX2CRZ and CRZ2RNX installed and declared in your path. The program must be present on the machine, if not, available there :
 http://terras.gsi.go.jp/ja/crx2rnx.html
 
-You have to have teqc installed and declared in your path.
-The program must be present on the machine, if not, available there :
+You have to have teqc installed and declared in your path. The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
