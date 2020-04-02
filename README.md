@@ -6,34 +6,24 @@ Tool to batch modify headers of RINEX Hatakana compressed files.
 
 # Project Overview
 
-This script takes a list of RINEX Hanakata compressed files (.d.Z), extract the
-rinex files and allows to pass to teqc parameters to modify headers, then put
-them back to Hanakata Z format. It permits also to rename the files changing
-the four first characters with another station code.
+This script takes a list of RINEX Hanakata compressed files (.d.Z), extract the rinex files and allows to pass to teqc parameters to modify headers, then put them back to Hanakata Z format. It permits also to rename the  files changing the four first characters with another station code.
 
 USAGE :
 
-RINEXLIST : Rinex list file
-OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory
-argument, you can not modify files inplace.
+- RINEXLIST : Rinex list file
+- OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory argument, you can not modify files inplace.
 
 OPTIONS :
--t : teqcargs :     Teqc modification command between double quotes
-                    (eg "-O.mn 'AGAL' -O.rt 'LEICA GR25'").
-                    You can refer to teqc -help to see which arguments can be
-                    passed to teqc. Here, the pertinent ones are mostly those
-                    starting with O, that permits to modifiy rinex headers.
--n : name :         A four characater station code that will be used to rename
-                    input files.
--s : single :       Option to provide if you want to run this script on a single
-                    rinex file and not on a list of files.
--r : reconstruct :  Reconstruct files subdirectory. You have to indicate the
-                    part of the path that is common to all files in the list and
-                    that will be replaced with output folder.
--v : verbose:       Increase output verbosity
+
+* -t : teqcargs :     Teqc modification command between double quotes (eg "-O.mn 'AGAL' -O.rt 'LEICA GR25'"). You can refer to teqc -help to see which arguments can be passed to teqc. Here, the pertinent ones are mostly  those starting with O, that permits to modifiy rinex headers.                 
+* -n : name : A four characater station code that will be used to rename input files.
+* -s : single : Option to provide if you want to run this script on a single rinex file and not on a list of files.
+* -r : reconstruct :  Reconstruct files subdirectory. You have to indicate the part of the path that is common to all files in the list and that will be replaced with output folder.
+* -v : verbose:       Increase output verbosity
 
 EXAMPLE:
-./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL) (-s) (-r /ROOTFOLDER/) (-vv)
+
+./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL)  (-s) (-r /ROOTFOLDER/) (-vv)
 
 # Requirements
 
