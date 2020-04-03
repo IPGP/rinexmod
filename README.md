@@ -1,4 +1,3 @@
-
 #  rinexmod
 
 Tool to batch modify headers of RINEX Hatakana compressed files.
@@ -35,12 +34,12 @@ http://terras.gsi.go.jp/ja/crx2rnx.html
 
 To declare it in your path, run on linux :
 
-  ln -s FULL_PATH_TO_RNXCMP_PACKAGE/rnx2crz ~/bin/rnx2crz
-  ln -s FULL_PATH_TO_RNXCMP_PACKAGE/crz2rnx ~/bin/crz2rnx
+	ln -s FULL_PATH_TO_RNXCMP_PACKAGE/rnx2crz ~/bin/rnx2crz
+	ln -s FULL_PATH_TO_RNXCMP_PACKAGE/crz2rnx ~/bin/crz2rnx
 
 You have to have teqc installed and declared in your path. The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
 
 To declare it in your path, run on linux :
 
-  ln -s FULL_PATH_TO_TEQC/teqc ~/bin/teqc
+	 ln -s FULL_PATH_TO_TEQC/teqc ~/bin/teqc
