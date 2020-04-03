@@ -25,7 +25,8 @@ OPTIONS :
 -r : reconstruct :  Reconstruct files subdirectory. You have to indicate the
                     part of the path that is common to all files in the list and
                     that will be replaced with output folder.
--v : verbose:       Increase output verbosity
+-v : verbose:       Increase output verbosity. Will prompt teqc +meta of each
+                    file before and after teqc modifications.
 
 EXAMPLE:
 ./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL) (-s) (-r /ROOTFOLDER/) (-vv)
@@ -56,6 +57,12 @@ def crz2rnx(file):
     The program must be present on the machine, if not, available there :
     http://terras.gsi.go.jp/ja/crx2rnx.html
     """
+
+    if not file.endswith('crx.Z') and not file.endswith('d.Z'):
+        success = False
+        rnxfile = None
+        return success, rnxfile
+
     # crx2rnx -f : force overwriting
     p = subprocess.Popen(['crz2rnx', '-f', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
@@ -85,15 +92,15 @@ def rnx2crz(file):
 
     if err:
         success = False
-        crxfile = None
+        crzfile = None
     else:
         success = True
         if file.endswith('rnx'):
-            rnxfile = file[:-3] + 'crx.Z'
+            crzfile = file[:-3] + 'crx.Z'
         elif file.endswith('o'):
-            crxfile = file[:-1] + 'd.Z'
+            crzfile = file[:-1] + 'd.Z'
 
-    return success, crxfile
+    return success, crzfile
 
 
 def teqcmeta(file):
@@ -124,10 +131,14 @@ def teqcmod(file, teqcargs):
     # Run the command
     stdoutdata = subprocess.getoutput(' '.join(args))
 
-    # Replacing the file with the modified temp file
-    move(tempfile, file)
+    # If teqc writes output message, error !
+    if stdoutdata:
+        return stdoutdata
+    else:
+        # Replacing the file with the modified temp file
+        move(tempfile, file)
 
-    return
+    return None
 
 
 def loggersVerbose(verbose, logfile):
@@ -141,12 +152,6 @@ def loggersVerbose(verbose, logfile):
     verbose = 1 : Debug to prompt, Error to logfile
     verbose = 2 : Debug to prompt, Info to logfile
     '''
-
-    # If logfile folder doesn't exists, return
-    if not os.path.exists(os.path.dirname(logfile)):
-        print('# ERROR : : The output folder for log file doesn\'t exist : ' + logfile)
-        success = False
-        return success, None
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -175,9 +180,7 @@ def loggersVerbose(verbose, logfile):
     logger.addHandler(prompthandler)
     logger.addHandler(filehandler)
 
-    success = True
-
-    return success, logger
+    return logger
 
 
 def rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbose):
@@ -190,12 +193,12 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbo
     # If inputfile doesn't exists, return
     if not os.path.isfile(rinexlist):
         print('# ERROR : : The input file doesn\'t exist : ' + rinexlist)
-        # Set exit code to Error
-        return 2
+        return
 
     outputfolder = os.path.abspath(outputfolder)
 
     if not os.path.isdir(outputfolder):
+        # mkdirs ???
         os.mkdir(outputfolder)
 
     ########### Logging levels ###########
@@ -204,15 +207,9 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbo
     dt = datetime.strftime(datetime.now(), '%Y%m%d%H%M%S')
     logfile = os.path.join(outputfolder, dt + '_' + 'rinexmod.log')
 
-    success, logger = loggersVerbose(verbose, logfile)
-
-    if not success:
-        # Set exit code to Error
-        return 2
+    logger = loggersVerbose(verbose, logfile)
 
     ########### Looping into file list ###########
-
-    out = 0
 
     # Opening and reading lines of the file containing list of rinex to proceed
     if single:
@@ -226,13 +223,15 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbo
 
         if not os.path.isfile(file):
             logger.error('01 - The specified file does not exists - ' + file)
-            out = 1
+            continue
+
+        if os.path.abspath(os.path.dirname(file)) == outputfolder:
+            logger.error('02 - Input and output folders are the same !')
             continue
 
         if reconstruct:
             if not reconstruct in file:
-                logger.error('02 - The subfolder can not be reconstructed for file - ' + file)
-                out = 1
+                logger.error('03 - The subfolder can not be reconstructed for file - ' + file)
                 continue
 
             # We construct the output path with relative path between file name and parameter
@@ -247,12 +246,25 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbo
         success = copy(file, myoutputfolder)
 
         if not success:
-            logger.error('03 - Copy of file to temp directory impossible - ' + file)
-            out = 1
+            logger.error('04 - Copy of file to temp directory impossible - ' + file)
             continue
 
         tempfile = os.path.join(myoutputfolder, os.path.basename(file))
         workfile = tempfile
+
+        if name:
+
+            dirname, basename = os.path.split(workfile)
+            newfile = os.path.join(dirname, name.lower() + basename[4:])
+
+            success = move(workfile, newfile)
+
+            if not success:
+                logger.error('05 - Could not rename the file - ' + file)
+                continue
+
+            workfile = newfile
+            logger.debug('File renamed : ' + workfile)
 
         if teqcargs:
 
@@ -264,17 +276,22 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbo
             workfile = convertedfile
 
             if not success:
-                logger.error('04 - Invalid Compressed Rinex file - ' + file)
-                out = 1
+                logger.error('06 - Invalid Compressed Rinex file - ' + file)
                 continue
 
-            metadata = teqcmeta(workfile)
-            logger.debug('\n' + metadata)
+            if verbose >= 1:
+                metadata = teqcmeta(workfile)
+                logger.debug('\n' + metadata)
 
-            teqcmod(workfile, teqcargs)
+            stdoutdata = teqcmod(workfile, teqcargs)
 
-            metadata = teqcmeta(workfile)
-            logger.debug('\n' + metadata)
+            if stdoutdata:
+                logger.error('07 - Could not execute teqc command. Check your args !')
+                continue
+
+            if verbose >= 1:
+                metadata = teqcmeta(workfile)
+                logger.debug('\n' + metadata)
 
             ##### We convert the file back to Hatanaka Compressed Rinex .crx or .XXd #####
             if workfile.endswith('.rnx') or re.match(r'\d{2}o', workfile[-3:]):
@@ -283,27 +300,12 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbo
                 success, crzfile = rnx2crz(workfile)
 
                 if not success:
-                    logger.error('05 - Invalid Rinex file - ' + file)
-                    out = 1
+                    logger.error('08 - Invalid Rinex file - ' + file)
                     continue
 
                 # Removing the rinex file
                 os.remove(workfile)
                 workfile = crzfile
-
-        if name:
-
-            dirname, basename = os.path.split(workfile)
-            newfile = os.path.join(dirname, name.lower() + basename[4:])
-
-            success = move(workfile, newfile)
-
-            if not success:
-                logger.error('06 - Could not rename the file - ' + file)
-                out = 1
-                continue
-
-            logger.debug('File renamed : ' + newfile)
 
     return
 
@@ -312,24 +314,24 @@ if __name__ == '__main__':
 
     import argparse
 
-    try:
-        # Parsing Args
-        parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
-        parser.add_argument('rinexlist', type=str, help='Input rinex list file to process')
-        parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
-        parser.add_argument('-t', '--teqcargs', help='Teqc modification command between double quotes (eg "-O.mn \'AGAL\' -O.rt \'LEICA GR25\'")', type=str, default=0)
-        parser.add_argument('-n', '--name', help='Change 4 first letters of file name', type=str, default=0)
-        parser.add_argument('-s', '--single', help='INPUT is a standalone Rinex file and not a file containing list of Rinex files paths', action='store_true')
-        parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectory. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
-        parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='count', default=0)
+    # Parsing Args
+    parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
+    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process')
+    parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
+    parser.add_argument('-t', '--teqcargs', help='Teqc modification command between double quotes (eg "-O.mn \'AGAL\' -O.rt \'LEICA GR25\'")', type=str, default=0)
+    parser.add_argument('-n', '--name', help='Change 4 first letters of file name', type=str, default=0)
+    parser.add_argument('-s', '--single', help='INPUT is a standalone Rinex file and not a file containing list of Rinex files paths', action='store_true')
+    parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectory. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
+    parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='count', default=0)
 
-        args = parser.parse_args()
+    args = parser.parse_args()
 
-        out = rinexmod(rinexlist = args.rinexlist, outputfolder = args.outputfolder, teqcargs = args.teqcargs, name=args.name, single = args.single, reconstruct = args.reconstruct, verbose = args.verbose)
+    rinexlist = args.rinexlist
+    outputfolder = args.outputfolder
+    teqcargs = args.teqcargs
+    name=args.name
+    single = args.single
+    reconstruct = args.reconstruct
+    verbose = args.verbose
 
-    except:
-        # Set exit code to Error
-        out = 2
-
-    # Returning Error code
-    sys.exit(out)
+    rinexmod(rinexlist, outputfolder, teqcargs, name, single, reconstruct, verbose)

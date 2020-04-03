@@ -20,7 +20,7 @@ OPTIONS :
 * -n : name : A four characater station code that will be used to rename input files.
 * -s : single : Option to provide if you want to run this script on a single rinex file and not on a list of files.
 * -r : reconstruct :  Reconstruct files subdirectory. You have to indicate the part of the path that is common to all files in the list and that will be replaced with output folder.
-* -v : verbose:       Increase output verbosity
+* -v : verbose:       Increase output verbosity. Will prompt teqc +meta of each file before and after teqc modifications.
 
 EXAMPLE:
 
@@ -28,8 +28,19 @@ EXAMPLE:
 
 # Requirements
 
-You have to have RNX2CRZ and CRZ2RNX installed and declared in your path. The program must be present on the machine, if not, available there :
+The tool is in Python 3, your must have it installed on your machine.
+
+You have to have RNX2CRZ and CRZ2RNX installed and declared in your path. The RNXCMP program package must be present on the machine, if not, available there :
 http://terras.gsi.go.jp/ja/crx2rnx.html
+
+To declare it in your path, run on linux :
+
+  ln -s FULL_PATH_TO_RNXCMP_PACKAGE/rnx2crz ~/bin/rnx2crz
+  ln -s FULL_PATH_TO_RNXCMP_PACKAGE/crz2rnx ~/bin/crz2rnx
 
 You have to have teqc installed and declared in your path. The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
+
+To declare it in your path, run on linux :
+
+  ln -s FULL_PATH_TO_TEQC/teqc ~/bin/teqc
