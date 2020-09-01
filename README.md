@@ -25,6 +25,13 @@ EXAMPLE:
 
 	./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL)  (-s) (-r /ROOTFOLDER/) (-vv)
 
+
+In addition to the main script, rinexmod.py, crzmeta.py is provided, that permits to extract a crz file'smetadata with crz2rnx and teqc.
+
+USAGE :
+
+	./crzmeta.py RINEXFILE
+
 # Requirements
 
 The tool is in Python 3, your must have it installed on your machine.

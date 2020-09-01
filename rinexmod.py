@@ -25,6 +25,7 @@ OPTIONS :
 -r : reconstruct :  Reconstruct files subdirectory. You have to indicate the
                     part of the path that is common to all files in the list and
                     that will be replaced with output folder.
+-d : delete :       Delete input file after process
 -v : verbose:       Increase output verbosity. Will prompt teqc +meta of each
                     file before and after teqc modifications.
 
