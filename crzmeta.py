@@ -79,7 +79,7 @@ def crzmeta(rinexfile):
     success, convertedfile = crz2rnx(rinexfile)
 
     if not success:
-        logger.error('06 - Invalid Compressed Rinex file - ' + file)
+        print('06 - Invalid Compressed Rinex file - ' + rinexfile)
         return
 
     metadata = teqcmeta(convertedfile)
