@@ -20,6 +20,7 @@ https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
 """
 
 import subprocess
+import tempfile as tmpf
 import os, sys, re
 from   datetime import datetime
 import logging
@@ -75,8 +76,18 @@ def crzmeta(rinexfile):
         print('# ERROR : : The input file doesn\'t exist : ' + rinexfile)
         return
 
+    temp_folder = tmpf.mkdtemp()
+
+    success = copy(rinexfile, temp_folder)
+
+    if not success:
+        logger.error('04 - Copy of file to temp directory impossible - ' + rinexfile)
+        return
+
+    tempfile = os.path.join(temp_folder, os.path.basename(rinexfile))
+
     ##### Lauchning crz2rnx to extract Rinex file from archive #####
-    success, convertedfile = crz2rnx(rinexfile)
+    success, convertedfile = crz2rnx(tempfile)
 
     if not success:
         print('06 - Invalid Compressed Rinex file - ' + rinexfile)
@@ -87,6 +98,7 @@ def crzmeta(rinexfile):
 
     # Removing the rinex file
     os.remove(convertedfile)
+    os.remove(tempfile)
 
     return
 
