@@ -223,8 +223,6 @@ def sitelog2dict(sitelogfile):
 
     ###### Input and output file tests #######
 
-    is_tempfile = False
-
     # Checking if inexisting file
     if not os.path.isfile(sitelogfile):
         print('The provided Sitelog is not valid : ' + sitelogfile)
@@ -246,11 +244,6 @@ def sitelog2dict(sitelogfile):
                 sitelog = datafile.read()
         except:
             raise
-
-    if is_tempfile:
-        shutil.rmtree(os.path.dirname((sitelogfile)))
-        print('Local temp copy of SVN file removed: ' + sitelogfile)
-        # shutil.rmtree('/folder_name')
 
     # We delete all initial space.
     pattern = re.compile(r'\n +')
@@ -282,6 +275,7 @@ def sitelog2dict(sitelogfile):
 
     if len(blocs) == 0:
         print('The provided Sitelog is not correct : ' + sitelogfile)
+        return None
 
     # We loop into those blocs, after a test that permits keeping only blocs
     # beggining with patterns like '6.'. This permits removing the title bloc.
@@ -309,9 +303,6 @@ def sitelog2dict(sitelogfile):
                 # We append the subbloc to the list of blocs to read
                 formatedblocs.append([index, subbloc])
 
-                # Verbose
-                # vprint(index); vprint(subbloc);
-
         elif re.search(r'\n', bloc):
             # Get index and bloc content
             index, bloc = bloc.split('\n', 1)
@@ -319,9 +310,6 @@ def sitelog2dict(sitelogfile):
 
             # We append it to the list of blocs to read
             formatedblocs.append([index, bloc])
-
-            # Verbose
-            # vprint(index); vprint(bloc);
 
         else:
             pass
@@ -337,7 +325,6 @@ def sitelog2dict(sitelogfile):
 
             cfgparser = configparser.RawConfigParser(allow_no_value=True)
             cfgparser.optionxform = str # Respect case
-            # vprint(bloc)
             cfgparser.read_string(bloc)
 
             # We construct the bloc dict
