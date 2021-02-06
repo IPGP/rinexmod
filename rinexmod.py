@@ -731,7 +731,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--name', help='Change 4 first letters of file name', type=str, default=0)
     parser.add_argument('-s', '--single', help='INPUT is a standalone Rinex file and not a file containing list of Rinex files paths', action='store_true')
     parser.add_argument('-l', '--sitelog', help='Get the Teqc args values from file\'s station\'s sitelog', type=str, default=0)
-    parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectory. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
+    parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='count', default=0)
 
     args = parser.parse_args()
