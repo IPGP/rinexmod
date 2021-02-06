@@ -8,6 +8,32 @@ Tool to batch modify headers of RINEX Hatakana compressed files.
 
 This script takes a list of RINEX Hanakata compressed files (.d.Z), extract the rinex files and allows to pass to teqc parameters to modify headers, then put them back to Hanakata Z format. It permits also to rename the  files changing the four first characters with another station code.
 
+Two ways of passing parameters to teqc are possible:
+
+* --teqcargs : you pass as argument the command that teqc has to execute.
+               E.g. : --teqcargs "-O.mn 'AGAL' -O.rt 'LEICA GR25'"
+
+* --sitelog  : you pass a sitelog file. The script will treat only files corresponding to
+               the same station as the provided sitelog. You then have to pass a list
+               of files comming from the right station. If not, they will be rejected.
+               The script will take the start and end time of each proceeded file
+               and use them to extract from the sitelog the station instrumentation
+               of the corresponding period and fill file's header with following infos :
+                       Four Character ID
+                       X coordinate (m)
+                       Y coordinate (m)
+                       Z coordinate (m)
+                       Receiver Type
+                       Serial Number
+                       Firmware Version
+                       Antenna Type
+                       Serial Number
+                       Marker->ARP Up Ecc. (m)
+                       Marker->ARP East Ecc(m)
+                       Marker->ARP North Ecc(m)
+
+You can not provide both --teqcargs and --sitelog options.
+
 USAGE :
 
 * RINEXLIST : Rinex list file
@@ -15,16 +41,17 @@ USAGE :
 
 OPTIONS :
 
-* -t : teqcargs :     Teqc modification command between double quotes (eg "-O.mn 'AGAL' -O.rt 'LEICA GR25'"). You can refer to teqc -help to see which arguments can be passed to teqc. Here, the pertinent ones are mostly  those starting with O, that permits to modifiy rinex headers.                 
+* -t : teqcargs :     Teqc modification command between double quotes (eg "-O.mn 'AGAL' -O.rt 'LEICA GR25'"). You can refer to teqc -help to see which arguments can be passed to teqc. Here, the pertinent ones are mostly  those starting with O, that permits to modifiy rinex headers.        
+* -l : --sitelog :      Sitelog file in with rinexmod will find file's period's instrumentation informations. The sitelog must be valid as the script does not check it.         
 * -n : name : A four characater station code that will be used to rename input files.
 * -s : single : Option to provide if you want to run this script on a single rinex file and not on a list of files.
 * -r : reconstruct :  Reconstruct files subdirectory. You have to indicate the part of the path that is common to all files in the list and that will be replaced with output folder.
 * -v : verbose:       Increase output verbosity. Will prompt teqc +meta of each file before and after teqc modifications.
 
-EXAMPLE:
+EXAMPLES:
 
 	./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL)  (-s) (-r /ROOTFOLDER/) (-vv)
-
+	./rinexmod.py  RINEXLIST OUTPUTFOLDER (-l ./sitelogsfolder/stationsitelog.log) (-n AGAL) (-s) (-r /ROOTFOLDER/) (-vv)
 
 In addition to the main script, rinexmod.py, crzmeta.py is provided. It permits to extract a crz file's metadata with crz2rnx and teqc.
 
