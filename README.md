@@ -2,7 +2,7 @@
 
 Tool to batch modify headers of RINEX Hatakana compressed files.
 
-2019-12-13 Félix Léger - leger@ipgp.fr
+2021-02-07 Félix Léger - leger@ipgp.fr
 
 # Project Overview
 

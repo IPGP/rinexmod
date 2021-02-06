@@ -73,7 +73,7 @@ You have to have teqc installed and declared in your path.
 The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
 
-2019-12-13 Félix Léger - leger@ipgp.fr
+2021-02-07 Félix Léger - leger@ipgp.fr
 """
 
 import subprocess
@@ -82,7 +82,6 @@ from   datetime import datetime
 import logging
 from   shutil import copy, move
 import configparser
-import tempfile
 
 
 def crz2rnx(file):
