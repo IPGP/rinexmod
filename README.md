@@ -1,6 +1,6 @@
 #  rinexmod
 
-Tool to batch modify headers of RINEX Hatakana compressed files.
+Tool to batch modify headers of RINEX Hatakana compressed files from a teqc command or a sitelog and optionnaly batch rename them.
 
 2021-02-07 Félix Léger - leger@ipgp.fr
 

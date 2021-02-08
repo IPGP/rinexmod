@@ -196,9 +196,9 @@ def teqcmod(file, teqcargs):
 
 def tryparsedate(date):
     # Different date format to test on the string in case of bad standard compliance
-    formats = ['%Y-%m-%dT%H:%MZ', '%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M',
+    formats = ['%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%MZ', '%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M',
                '%Y/%m/%dT%H:%MZ', '%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M',
-               '%d/%m/%YT%H:%MZ', '%d/%m/%Y %H:%M', '%d/%m/%YT%H:%M', '%Y-%m-%d %H:%M:%S.%f',
+               '%d/%m/%YT%H:%MZ', '%d/%m/%Y %H:%M', '%d/%m/%YT%H:%M',
                '%Y-%m-%d',        '%Y/%m/%d',       '%d/%m/%Y'      ]
     if date:
         # Parse to date trying different formats
@@ -457,29 +457,13 @@ def get_instrumentation(sitelogdict, starttime, endtime):
 
     else:
 
-        # print(sitelogdict['1.']['Four Character ID'])
-        # print(sitelogdict['2.']['X coordinate (m)'])
-        # print(sitelogdict['2.']['Y coordinate (m)'])
-        # print(sitelogdict['2.']['Z coordinate (m)'])
-        # print(thisinstall['receiver']['Receiver Type'])
-        # print(thisinstall['receiver']['Serial Number'])
-        # print(thisinstall['receiver']['Firmware Version'])
-        # print(thisinstall['antenna']['Antenna Type'])
-        # print(thisinstall['antenna']['Serial Number'])
-        # print(thisinstall['antenna']['Marker->ARP Up Ecc. (m)'])
-        # print(thisinstall['antenna']['Marker->ARP East Ecc(m)'])
-        # print(thisinstall['antenna']['Marker->ARP North Ecc(m)'])
-
         # We construct the TEQC args line
-
-        # -M.mo[nument] ? XXXXXX
+        # -M.mo[nument] ? XXXXXX o_system ??
+        o_system = 'M'
 
         teqcargs = "-O.mo[nument] '{}' -M.mo[nument] '{}' -O.px[WGS84xyz,m] {} {} {} -O.s[ystem] {}"
         teqcargs += " -O.rt '{}' -O.rn '{}' -O.rv '{}'"
         teqcargs += " -O.at '{}' -O.an '{}' -O.pe[hEN,m] {} {} {}"
-
-        # XXXXXXX #
-        o_system = 'M'
 
         teqcargs = teqcargs.format(sitelogdict['1.']['Four Character ID'],
                                   sitelogdict['1.']['Four Character ID'],
