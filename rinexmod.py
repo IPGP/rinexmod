@@ -358,7 +358,7 @@ def sitelog2dict(sitelogfile):
     return sitelogdict
 
 
-def get_instrumentation(sitelogdict, starttime, endtime):
+def get_instrumentation(sitelogdict, starttime, endtime, gnss_codes):
     """
     This function identifies the different complete installations from the antenna
     and receiver change dates, and then construct a CSV, GSAC complient line for each of
@@ -458,12 +458,18 @@ def get_instrumentation(sitelogdict, starttime, endtime):
     else:
 
         # We construct the TEQC args line
-        # -M.mo[nument] ? XXXXXX o_system ??
-        o_system = 'M'
+        # -M.mo[nument] ? XXXXXX
 
         teqcargs = "-O.mo[nument] '{}' -M.mo[nument] '{}' -O.px[WGS84xyz,m] {} {} {} -O.s[ystem] {}"
         teqcargs += " -O.rt '{}' -O.rn '{}' -O.rv '{}'"
         teqcargs += " -O.at '{}' -O.an '{}' -O.pe[hEN,m] {} {} {}"
+
+        o_system = thisinstall['receiver']['Satellite System']
+
+        if '+' in o_system:
+            o_system = 'M'
+        else:
+            o_system = gnss_codes[o_system]
 
         teqcargs = teqcargs.format(sitelogdict['1.']['Four Character ID'],
                                   sitelogdict['1.']['Four Character ID'],
@@ -567,6 +573,19 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, reconstru
             print('# ERROR : The sitelog is not parsable : ' + sitelog)
             return
 
+    ########### GNSS one-letter codes ###########
+
+    # From https://www.unavco.org/software/data-processing/teqc/tutorial/tutorial.html
+    gnss_codes = {
+                  'GPS': 'G',
+                  'GLO' : '­R',
+                  'GAL' : '­E',
+                  'BDS' : '­C',
+                  'QZSS' : '­J',
+                  'IRNSS' : 'I',
+                  'SBAS' : 'S'
+                  }
+
     ########### Looping into file list ###########
 
     # Opening and reading lines of the file containing list of rinex to proceed
@@ -654,8 +673,10 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, reconstru
                     continue
 
                 # Get teqc args from sitelog infos and start and end time of the file
-                teqcargs = get_instrumentation(sitelogdict, metadata['start date & time'],
-                                                            metadata['final date & time'])
+                teqcargs = get_instrumentation(sitelogdict,
+                                               metadata['start date & time'],
+                                               metadata['final date & time'],
+                                               gnss_codes)
 
                 if not teqcargs:
                     logger.error('11 - No instrumentation corresponding to the data period on the sitelog : ' + file)
