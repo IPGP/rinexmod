@@ -450,7 +450,7 @@ def get_instrumentation(sitelogdict, starttime, endtime, gnss_codes):
     thisinstall = None
 
     for installation in installations:
-        if installation['dates'][0] < starttime and installation['dates'][1] > endtime:
+        if installation['dates'][0] <= starttime and installation['dates'][1] >= endtime:
             thisinstall = installation
             break
 
