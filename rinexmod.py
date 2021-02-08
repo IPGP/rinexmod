@@ -24,6 +24,7 @@ Two ways of passing parameters to teqc are possible:
                        Receiver Type
                        Serial Number
                        Firmware Version
+                       Satellite System (will translate this info to one-letter code, see line 580)
                        Antenna Type
                        Serial Number
                        Marker->ARP Up Ecc. (m)
