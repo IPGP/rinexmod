@@ -24,12 +24,14 @@ Two ways of passing parameters to teqc are possible:
                        Receiver Type
                        Serial Number
                        Firmware Version
-                       Satellite System (will translate this info to one-letter code, see line 580)
+                       Satellite System (will translate this info to one-letter code, see line 586)
                        Antenna Type
                        Serial Number
                        Marker->ARP Up Ecc. (m)
                        Marker->ARP East Ecc(m)
                        Marker->ARP North Ecc(m)
+                       On-Site Agency Preferred Abbreviation
+                       Responsible Agency Preferred Abbreviation
 
 You can not provide both --teqcargs and --sitelog options.
 
@@ -464,9 +466,10 @@ def get_instrumentation(sitelogdict, starttime, endtime, gnss_codes):
         teqcargs = "-O.mo[nument] '{}' -M.mo[nument] '{}' -O.px[WGS84xyz,m] {} {} {} -O.s[ystem] {}"
         teqcargs += " -O.rt '{}' -O.rn '{}' -O.rv '{}'"
         teqcargs += " -O.at '{}' -O.an '{}' -O.pe[hEN,m] {} {} {}"
+        teqcargs += " -O.o[perator] '{}' -O.r[un_by] '{}' -O.ag[ency] '{}'"
 
+        # GNSS system. M if multiple, else, one letter code from gnss_codes dict.
         o_system = thisinstall['receiver']['Satellite System']
-
         if '+' in o_system:
             o_system = 'M'
         else:
@@ -485,7 +488,10 @@ def get_instrumentation(sitelogdict, starttime, endtime, gnss_codes):
                                   thisinstall['antenna']['Serial Number'],
                                   thisinstall['antenna']['Marker->ARP Up Ecc. (m)'].zfill(8),
                                   thisinstall['antenna']['Marker->ARP East Ecc(m)'].zfill(8),
-                                  thisinstall['antenna']['Marker->ARP North Ecc(m)'].zfill(8)
+                                  thisinstall['antenna']['Marker->ARP North Ecc(m)'].zfill(8),
+                                  sitelogdict['11.']['Preferred Abbreviation'],
+                                  sitelogdict['11.']['Preferred Abbreviation'],
+                                  sitelogdict['12.']['Preferred Abbreviation']
                                   )
 
     return teqcargs
