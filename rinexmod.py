@@ -85,6 +85,7 @@ from   datetime import datetime
 import logging
 from   shutil import copy, move
 import configparser
+import json
 
 
 def crz2rnx(file):
@@ -189,6 +190,7 @@ def teqcmod(file, teqcargs):
 
     # If teqc writes output message, error !
     if stdoutdata:
+        os.remove(tempfile)
         return stdoutdata
     else:
         # Replacing the file with the modified temp file
@@ -218,7 +220,7 @@ def tryparsedate(date):
     return date
 
 
-def sitelog2dict(sitelogfile):
+def sitelog2dict(sitelogfile, write=False):
     """
     Main function for reading a Sitelog file. From the sitelog file,
     returns a dict with all readed values.
@@ -358,14 +360,23 @@ def sitelog2dict(sitelogfile):
             # Removing it from the incorrect dict level
             sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
 
+    if write:
+        filename = (os.path.splitext(os.path.basename(sitelogfile))[0])
+        output = os.path.dirname(sitelogfile)
+        outputfilejson = os.path.join(output, filename + '.json')
+        with open(outputfilejson, "w+") as outputfilejson:
+            json.dump(sitelogdict, outputfilejson)
+
     return sitelogdict
 
 
 def get_instrumentation(sitelogdict, starttime, endtime, gnss_codes):
     """
     This function identifies the different complete installations from the antenna
-    and receiver change dates, and then construct a CSV, GSAC complient line for each of
-    those installations. It then write this line to new file or append it to exisitng one.
+    and receiver change dates, and identify the installation corresponding
+    to the file start and end date. It then constructs a TEQC args string, containing
+    information from the sitelog, to be applied in the main function to the file.
+    If no instrumentation on the file dates, returns None.
     """
 
     ##### Constructing a list of date intervals from all changes dates #####
@@ -463,7 +474,8 @@ def get_instrumentation(sitelogdict, starttime, endtime, gnss_codes):
         # We construct the TEQC args line
         # -M.mo[nument] ? XXXXXX
 
-        teqcargs = "-O.mo[nument] '{}' -M.mo[nument] '{}' -O.px[WGS84xyz,m] {} {} {} -O.s[ystem] {}"
+        teqcargs = "-O.mo[nument] '{}' -M.mo[nument] '{}' -O.mn '{}'"
+        teqcargs += " -O.px[WGS84xyz,m] {} {} {} -O.s[ystem] {}"
         teqcargs += " -O.rt '{}' -O.rn '{}' -O.rv '{}'"
         teqcargs += " -O.at '{}' -O.an '{}' -O.pe[hEN,m] {} {} {}"
         teqcargs += " -O.o[perator] '{}' -O.r[un_by] '{}' -O.ag[ency] '{}'"
@@ -476,6 +488,7 @@ def get_instrumentation(sitelogdict, starttime, endtime, gnss_codes):
             o_system = gnss_codes[o_system]
 
         teqcargs = teqcargs.format(sitelogdict['1.']['Four Character ID'],
+                                  sitelogdict['1.']['Four Character ID'],
                                   sitelogdict['1.']['Four Character ID'],
                                   sitelogdict['2.']['X coordinate (m)'],
                                   sitelogdict['2.']['Y coordinate (m)'],
@@ -539,7 +552,7 @@ def loggersVerbose(verbose, logfile):
     return logger
 
 
-def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, reconstruct, verbose):
+def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, verbose):
     """
     Main function for reading a Rinex list file. It process the list,
     get metadata of the file, and push to the GSAC DB
@@ -550,6 +563,10 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, reconstru
     if sitelog and teqcargs:
         print('# ERROR : If you get metadata from sitelog, don\'t provide arguments for teqc !')
         return
+
+    # If sitelog option, no teqc argument must be provided
+    if force and not sitelog:
+        print('# WARNING : --force option is meaningful only when using also --sitelog option')
 
     # If inputfile doesn't exists, return
     if not os.path.isfile(rinexlist):
@@ -675,9 +692,17 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, reconstru
                 metadata = meta2dict(metadata)
 
                 # Check that sitelog corresponds to file's station
-                if sitelogdict['1.']['Four Character ID'].lower() != metadata['station ID number'].lower():
-                    logger.error('10 - File\'s station does not correspond to provided sitelog - ' + file)
-                    continue
+                if metadata['station ID number']:
+                    metadata_sta = metadata['station ID number']
+                else:
+                    metadata_sta = metadata['station name']
+
+                if sitelogdict['1.']['Four Character ID'].lower() != metadata_sta.lower():
+                    if force:
+                        logger.error('10 - File\'s station does not correspond to provided sitelog, processing anyway - ' + file)
+                    else:
+                        logger.error('11 - File\'s station does not correspond to provided sitelog - ' + file)
+                        continue
 
                 # Get teqc args from sitelog infos and start and end time of the file
                 teqcargs = get_instrumentation(sitelogdict,
@@ -686,7 +711,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, reconstru
                                                gnss_codes)
 
                 if not teqcargs:
-                    logger.error('11 - No instrumentation corresponding to the data period on the sitelog : ' + file)
+                    logger.error('12 - No instrumentation corresponding to the data period on the sitelog : ' + file)
                     continue
 
                 logger.debug('Teqc args from sitelog : ' + teqcargs)
@@ -730,6 +755,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--name', help='Change 4 first letters of file name', type=str, default=0)
     parser.add_argument('-s', '--single', help='INPUT is a standalone Rinex file and not a file containing list of Rinex files paths', action='store_true')
     parser.add_argument('-l', '--sitelog', help='Get the Teqc args values from file\'s station\'s sitelog', type=str, default=0)
+    parser.add_argument('-f', '--force', help='Force appliance of sitelog based teqc arguments when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='count', default=0)
 
@@ -741,7 +767,8 @@ if __name__ == '__main__':
     name=args.name
     single = args.single
     sitelog = args.sitelog
+    force = args.force
     reconstruct = args.reconstruct
     verbose = args.verbose
 
-    rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, reconstruct, verbose)
+    rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, verbose)
