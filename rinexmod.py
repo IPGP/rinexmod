@@ -682,7 +682,8 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             if not success:
                 logger.error('06 - Invalid Compressed Rinex file - ' + file)
-                logger.error('Message - 06 - ' + convertedfile.strip())
+                for line in convertedfile.strip().split('\n'):
+                    logger.error('Message - 06 - ' + line)
                 continue
 
             if sitelog or verbose:
@@ -725,7 +726,8 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             if stdoutdata:
                 logger.error('07 - Could not execute teqc command. Args incorrects or file invalid - ' + file)
-                logger.error('Message - 07 - ' + stdoutdata.strip())
+                for line in stdoutdata.strip().split('\n'):
+                    logger.error('Message - 07 - ' + line)
                 continue
 
             if verbose >= 1:
@@ -740,7 +742,8 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
                 if not success:
                     logger.error('08 - Invalid Rinex file - ' + file)
-                    logger.error('Message - 08 - ' + crzfile.strip())
+                    for line in crzfile.strip().split('\n'):
+                        logger.error('Message - 08 - ' + line)
                     continue
 
                 # Removing the rinex file
