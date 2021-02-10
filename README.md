@@ -63,13 +63,17 @@ USAGE :
 
 The tool is in Python 3, your must have it installed on your machine.
 
-You have to have RNX2CRZ and CRZ2RNX installed and declared in your path. The RNXCMP program package must be present on the machine, if not, available there :
+You have to have RNX2CRZ, CRZ2RNX, RNX2CRX and CRX2RNX installed and declared in your path. The RNXCMP program package must be present on the machine, if not, available there :
 http://terras.gsi.go.jp/ja/crx2rnx.html
 
 To declare it in your path, run on linux :
 
 	ln -s FULL_PATH_TO_RNXCMP_PACKAGE/rnx2crz ~/bin/rnx2crz
 	ln -s FULL_PATH_TO_RNXCMP_PACKAGE/crz2rnx ~/bin/crz2rnx
+	ln -s FULL_PATH_TO_RNXCMP_PACKAGE/rnx2crx ~/bin/rnx2crx
+	ln -s FULL_PATH_TO_RNXCMP_PACKAGE/crx2rnx ~/bin/crx2rnx
+
+You may encounter problems with case of those symlinks as the executables are in upper case or lower case depending to the version.
 
 You have to have teqc installed and declared in your path. The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables

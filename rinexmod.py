@@ -106,7 +106,7 @@ def crz2rnx(file):
 
     if err:
         success = False
-        rnxfile = None
+        rnxfile = err.decode('utf-8')
     else:
         success = True
         if file.endswith('crx.Z'):
@@ -129,7 +129,7 @@ def rnx2crz(file):
 
     if err:
         success = False
-        crzfile = None
+        crzfile = err.decode("utf-8")
     else:
         success = True
         if file.endswith('rnx'):
@@ -616,7 +616,11 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
     if single:
         rinexlist = [rinexlist]
     else:
-        rinexlist = [line.strip() for line in open(rinexlist).readlines()]
+        try:
+            rinexlist = [line.strip() for line in open(rinexlist).readlines()]
+        except:
+            print('# ERROR : The input file is not a list : ' + rinexlist)
+            return
 
     for file in rinexlist:
 
@@ -678,6 +682,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             if not success:
                 logger.error('06 - Invalid Compressed Rinex file - ' + file)
+                logger.error('Message - 06 - ' + convertedfile.strip())
                 continue
 
             if sitelog or verbose:
@@ -720,6 +725,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             if stdoutdata:
                 logger.error('07 - Could not execute teqc command. Args incorrects or file invalid - ' + file)
+                logger.error('Message - 07 - ' + stdoutdata.strip())
                 continue
 
             if verbose >= 1:
@@ -734,6 +740,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
                 if not success:
                     logger.error('08 - Invalid Rinex file - ' + file)
+                    logger.error('Message - 08 - ' + crzfile.strip())
                     continue
 
                 # Removing the rinex file
