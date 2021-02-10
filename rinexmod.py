@@ -554,9 +554,9 @@ def loggersVerbose(verbose, logfile):
 
 def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, verbose):
     """
-    Main function for reading a Rinex list file. It process the list,
-    get metadata of the file, and push to the GSAC DB
-    the metadata and file location informations.
+    Main function for reading a Rinex list file. It process the list, and apply
+    file name modification, teqc args based header modification, or sitelog-based
+    header modification.
     """
 
     # If sitelog option, no teqc argument must be provided
