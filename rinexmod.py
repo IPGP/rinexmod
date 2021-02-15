@@ -179,6 +179,7 @@ def teqcmod(file, teqcargs):
     modifiy the Rinex file. Tipical use : header modification.
     The program must be present on the machine, if not, available there :
     https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
+    Discriminates Notice and Warning messages from error messages, and return only errors.
     """
     tempfile = file + '_tmp'
 
@@ -188,13 +189,21 @@ def teqcmod(file, teqcargs):
     # Run the command
     stdoutdata = subprocess.getoutput(' '.join(args))
 
-    # If teqc writes output message, error !
+    # If teqc writes output message :
     if stdoutdata:
-        os.remove(tempfile)
-        return stdoutdata
-    else:
-        # Replacing the file with the modified temp file
-        move(tempfile, file)
+        # Sdterr to list, then quit Notice and Warning messages.
+        stdoutdata = stdoutdata.strip().split('\n')
+        acceptable = ['Notice', 'NOTICE', 'Warning', 'WARNING']
+        stdoutdata = [l for l in stdoutdata if not any(w in l for w in acceptable)]
+        # If messages left, i.e if error message(s), raise error
+        if len(stdoutdata) != 0:
+            os.remove(tempfile)
+            return stdoutdata
+        else:
+            stdoutdata = None
+
+    # Replacing the file with the modified temp file
+    move(tempfile, file)
 
     return None
 
@@ -624,7 +633,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
     for file in rinexlist:
 
-        logger.info('############ File : ' + file + ' ############')
+        logger.info('# File : ' + file)
 
         if not os.path.isfile(file):
             logger.error('01 - The specified file does not exists - ' + file)
@@ -726,7 +735,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             if stdoutdata:
                 logger.error('07 - Could not execute teqc command. Args incorrects or file invalid - ' + file)
-                for line in stdoutdata.strip().split('\n'):
+                for line in stdoutdata:
                     logger.error('Message - 07 - ' + line)
                 continue
 
