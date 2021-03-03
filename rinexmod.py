@@ -393,7 +393,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                     if force:
                         logger.error('10 - File\'s station does not correspond to provided sitelog, processing anyway - ' + file)
                     else:
-                        logger.error('11 - File\'s station does not correspond to provided sitelog - ' + file)
+                        logger.error('11 - File\'s station does not correspond to provided sitelog - use -f option to force ' + file)
                         os.remove(workfile)
                         continue
 
