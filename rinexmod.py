@@ -185,7 +185,7 @@ def teqcmod(file, teqcargs):
     tempfile = file + '_tmp'
 
     # Preparing the teqc command line
-    args = ['teqc', '+out', tempfile] + teqcargs + [file]
+    args = ['teqc', '+out', tempfile, teqcargs, file]
 
     # Run the command
     stdoutdata = subprocess.getoutput(' '.join(args))
@@ -384,13 +384,12 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                 # Parse teqc metadata output
                 metadata = meta2dict(metadata)
 
-                # Check that sitelog corresponds to file's station
-                if metadata['station ID number']:
-                    metadata_sta = metadata['station ID number']
-                else:
-                    metadata_sta = metadata['station name']
+                sitelog_sta_code = sitelogobj.info['1.']['Four Character ID'].lower()
 
-                if sitelogobj.info['1.']['Four Character ID'].lower() != metadata_sta.lower():
+                metadata_sta_codes = [metadata['station ID number'],
+                                      metadata['station name']]
+
+                if not any(sitelog_sta_code in metadata_code.lower() for metadata_code in metadata_sta_codes):
                     if force:
                         logger.error('10 - File\'s station does not correspond to provided sitelog, processing anyway - ' + file)
                     else:
@@ -408,7 +407,9 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                     os.remove(workfile)
                     continue
 
-                logger.debug('Teqc args from sitelog : ' + ' '.join(teqcargs))
+                teqcargs = ' '.join(teqcargs)
+
+                logger.debug('Teqc args from sitelog : ' + teqcargs)
 
             stdoutdata = teqcmod(workfile, teqcargs)
 
