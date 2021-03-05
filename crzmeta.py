@@ -99,6 +99,7 @@ def crzmeta(rinexfile):
     # Removing the rinex file
     os.remove(convertedfile)
     os.remove(tempfile)
+    os.rmdir(temp_folder)
 
     return
 

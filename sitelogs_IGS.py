@@ -13,7 +13,21 @@ import json
 
 class Sitelog:
     """
+    Parses and store in a dict informations from an IGS sitelog.
+    Requires one parameter, the sitelog path.
+    At instantiation, will parse the sitelog and store in a dict all parsed values.
+    Dict accessible via Sitelog.info
+    Will also create a tab, stored in Sitelog.instrumentations, containing all
+    the different instrumentation periods, tab containing a start and an end date,
+    and for each line a dict of antenna instrumentation an receiver isntrumentation.
 
+    3 avaialable methods:
+    get_instrumentation takes a start and an end date and returns the instrumentation
+    corresponding to the period, if found.
+    teqcargs also takes a start and an end date and returns a string of args to
+    pass to teqc so that it will modify a rinex file's header.
+    write_json will write the dict of the parsed values from the sitelog to a
+    json file.
     """
 
     def __init__(self, sitelogfile):
@@ -290,14 +304,14 @@ class Sitelog:
                 thisinstall = installation
                 break
 
-        if not thisinstall:
-            return None
-
-        else:
-            return thisinstall
+        return thisinstall
 
 
     def teqcargs(self, starttime, endtime):
+        """
+        Will return a string of teqc args containing all infos from the sitelog,
+        incuding instrumetnation infos taking into account a start and an end date.
+        """
 
         instrumentation = self.get_instrumentation(starttime, endtime)
 
@@ -350,6 +364,10 @@ class Sitelog:
 
 
     def write_json(self, output = None):
+        """
+        Writes sitelog's dict to json. If no output provided, will write it in
+        the same directory as the sitelog.
+        """
 
         filename = (os.path.splitext(os.path.basename(self.path))[0])
         if not output:
