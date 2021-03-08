@@ -368,9 +368,10 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             if not success:
                 logger.error('06 - Invalid Compressed Rinex file - ' + file)
-                for line in convertedfile.strip().split('\n'):
-                    logger.error('Message - 06 - ' + line)
-                os.remove(workfile)
+                if convertedfile:
+                    for line in convertedfile.strip().split('\n'):
+                        logger.error('Message - 06 - ' + line)
+                    os.remove(workfile)
                 continue
 
             if sitelog or verbose:
