@@ -8,7 +8,7 @@ Class
 import os, re
 from   datetime import datetime
 import configparser
-import json
+import json, copy
 
 
 class Sitelog:
@@ -21,7 +21,7 @@ class Sitelog:
     the different instrumentation periods, tab containing a start and an end date,
     and for each line a dict of antenna instrumentation an receiver isntrumentation.
 
-    3 avaialable methods:
+    3 available methods:
     get_instrumentation takes a start and an end date and returns the instrumentation
     corresponding to the period, if found.
     teqcargs also takes a start and an end date and returns a string of args to
@@ -186,10 +186,7 @@ class Sitelog:
     def _instrumentations(self):
         """
         This function identifies the different complete installations from the antenna
-        and receiver change dates, and identify the installation corresponding
-        to the file start and end date. It then constructs a TEQC args string, containing
-        information from the sitelog, to be applied in the main function to the file.
-        If no instrumentation on the file dates, returns None.
+        and receiver change dates, then returns a table with only instrumented periods.
         """
 
         ##### Constructing a list of date intervals from all changes dates #####
@@ -293,30 +290,75 @@ class Sitelog:
         return date
 
 
-    def get_instrumentation(self, starttime, endtime):
+    def get_instrumentation(self, starttime, endtime, ignore = False):
+        '''
+        We get the installation corresponding to the starttime and endtime.
+        If force option set to True, we will force ignoring the firmware version
+        modification between two periods and consider only the other parameters
+        '''
 
         # We get the installation corresponding to the starttime and endtime
-
         thisinstall = None
+        ignored = False
 
         for installation in self.instrumentations:
             if installation['dates'][0] <= starttime and installation['dates'][1] >= endtime:
                 thisinstall = installation
                 break
 
-        return thisinstall
+        # If we can't find a corresponding installation period and we use the force
+        # option, we will force ignoring the firmware version modification and
+        # consider only the other parameters
+        if not thisinstall and ignore:
+
+            # We work with consecutive instrumentation periods
+            for i in range(0, len(self.instrumentations) - 1):
+                if self.instrumentations[i]['dates'][0] <= starttime \
+                    and self.instrumentations[i+1]['dates'][1] >= endtime:
+
+                    # we copy the two instrumentation periods dictionnary to remove firmware info
+                    nofirmware_instrumentation_i = copy.deepcopy(self.instrumentations[i])
+                    nofirmware_instrumentation_i1 = copy.deepcopy(self.instrumentations[i+1])
+
+                    # We remove date infos
+                    nofirmware_instrumentation_i.pop('dates')
+                    nofirmware_instrumentation_i1.pop('dates')
+                    for e in ['Date Removed', 'Date Installed']:
+                        nofirmware_instrumentation_i['antenna'].pop(e)
+                        nofirmware_instrumentation_i['receiver'].pop(e)
+                        nofirmware_instrumentation_i1['antenna'].pop(e)
+                        nofirmware_instrumentation_i1['receiver'].pop(e)
+
+                    # We remove Firmware info
+                    nofirmware_instrumentation_i['receiver'].pop('Firmware Version')
+                    nofirmware_instrumentation_i1['receiver'].pop('Firmware Version')
+
+                    # If, except dates and firmware version, the dicts are equls, we set
+                    # instrumentation to the first one of the two.
+                    if nofirmware_instrumentation_i == nofirmware_instrumentation_i1:
+                        thisinstall = self.instrumentations[i]
+                        ignored = True
 
 
-    def teqcargs(self, starttime, endtime):
+        return thisinstall, ignored
+
+
+    def merge_firmwares(self):
+
+
+        return installations
+
+
+    def teqcargs(self, starttime, endtime, ignore = False):
         """
         Will return a string of teqc args containing all infos from the sitelog,
         incuding instrumetnation infos taking into account a start and an end date.
         """
 
-        instrumentation = self.get_instrumentation(starttime, endtime)
+        instrumentation, ignored = self.get_instrumentation(starttime, endtime, ignore)
 
         if not instrumentation:
-            return ''
+            return '', ignored
 
         ########### GNSS one-letter codes ###########
 
@@ -360,7 +402,7 @@ class Sitelog:
                     "-O.ag[ency] '{}'".format(self.info['12.']['Preferred Abbreviation'])
                     ]
 
-        return teqcargs
+        return teqcargs, ignored
 
 
     def write_json(self, output = None):

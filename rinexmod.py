@@ -251,7 +251,7 @@ def loggersVerbose(verbose, logfile):
     return logger
 
 
-def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, verbose):
+def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, ignore, verbose):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, teqc args based header modification, or sitelog-based
@@ -263,9 +263,13 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
         print('# ERROR : If you get metadata from sitelog, don\'t provide arguments for teqc !')
         return
 
-    # If sitelog option, no teqc argument must be provided
+    # If force option provided, check if sitelog option too, if not, not relevant.
     if force and not sitelog:
         print('# WARNING : --force option is meaningful only when using also --sitelog option')
+
+    # If ignore option provided, check if sitelog option too, if not, not relevant.
+    if ignore and not sitelog:
+        print('# WARNING : --ignore option is meaningful only when using also --sitelog option')
 
     # If inputfile doesn't exists, return
     if not os.path.isfile(rinexlist):
@@ -399,14 +403,18 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                         continue
 
                 # Get teqc args from sitelog infos and start and end time of the file
-                teqcargs = sitelogobj.teqcargs(metadata['start date & time'],
-                                               metadata['final date & time'])
-                # current_instru = sitelogobj.Instrumentation(sitelogdict,
+                # ignore option is to ignore firmware changes between instrumentation periods
+                teqcargs, ignored = sitelogobj.teqcargs(metadata['start date & time'],
+                                               metadata['final date & time'],
+                                               ignore)
 
                 if not teqcargs:
                     logger.error('12 - No instrumentation corresponding to the data period on the sitelog : ' + file)
                     os.remove(workfile)
                     continue
+
+                if ignored:
+                    logger.error('13 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway - ' + file)
 
                 teqcargs = ' '.join(teqcargs)
 
@@ -458,6 +466,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--single', help='INPUT is a standalone Rinex file and not a file containing list of Rinex files paths', action='store_true')
     parser.add_argument('-l', '--sitelog', help='Get the Teqc args values from file\'s station\'s sitelog', type=str, default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based teqc arguments when station name within file does not correspond to sitelog', action='store_true')
+    parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting teqc args info from sitelogs', action='store_true')
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='count', default=0)
 
@@ -470,7 +479,8 @@ if __name__ == '__main__':
     single = args.single
     sitelog = args.sitelog
     force = args.force
+    ignore = args.ignore
     reconstruct = args.reconstruct
     verbose = args.verbose
 
-    rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, verbose)
+    rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, ignore, verbose)
