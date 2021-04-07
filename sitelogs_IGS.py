@@ -339,14 +339,7 @@ class Sitelog:
                         thisinstall = self.instrumentations[i]
                         ignored = True
 
-
         return thisinstall, ignored
-
-
-    def merge_firmwares(self):
-
-
-        return installations
 
 
     def teqcargs(self, starttime, endtime, ignore = False):

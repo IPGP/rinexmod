@@ -51,6 +51,10 @@ OPTIONS :
 -l : --sitelog :      Sitelog file in with rinexmod will find file's period's
                       instrumentation informations. The sitelog must be valid
                       as the script does not check it.
+-f : --force :        Force appliance of sitelog based teqc arguments when
+                      station name within file does not correspond to sitelog.
+-i : --ignore :       Ignore firmware changes between instrumentation periods
+                      when getting teqc args info from sitelogs.
 -n : --name :         A four characater station code that will be used to rename
                       input files.
 -s : --single :       Option to provide if you want to run this script on a single
@@ -64,7 +68,7 @@ OPTIONS :
 EXAMPLES:
 
 ./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL) (-s) (-r /ROOTFOLDER/) (-vv)
-./rinexmod.py  RINEXLIST OUTPUTFOLDER (-l ./sitelogsfolder/stationsitelog.log) (-n AGAL) (-s) (-r /ROOTFOLDER/) (-vv)
+./rinexmod.py  RINEXLIST OUTPUTFOLDER (-l ./sitelogsfolder/stationsitelog.log) (-n AGAL) (-s) (-r /ROOTFOLDER/) (-f) (-i) (-vv)
 
 REQUIREMENTS :
 
