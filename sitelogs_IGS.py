@@ -323,7 +323,7 @@ class Sitelog:
                     # We remove date infos
                     nofirmware_instrumentation_i.pop('dates')
                     nofirmware_instrumentation_i1.pop('dates')
-                    for e in ['Date Removed', 'Date Installed']:
+                    for e in ['Date Removed', 'Date Installed', 'Additional Information']:
                         nofirmware_instrumentation_i['antenna'].pop(e)
                         nofirmware_instrumentation_i['receiver'].pop(e)
                         nofirmware_instrumentation_i1['antenna'].pop(e)
