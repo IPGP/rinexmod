@@ -23,7 +23,7 @@ class Sitelog:
 
     3 available methods:
     get_instrumentation takes a start and an end date and returns the instrumentation
-    corresponding to the period, if found.
+    corresponding to the period, if found. Option to ignore firmware version inconsistency.
     teqcargs also takes a start and an end date and returns a string of args to
     pass to teqc so that it will modify a rinex file's header.
     write_json will write the dict of the parsed values from the sitelog to a
@@ -293,8 +293,8 @@ class Sitelog:
     def get_instrumentation(self, starttime, endtime, ignore = False):
         '''
         We get the installation corresponding to the starttime and endtime.
-        If force option set to True, we will force ignoring the firmware version
-        modification between two periods and consider only the other parameters
+        If ignore option set to True, we will force ignoring the firmware version
+        modification between two periods and consider only the other parameters.
         '''
 
         # We get the installation corresponding to the starttime and endtime
@@ -346,6 +346,8 @@ class Sitelog:
         """
         Will return a string of teqc args containing all infos from the sitelog,
         incuding instrumetnation infos taking into account a start and an end date.
+        If ignore option set to True, we will force ignoring the firmware version
+        modification between two periods and consider only the other parameters.
         """
 
         instrumentation, ignored = self.get_instrumentation(starttime, endtime, ignore)

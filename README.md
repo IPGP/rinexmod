@@ -42,9 +42,11 @@ USAGE :
 OPTIONS :
 
 * -t : teqcargs :     Teqc modification command between double quotes (eg "-O.mn 'AGAL' -O.rt 'LEICA GR25'"). You can refer to teqc -help to see which arguments can be passed to teqc. Here, the pertinent ones are mostly  those starting with O, that permits to modifiy rinex headers.        
-* -l : --sitelog :      Sitelog file in with rinexmod will find file's period's instrumentation informations. The sitelog must be valid as the script does not check it.         
-* -n : name : A four characater station code that will be used to rename input files.
-* -s : single : Option to provide if you want to run this script on a single rinex file and not on a list of files.
+* -l : --sitelog :    Sitelog file in with rinexmod will find file's period's instrumentation informations. The sitelog must be valid as the script does not check it.         
+* -f : force :        Force appliance of sitelog based teqc arguments when station name within file does not correspond to sitelog.
+* -i : ignore :       Ignore firmware changes between instrumentation periods when getting teqc args info from sitelogs.
+* -n : name :         A four characater station code that will be used to rename input files.
+* -s : single :       Option to provide if you want to run this script on a single rinex file and not on a list of files.
 * -r : reconstruct :  Reconstruct files subdirectory. You have to indicate the part of the path that is common to all files in the list and that will be replaced with output folder.
 * -v : verbose:       Increase output verbosity. Will prompt teqc +meta of each file before and after teqc modifications.
 
