@@ -63,10 +63,11 @@ USAGE :
 
 # Requirements
 
-The tool is in Python 3, your must have it installed on your machine.
+The tool is in Python 3, you must have it installed on your machine. Install Hatanaka for RINEX decompression.
 
-You have to have RNX2CRZ, CRZ2RNX, RNX2CRX and CRX2RNX installed and declared in your path. The RNXCMP program package must be present on the machine, if not, available there :
-http://terras.gsi.go.jp/ja/crx2rnx.html
+```bash
+pip install hatanaka
+```
 
 To declare it in your path, run on linux :
 
