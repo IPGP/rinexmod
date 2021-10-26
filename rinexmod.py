@@ -316,7 +316,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             ##### Lauchning crz2rnx to extract Rinex file from archive #####
             logger.debug('Converting file to RNX')
-            convertedfile = hatanaka.decompress_on_disk(workfile)
+            convertedfile = str(hatanaka.decompress_on_disk(workfile))
             workfile = convertedfile
 
             if not success:
@@ -386,7 +386,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
             if workfile.endswith('.rnx') or re.match(r'\d{2}o', workfile[-3:]):
 
                 logger.debug('Converting file to CRZ')
-                crzfile = hatanaka.decompress_on_disk(workfile)
+                crzfile = hatanaka.compress_on_disk(workfile, compression = 'Z')
 
                 if not success:
                     logger.error('08 - Invalid Rinex file - ' + file)
