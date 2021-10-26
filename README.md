@@ -80,7 +80,7 @@ OPTION :
 
 EXAMPLE:
 
- ./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
+	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 
 # batch_rinexmod.py
 
@@ -99,8 +99,8 @@ OPTION :
 
 EXAMPLES:
 
-./batch_rinexmod.py  RINEXLIST (-u)
-./batch_rinexmod.py  RINEXFOLDER (-u)
+	./batch_rinexmod.py  RINEXLIST (-u)
+	./batch_rinexmod.py  RINEXFOLDER (-u)
 
 # crzmeta.py
 
