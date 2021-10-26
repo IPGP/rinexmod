@@ -61,6 +61,12 @@ USAGE :
 
 	./crzmeta.py RINEXFILE
 
+# Batch_rinexmod
+
+This script will read a folder and extract rinex files, or read directly a file containing a list of files. For each of those files, it will lauch rinexmod function, that will fill the file's header with informations gathered from the corresponding sitelog, read in the 'sitelogsfolder' folder.
+Sitelogs can be updated during the process using --update option. The corrected files will be written to 'outputfolder' folder, and subfolders will be reconstructed. The part of the path that is common to all files must be indictaed in 'reconstruct' and this part of the path will be replaced with output folder.
+All those 3 variables ('sitelogsfolder', 'outputfolder' and 'reconstruct') are stored in the batch_rinexmod.cfg ini file.
+
 # Requirements
 
 The tool is in Python 3, your must have it installed on your machine.

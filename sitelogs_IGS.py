@@ -19,7 +19,7 @@ class Sitelog:
     Dict accessible via Sitelog.info
     Will also create a tab, stored in Sitelog.instrumentations, containing all
     the different instrumentation periods, tab containing a start and an end date,
-    and for each line a dict of antenna instrumentation an receiver isntrumentation.
+    and for each line a dict of antenna instrumentation an receiver instrumentation.
 
     3 available methods:
     get_instrumentation takes a start and an end date and returns the instrumentation

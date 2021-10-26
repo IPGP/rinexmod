@@ -276,7 +276,9 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
         print('# WARNING : --ignore option is meaningful only when using also --sitelog option')
 
     # If inputfile doesn't exists, return
-    if not os.path.isfile(rinexlist):
+    if isinstance(rinexlist, list):
+        pass
+    elif not os.path.isfile(rinexlist):
         print('# ERROR : The input file doesn\'t exist : ' + rinexlist)
         return
 
@@ -309,6 +311,8 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
     # Opening and reading lines of the file containing list of rinex to proceed
     if single:
         rinexlist = [rinexlist]
+    elif isinstance(rinexlist, list):
+        pass
     else:
         try:
             rinexlist = [line.strip() for line in open(rinexlist).readlines()]
@@ -392,7 +396,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
                 # Parse teqc metadata output
                 metadata = meta2dict(metadata)
-
+                # This metadata field cames from the name and not the header
                 sitelog_sta_code = sitelogobj.info['1.']['Four Character ID'].lower()
 
                 metadata_sta_codes = [metadata['station ID number'],
@@ -453,6 +457,8 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                 # Removing the rinex file
                 os.remove(workfile)
                 workfile = crzfile
+
+    logger.handlers.clear()
 
     return
 
