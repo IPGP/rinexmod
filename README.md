@@ -8,7 +8,7 @@ Tool to batch modify headers of RINEX Hatakana compressed files from a teqc comm
 
 This project is composed of 4 scripts.
 
-* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z), extract the rinex files and modifiy the file's header using a teqc subprocess. It then compress them back to Hanakata Z format in an output folder. It also allows renaming the files by changing the four first characters with another station code. Two ways of passing parameters to teqc are possible, passing the teqc as an argument, or passing a sitelog as an argument. In this case, the script will treat only files corresponding to the same station as the provided sitelog, and will take the start and end time of each proceeded file and use them to extract the wright station instrumentation from the sitelog.
+* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z), extract the rinex files and modifiy the file's header using a teqc subprocess. It then compress them back to Hanakata Z format in an output folder. It also allows renaming the files by changing the four first characters with another station code. Two ways of passing parameters to teqc are possible, passing the teqc args as an argument, or passing a sitelog as an argument. In this case, the script will treat only files corresponding to the same station as the provided sitelog, and will take the start and end time of each proceeded file and use them to extract the right station instrumentation from the sitelog.
 of the corresponding period
 
 * get_m3g_sitelogs.py will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder.

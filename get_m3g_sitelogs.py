@@ -97,11 +97,11 @@ if __name__ == '__main__':
 
     # Parsing Args
     parser = argparse.ArgumentParser(description='Get all IPGP sitelogs in the last version for M3G repository')
+    parser.add_argument('sitelogsfolder', type=str, help='Output folder where to store downloaded sitelogs')
     parser.add_argument('-d', '--delete', help='Delete old sitelogs in storage folder', action='store_true')
 
     args = parser.parse_args()
+    sitelogsfolder = args.sitelogsfolder
     delete = args.delete
-
-    sitelogsfolder = "/home/leger/Documents/11_Metadonnées_GPS/test/"
 
     get_m3g_sitelogs(sitelogsfolder, delete)
