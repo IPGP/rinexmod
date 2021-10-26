@@ -6,7 +6,18 @@ Tool to batch modify headers of RINEX Hatakana compressed files from a teqc comm
 
 # Project Overview
 
-This script takes a list of RINEX Hanakata compressed files (.d.Z), extract the rinex files and allows to pass to teqc parameters to modify headers, then put them back to Hanakata Z format. It permits also to rename the  files changing the four first characters with another station code.
+This project is composed of 4 scripts.
+
+* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z), extract the rinex files and modifiy the file's header using a teqc subprocess. It then compress them back to Hanakata Z format in an output folder. It also allows renaming the files by changing the four first characters with another station code. Two ways of passing parameters to teqc are possible, passing the teqc as an argument, or passing a sitelog as an argument. In this case, the script will treat only files corresponding to the same station as the provided sitelog, and will take the start and end time of each proceeded file and use them to extract the wright station instrumentation from the sitelog.
+of the corresponding period
+
+* get_m3g_sitelogs.py will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder.
+
+* batch_rinexmod.py will read a folder and extract rinex files, or read directly a file containing a list of rinex files. It will then identify the corresponding sitelogs, and launch rinexmod.py for each of the sitelog and station rinex file pairs. It can also launch get_m3g_sitelogs.py as an option to be sure to use last sitelogs version.
+
+* crzmeta.py will extract rinex file's header information, uncompressing the file and lauching teqc +meta, prompting the result, and deleting the temporary uncompressed file. This permits to access quickly the header information without uncompressing mannually the file.
+
+# rinexmod.py
 
 Two ways of passing parameters to teqc are possible:
 
@@ -34,7 +45,7 @@ Two ways of passing parameters to teqc are possible:
 
 You can not provide both --teqcargs and --sitelog options.
 
-USAGE :
+USE :
 
 * RINEXLIST : Rinex list file
 * OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory argument, you can not modify files inplace.
@@ -55,17 +66,49 @@ EXAMPLES:
 	./rinexmod.py  RINEXLIST OUTPUTFOLDER (-t "-O.mo 'Abri_du_Gallion' -O.mn 'AGAL' -O.o OVSG") (-n AGAL)  (-s) (-r /ROOTFOLDER/) (-vv)
 	./rinexmod.py  RINEXLIST OUTPUTFOLDER (-l ./sitelogsfolder/stationsitelog.log) (-n AGAL) (-s) (-r /ROOTFOLDER/) (-vv)
 
-In addition to the main script, rinexmod.py, crzmeta.py is provided. It permits to extract a crz file's metadata with crz2rnx and teqc.
+# get_m3g_sitelogs.py
 
-USAGE :
+This script will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder set in 'observatories'.
 
-	./crzmeta.py RINEXFILE
+USE :
 
-# Batch_rinexmod
+* OUTPUTFOLDER : Folder where to write the downloaded sitelogs.
+
+OPTION :
+
+* -d : delete : Delete old sitelogs in storage folder. This permits to have only the last version, as version changing sitelogs changes of name.
+
+EXAMPLE:
+
+ ./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
+
+# batch_rinexmod.py
 
 This script will read a folder and extract rinex files, or read directly a file containing a list of files. For each of those files, it will lauch rinexmod function, that will fill the file's header with informations gathered from the corresponding sitelog, read in the 'sitelogsfolder' folder.
 Sitelogs can be updated during the process using --update option. The corrected files will be written to 'outputfolder' folder, and subfolders will be reconstructed. The part of the path that is common to all files must be indictaed in 'reconstruct' and this part of the path will be replaced with output folder.
 All those 3 variables ('sitelogsfolder', 'outputfolder' and 'reconstruct') are stored in the batch_rinexmod.cfg ini file.
+
+USE:
+
+* RINEXFOLDER : folder where rinexfiles will be scanned.
+* RINEXLIST : list of rinex files.
+
+OPTION :
+
+* -u : update : Update sitelogs in corresponding folder using get_m3g_sitelogs.py script.
+
+EXAMPLES:
+
+./batch_rinexmod.py  RINEXLIST (-u)
+./batch_rinexmod.py  RINEXFOLDER (-u)
+
+# crzmeta.py
+
+The script will permit to extract a crz file's metadata with crz2rnx and teqc.
+
+USE :
+
+	./crzmeta.py RINEXFILE
 
 # Requirements
 
