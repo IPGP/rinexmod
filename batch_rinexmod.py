@@ -29,7 +29,7 @@ OPTIONS :
 EXAMPLES:
 
 ./batch_rinexmod.py  RINEXLIST (-u)
-./rinexmod.py  RINEXFOLDER (-u)
+./batch_rinexmod.py  RINEXFOLDER (-u)
 
 REQUIREMENTS :
 
