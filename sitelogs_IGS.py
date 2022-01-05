@@ -6,7 +6,7 @@ Class
 """
 
 import os, re
-from   datetime import datetime
+from   datetime import datetime, timedelta
 import configparser
 import json, copy
 
@@ -418,3 +418,85 @@ class Sitelog:
             json.dump(self.info, j, default=str)
 
         return outputfilejson
+
+
+    def stationinfo(self, output = None):
+
+        if output:
+            if not os.path.isdir(output):
+                print("error, output folder incorrect " + output)
+                return None
+
+        header = []
+
+        now = datetime.strftime(datetime.now(), '%Y-%m-%d %H%M')
+
+        header.append("# Station.info written by Rinexmod user             on ".format(now))
+        header.append("* Reference file : station.info")
+        header.append("*")
+        header.append("*")
+        header.append("*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant N    Ant E    Receiver Type         Vers                  SwVer  Receiver SN           Antenna Type     Dome   Antenna SN")
+
+        stationinfo = []
+
+        SITE = self.info['1.']['Four Character ID']
+        Station_Name = self.info['1.']['Site Name']
+
+        pattern = re.compile(r'[ 0](0+)[0-9]')
+
+        for installation in self.instrumentations:
+
+            Session_Start = installation['dates'][0]
+            # print(type(Session_Start))
+            Session_Start = datetime.strftime(Session_Start, '%Y %j %H %M %S')
+            Session_Start = re.sub(pattern, ' ', Session_Start)
+
+            # Session_Start = Session_Start.replace(' 00', '   ')
+            # Session_Start = Session_Start.replace(' 0', '  ')
+            # Session_Start = Session_Start.replace('  00', '   0')
+            # Session_Start = Session_Start.replace(' 00', '  0')
+
+            Session_Stop = installation['dates'][1]
+            # print(type(Session_Stop))
+
+            # Session_Stop = Session_Stop - timedelta(seconds=1)
+            Session_Stop = datetime.strftime(Session_Stop, '%Y %j %H %M %S')
+            Session_Stop = re.sub(pattern, ' ', Session_Stop)
+            # Session_Stop = Session_Stop.replace(' 0', '  ')
+            #
+            # Session_Start = Session_Start.replace('  00', '   0')
+            # Session_Stop = Session_Stop.replace(' 00', '  0')
+
+            Ant_Ht = installation['antenna']['Marker->ARP Up Ecc. (m)']
+            HtCod = None #installation['antenna'][''] # XXXX
+            Ant_N = installation['antenna']['Marker->ARP North Ecc(m)']
+            Ant_E = installation['antenna']['Marker->ARP East Ecc(m)']
+            Receiver_Type = installation['receiver']['Receiver Type']
+            Vers = None #installation['receiver'][''] # XXXXX
+            SwVer = installation['receiver']['Firmware Version']
+            Receiver_SN = installation['receiver']['Serial Number']
+            Antenna_Type = installation['antenna']['Antenna Type']
+            Dome = installation['antenna']['Antenna Radome Type']
+            Antenna_SN = installation['antenna']['Serial Number']
+
+            info_line = [SITE,
+                         Station_Name,
+                         Session_Start,
+                         Session_Stop,
+                         Ant_Ht,
+                         HtCod,
+                         Ant_N,
+                         Ant_E,
+                         Receiver_Type,
+                         Vers,
+                         SwVer,
+                         Receiver_SN,
+                         Antenna_Type,
+                         Dome,
+                         Antenna_SN]
+
+            stationinfo.append(info_line)
+
+        for line in stationinfo:
+
+            print(line)
