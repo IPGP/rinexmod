@@ -72,10 +72,6 @@ EXAMPLES:
 
 REQUIREMENTS :
 
-You have to have RNX2CRZ, CRZ2RNX, RNX2CRX and CRX2RNX installed and declared in
-your path. The program must be present on the machine, if not, available there :
-http://terras.gsi.go.jp/ja/crx2rnx.html
-
 You have to have teqc installed and declared in your path.
 The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
@@ -89,60 +85,9 @@ from   datetime import datetime
 import logging
 from   shutil import copy, move
 import configparser
-import json
 from sitelogs_IGS import Sitelog
+import hatanaka
 
-
-def crz2rnx(file):
-    """
-    Calling 'crz2rnx' program via subprocess to uncomrpess CRX files.
-    The program must be present on the machine, if not, available there :
-    http://terras.gsi.go.jp/ja/crx2rnx.html
-    """
-
-    if not file.endswith('crx.Z') and not file.endswith('d.Z'):
-        success = False
-        rnxfile = None
-        return success, rnxfile
-
-    # crx2rnx -f : force overwriting
-    p = subprocess.Popen(['crz2rnx', '-f', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
-
-    if err:
-        success = False
-        rnxfile = err.decode('utf-8')
-    else:
-        success = True
-        if file.endswith('crx.Z'):
-            rnxfile = file[:-5] + 'rnx'
-        elif file.endswith('d.Z'):
-            rnxfile = file[:-3] + 'o'
-
-    return success, rnxfile
-
-
-def rnx2crz(file):
-    """
-    Calling 'rnx2crx' program via subprocess to uncomrpess CRX files.
-    The program must be present on the machine, if not, available there :
-    http://terras.gsi.go.jp/ja/crx2rnx.html
-    """
-    # crx2rnx -f : force overwriting
-    p = subprocess.Popen(['rnx2crz', '-f', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
-
-    if err:
-        success = False
-        crzfile = err.decode("utf-8")
-    else:
-        success = True
-        if file.endswith('rnx'):
-            crzfile = file[:-3] + 'crx.Z'
-        elif file.endswith('o'):
-            crzfile = file[:-1] + 'd.Z'
-
-    return success, crzfile
 
 
 def teqcmeta(file):
@@ -375,7 +320,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             ##### Lauchning crz2rnx to extract Rinex file from archive #####
             logger.debug('Converting file to RNX')
-            success, convertedfile = crz2rnx(workfile)
+            convertedfile = str(hatanaka.decompress_on_disk(workfile))
             workfile = convertedfile
 
             if not success:
@@ -445,7 +390,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
             if workfile.endswith('.rnx') or re.match(r'\d{2}o', workfile[-3:]):
 
                 logger.debug('Converting file to CRZ')
-                success, crzfile = rnx2crz(workfile)
+                crzfile = hatanaka.compress_on_disk(workfile, compression = 'Z')
 
                 if not success:
                     logger.error('08 - Invalid Rinex file - ' + file)

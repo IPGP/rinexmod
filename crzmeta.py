@@ -8,10 +8,6 @@ EXAMPLE:
 
 REQUIREMENTS :
 
-You have to have RNX2CRZ and CRZ2RNX installed and declared in your path.
-The program must be present on the machine, if not, available there :
-http://terras.gsi.go.jp/ja/crx2rnx.html
-
 You have to have teqc installed and declared in your path.
 The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
@@ -25,35 +21,7 @@ import os, sys, re
 from   datetime import datetime
 import logging
 from   shutil import copy, move
-
-
-def crz2rnx(file):
-    """
-    Calling 'crz2rnx' program via subprocess to uncomrpess CRX files.
-    The program must be present on the machine, if not, available there :
-    http://terras.gsi.go.jp/ja/crx2rnx.html
-    """
-
-    if not file.endswith('crx.Z') and not file.endswith('d.Z'):
-        success = False
-        rnxfile = None
-        return success, rnxfile
-
-    # crx2rnx -f : force overwriting
-    p = subprocess.Popen(['crz2rnx', '-f', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
-
-    if err:
-        success = False
-        rnxfile = None
-    else:
-        success = True
-        if file.endswith('crx.Z'):
-            rnxfile = file[:-5] + 'rnx'
-        elif file.endswith('d.Z'):
-            rnxfile = file[:-3] + 'o'
-
-    return success, rnxfile
+import hatanaka
 
 
 def teqcmeta(file):
@@ -81,13 +49,13 @@ def crzmeta(rinexfile):
     success = copy(rinexfile, temp_folder)
 
     if not success:
-        logger.error('04 - Copy of file to temp directory impossible - ' + rinexfile)
+        logging.error('04 - Copy of file to temp directory impossible - ' + rinexfile)
         return
 
     tempfile = os.path.join(temp_folder, os.path.basename(rinexfile))
 
     ##### Lauchning crz2rnx to extract Rinex file from archive #####
-    success, convertedfile = crz2rnx(tempfile)
+    convertedfile = hatanaka.decompress_on_disk(tempfile)
 
     if not success:
         print('06 - Invalid Compressed Rinex file - ' + rinexfile)
