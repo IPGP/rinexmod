@@ -114,9 +114,7 @@ USE :
 
 The tool is in Python 3, you must have it installed on your machine. Install Hatanaka for RINEX decompression.
 
-```bash
-pip install hatanaka
-```
+ pip install hatanaka
 
 To declare it in your path, run on linux :
 

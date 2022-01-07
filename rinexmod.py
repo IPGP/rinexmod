@@ -76,6 +76,10 @@ You have to have teqc installed and declared in your path.
 The program must be present on the machine, if not, available there :
 https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
 
+You need Python Install Hatanaka library from Martin Valgur:
+
+pip install hatanaka
+
 2021-02-07 Félix Léger - leger@ipgp.fr
 """
 
@@ -321,6 +325,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
             ##### Lauchning crz2rnx to extract Rinex file from archive #####
             logger.debug('Converting file to RNX')
             convertedfile = str(hatanaka.decompress_on_disk(workfile))
+            print(convertedfile)
             workfile = convertedfile
 
             if not success:

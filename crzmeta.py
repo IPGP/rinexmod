@@ -19,7 +19,6 @@ import subprocess
 import tempfile as tmpf
 import os, sys, re
 from   datetime import datetime
-import logging
 from   shutil import copy, move
 import hatanaka
 
@@ -49,26 +48,24 @@ def crzmeta(rinexfile):
     success = copy(rinexfile, temp_folder)
 
     if not success:
-        logging.error('04 - Copy of file to temp directory impossible - ' + rinexfile)
+        print('04 - Copy of file to temp directory impossible - ' + rinexfile)
         return
 
     tempfile = os.path.join(temp_folder, os.path.basename(rinexfile))
 
-    ##### Lauchning crz2rnx to extract Rinex file from archive #####
-    try:
-        convertedfile = hatanaka.decompress_on_disk(tempfile)
-        print(convertedfile)
-    except:
-        print('06 - Invalid Compressed Rinex file - ' + rinexfile)
+    ##### Lauchning decompress_on_disk to extract Rinex file from archive #####
+    if not tempfile.endswith('crx.Z') and not tempfile.endswith('d.Z'):
+        print('06 - Invalid Compressed Rinex file - ' + tempfile)
         return
+    else:
+        convertedfile = hatanaka.decompress_on_disk(tempfile)
 
     metadata = teqcmeta(convertedfile)
     print('\n' + metadata)
 
     # Removing the rinex file
     os.remove(convertedfile)
-    if tempfile == convertedfile:
-        os.remove(tempfile)
+    os.remove(tempfile)
     os.rmdir(temp_folder)
 
     return
