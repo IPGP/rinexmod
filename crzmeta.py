@@ -55,9 +55,10 @@ def crzmeta(rinexfile):
     tempfile = os.path.join(temp_folder, os.path.basename(rinexfile))
 
     ##### Lauchning crz2rnx to extract Rinex file from archive #####
-    convertedfile = hatanaka.decompress_on_disk(tempfile)
-
-    if not success:
+    try:
+        convertedfile = hatanaka.decompress_on_disk(tempfile)
+        print(convertedfile)
+    except:
         print('06 - Invalid Compressed Rinex file - ' + rinexfile)
         return
 
@@ -66,7 +67,8 @@ def crzmeta(rinexfile):
 
     # Removing the rinex file
     os.remove(convertedfile)
-    os.remove(tempfile)
+    if tempfile == convertedfile:
+        os.remove(tempfile)
     os.rmdir(temp_folder)
 
     return
