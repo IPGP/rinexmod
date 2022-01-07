@@ -324,17 +324,21 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             ##### Lauchning crz2rnx to extract Rinex file from archive #####
             logger.debug('Converting file to RNX')
+            # if not file.endswith('crx.Z') and not file.endswith('d.Z'):
+            #     logger.error('06 - Invalid Compressed Rinex file - ' + file)
+            #     continue
+
             convertedfile = str(hatanaka.decompress_on_disk(workfile))
             print(convertedfile)
             workfile = convertedfile
 
-            if not success:
-                logger.error('06 - Invalid Compressed Rinex file - ' + file)
-                if convertedfile:
-                    for line in convertedfile.strip().split('\n'):
-                        logger.error('Message - 06 - ' + line)
-                    os.remove(workfile)
-                continue
+            # if not success:
+            #     logger.error('06 - Invalid Compressed Rinex file - ' + file)
+            #     if convertedfile:
+            #         for line in convertedfile.strip().split('\n'):
+            #             logger.error('Message - 06 - ' + line)
+            #         os.remove(workfile)
+            #     continue
 
             if sitelog or verbose:
                 metadata = teqcmeta(workfile)
@@ -397,12 +401,12 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                 logger.debug('Converting file to CRZ')
                 crzfile = hatanaka.compress_on_disk(workfile, compression = 'Z')
 
-                if not success:
-                    logger.error('08 - Invalid Rinex file - ' + file)
-                    for line in crzfile.strip().split('\n'):
-                        logger.error('Message - 08 - ' + line)
-                    os.remove(workfile)
-                    continue
+                # if not success:
+                #     logger.error('08 - Invalid Rinex file - ' + file)
+                #     for line in crzfile.strip().split('\n'):
+                #         logger.error('Message - 08 - ' + line)
+                #     os.remove(workfile)
+                #     continue
 
                 # Removing the rinex file
                 os.remove(workfile)
