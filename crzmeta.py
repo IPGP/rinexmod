@@ -23,6 +23,22 @@ from   shutil import copy, move
 import hatanaka
 
 
+def teqcisrinex(file):
+    """
+    Calling UNAVCO 'teqc' program via subprocess and returns the probable format
+    of file. Parsing the response to find RINEX in it.
+    https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
+    """
+    # teqc +mdf : returns the format of file
+    p = subprocess.Popen(['teqc', '+mdf', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+
+    if 'INEX' in out.decode("utf-8"):
+        return True
+    else:
+        return False
+
+
 def teqcmeta(file):
     """
     Calling UNAVCO 'teqc' program via subprocess and returns the file's metadata
@@ -54,8 +70,8 @@ def crzmeta(rinexfile):
     tempfile = os.path.join(temp_folder, os.path.basename(rinexfile))
 
     ##### Lauchning decompress_on_disk to extract Rinex file from archive #####
-    if not tempfile.endswith('crx.Z') and not tempfile.endswith('d.Z'):
-        print('06 - Invalid Compressed Rinex file - ' + tempfile)
+    if not teqcisrinex(tempfile):
+        logger.error('06 - Invalid Compressed Rinex file - ' + file)
         return
     else:
         convertedfile = hatanaka.decompress_on_disk(tempfile)
@@ -65,7 +81,8 @@ def crzmeta(rinexfile):
 
     # Removing the rinex file
     os.remove(convertedfile)
-    os.remove(tempfile)
+    if os.path.isfile(tempfile):
+        os.remove(tempfile)
     os.rmdir(temp_folder)
 
     return

@@ -93,6 +93,21 @@ from sitelogs_IGS import Sitelog
 import hatanaka
 
 
+def teqcisrinex(file):
+    """
+    Calling UNAVCO 'teqc' program via subprocess and returns the probable format
+    of file. Parsing the response to find RINEX in it.
+    https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
+    """
+    # teqc +mdf : returns the format of file
+    p = subprocess.Popen(['teqc', '+mdf', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
+
+    if 'INEX' in out.decode("utf-8"):
+        return True
+    else:
+        return False
+
 
 def teqcmeta(file):
     """
@@ -325,6 +340,9 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
             ##### Lauchning crz2rnx to extract Rinex file from archive #####
             logger.debug('Converting file to RNX')
             if not file.endswith('crx.Z') and not file.endswith('d.Z'):
+                logger.error('06 - Invalid Compressed Rinex file - ' + file)
+                continue
+            elif not teqcisrinex(file):
                 logger.error('06 - Invalid Compressed Rinex file - ' + file)
                 continue
 
