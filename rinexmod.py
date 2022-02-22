@@ -43,30 +43,31 @@ argument, you can not modify files inplace.
 
 OPTIONS :
 
--t : --teqcargs :     Teqc modification command between double quotes
-                      (eg "-O.mn 'AGAL' -O.rt 'LEICA GR25'").
-                      You can refer to teqc -help to see which arguments can be
-                      passed to teqc. Here, the pertinent ones are mostly those
-                      starting with O, that permits to modifiy rinex headers.
--l : --sitelog :      Sitelog file in with rinexmod will find file's period's
-                      instrumentation informations. The sitelog must be valid
-                      as the script does not check it.
--f : --force :        Force appliance of sitelog based teqc arguments when
-                      station name within file does not correspond to sitelog.
--i : --ignore :       Ignore firmware changes between instrumentation periods
-                      when getting teqc args info from sitelogs.
--n : --name :         A four characater station code that will be used to rename
-                      input files.
--m : --m3g_site_list :path a of a list file containing 9-char. site names from the M3G database
-                      generated with get_m3g_stations
-                      if not provided the country code will be XXX 
--s : --single :       Option to provide if you want to run this script on a single
-                      rinex file and not on a list of files.
--r : --reconstruct :  Reconstruct files subdirectory. You have to indicate the
-                      part of the path that is common to all files in the list and
-                      that will be replaced with output folder.
--v : --verbose:       Increase output verbosity. Will prompt teqc +meta of each
-                      file before and after teqc modifications.
+-t : --teqcargs :      Teqc modification command between double quotes
+                       (eg "-O.mn 'AGAL' -O.rt 'LEICA GR25'").
+                       You can refer to teqc -help to see which arguments can be
+                       passed to teqc. Here, the pertinent ones are mostly those
+                       starting with O, that permits to modifiy rinex headers.
+-l : --sitelog :       Sitelog file in with rinexmod will find file's period's
+                       instrumentation informations. The sitelog must be valid
+                       as the script does not check it.
+-f : --force :         Force appliance of sitelog based teqc arguments when
+                       station name within file does not correspond to sitelog.
+-i : --ignore :        Ignore firmware changes between instrumentation periods
+                       when getting teqc args info from sitelogs.
+-n : --name :          A four characater station code that will be used to rename
+                       input files.
+-m : --m3g_site_list : path a of a list file containing 9-char. site names from 
+                       the M3G database generated with get_m3g_stations.
+                       Not mandatory, but nessessary to get the country code 
+                       if not provided the country code will be XXX 
+-s : --single :        Option to provide if you want to run this script on a single
+                       rinex file and not on a list of files.
+-r : --reconstruct :   Reconstruct files subdirectory. You have to indicate the
+                       part of the path that is common to all files in the list and
+                       that will be replaced with output folder.
+-v : --verbose:        Increase output verbosity. Will prompt teqc +meta of each
+                       file before and after teqc modifications.
 
 EXAMPLES:
 
@@ -118,7 +119,7 @@ def teqcmeta(file):
     The program must be present on the machine, if not, available there :
     https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
     """
-    if file.endswith('crx.Z') or file.endswith('d.Z'):
+    if file.endswith('crx.Z') or file.endswith('crx.gz') or file.endswith('d.Z'):
         workfile = str(hatanaka.decompress_on_disk(file))
         remove_work = True
     else:
@@ -232,7 +233,7 @@ def loggersVerbose(verbose, logfile):
     return logger
 
 
-def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, ignore, verbose, m3g_site_list):
+def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, ignore, verbose, m3g_site_list, gzip):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, teqc args based header modification, or sitelog-based
@@ -297,12 +298,12 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
             print('# ERROR : The input file is not a list : ' + rinexlist)
             return
 
-    if m3g_site_list:
 
+    ### Get the 4 char > 9 char dictionnary from the input list 
+    if m3g_site_list:
         if not os.path.isfile(m3g_site_list):
             logger.error('01 - The specified 9-chars. list file does not exists - ' + m3g_site_list)
             m3g_site_list=None
-            continue
         else:
             with open(m3g_site_list,"r+")  as F:
                 nine_char_list = F.readlines()
@@ -347,19 +348,27 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
         tempfile = os.path.join(myoutputfolder, os.path.basename(file))
         workfile = tempfile
 
+
+        ### we rename the RINEX
         if name:
             dirname, basename = os.path.split(workfile)
-
+            
+            ### rename the RINEX with a different 4-char name (legacy mode)
             if len(name) == 4:
                 newfile = os.path.join(dirname, name.lower() + basename[4:])
 
+            ### rename the RINEX with a different 9-char name 
             elif len(name) == 9 or name == 'LONG_NAME':
 
+                ### with the generic keyword "LONG_NAME" 
                 if name == 'LONG_NAME':
                     if m3g_site_list:
                          site = nine_char_dict[basename[:4].lower()] 
+                    elif sitelog:
+                         site = os.path.basename(sitelog)[:9].upper() 
                     else:
                          site = basename[:4].upper() + "00XXX"
+                ### with a manual 9-char site as input 
                 else:
                     site = name
 
@@ -394,7 +403,8 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                 newfile = os.path.join(dirname, newname)
 
             else:
-                print("error")
+                logger.error('Wrong name argument given ' + file)
+                continue
 
             success = move(workfile, newfile)
 
@@ -412,7 +422,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             ##### Lauchning crz2rnx to extract Rinex file from archive #####
             logger.debug('Converting file to RNX')
-            if not file.endswith('crx.Z') and not file.endswith('d.Z'):
+            if not file.endswith('crx.Z') and not file.endswith('crx.gz') and not file.endswith('d.Z'):
                 logger.error('06 - Invalid Compressed Rinex file - ' + file)
                 continue
             elif not teqcisrinex(file):
@@ -420,6 +430,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                 continue
 
             convertedfile = str(hatanaka.decompress_on_disk(workfile))
+            os.remove(workfile)
             workfile = convertedfile
 
             # if not success:
@@ -486,10 +497,15 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
                 logger.debug('File Metadata :\n' + metadata)
 
             ##### We convert the file back to Hatanaka Compressed Rinex .crx or .XXd #####
-            if workfile.endswith('.rnx') or re.match(r'\d{2}o', workfile[-3:]):
-
+            if workfile.endswith('.rnx') or gzip:
+               compression = "gz"
+            elif re.match(r'\d{2}o', workfile[-3:]):
+               compression = "Z"
+            else:
+               compression = None
+            if compression:
                 logger.debug('Converting file to CRZ')
-                crzfile = hatanaka.compress_on_disk(workfile, compression = 'Z')
+                crzfile = hatanaka.compress_on_disk(workfile, compression = compression)
 
                 # if not success:
                 #     logger.error('08 - Invalid Rinex file - ' + file)
@@ -526,6 +542,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting teqc args info from sitelogs', action='store_true')
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='count', default=0)
+    parser.add_argument('-g', '--gzip', help='Force gzip compression (recommended to fit IGS standards)', action='store_true', default=0)
 
     args = parser.parse_args()
 
@@ -540,5 +557,6 @@ if __name__ == '__main__':
     reconstruct = args.reconstruct
     verbose = args.verbose
     m3g_site_list = args.m3g_site_list 
+    gzip = args.gzip
 
-    rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, ignore, verbose, m3g_site_list)
+    rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, reconstruct, ignore, verbose, m3g_site_list, gzip)
