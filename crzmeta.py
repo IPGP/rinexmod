@@ -64,20 +64,20 @@ def crzmeta(rinexfile):
     success = copy(rinexfile, temp_folder)
 
     if not success:
-        print('04 - Copy of file to temp directory impossible - ' + rinexfile)
+        print('# ERROR - Copy of file to temp directory impossible - ' + rinexfile)
         return
 
     tempfile = os.path.join(temp_folder, os.path.basename(rinexfile))
 
     ##### Lauchning decompress_on_disk to extract Rinex file from archive #####
-    if not teqcisrinex(tempfile):
-        logger.error('06 - Invalid Compressed Rinex file - ' + file)
+    convertedfile = hatanaka.decompress_on_disk(tempfile)
+
+    if not teqcisrinex(convertedfile):
+        print('# ERROR - Invalid Compressed Rinex file - ' + rinexfile)
         return
     else:
-        convertedfile = hatanaka.decompress_on_disk(tempfile)
-
-    metadata = teqcmeta(convertedfile)
-    print('\n' + metadata)
+        metadata = teqcmeta(convertedfile)
+        print('\n' + metadata)
 
     # Removing the rinex file
     os.remove(convertedfile)
