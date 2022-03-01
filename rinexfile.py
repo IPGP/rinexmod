@@ -64,7 +64,7 @@ class RinexFile:
         return '\n'.join(str_RinexFile)
 
 
-    def metadata_str(self):
+    def print_metadata(self):
         """
         Returns a printable, with carriage-return, string of metadata lines from
         the header
@@ -92,18 +92,16 @@ class RinexFile:
                     metadata.append(line)
                     break
 
-        return '\n'.join(metadata)
+        print('\n'.join(metadata))
+
+        return
 
 
     def retrieve_station(self):
 
         meta_station = 'MARKER NAME'
 
-        # metadata_list = self.metadata.split('\n')
-
-        for line in self.metadata:
-            print(line)
-            print(meta_station)
+        for line in self.rinex_data:
             if re.search(meta_station, line):
                 meta_station = line
                 break
@@ -111,22 +109,19 @@ class RinexFile:
         if meta_station == 'MARKER NAME':
             return None
 
-        meta_station = meta_station.split(' ')[0].lower()
+        meta_station = meta_station.split(' ')[0].upper()
 
         return meta_station
 
 
     def retrieve_date(self):
-        print('la')
 
         meta_date = 'TIME OF FIRST OBS'
 
         # metadata_list = self.metadata.split('\n')
 
-        for line in self.metadata:
-            print(line)
+        for line in self.rinex_data:
             if re.search(meta_date, line):
-                print('al')
                 meta_date = line
                 break
 
