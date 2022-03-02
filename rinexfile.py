@@ -7,6 +7,7 @@ Class
 
 import os, re
 import hatanaka
+from pathlib import Path
 from datetime import datetime
 
 
@@ -20,6 +21,7 @@ class RinexFile:
     def __init__(self, rinexfile):
 
         self.path = rinexfile
+        self.filename = self._filename()
         self.rinex_data = self._load_rinex_data()
 
 
@@ -43,6 +45,14 @@ class RinexFile:
         return rinex_data
 
 
+    def _filename(self):
+        """ Get filename without compression extension """
+
+        filename = os.path.splitext(os.path.basename(self.path))[0]
+
+        return filename
+
+
     def __str__(self):
         """
         Defnies a print method for the rinex file object. Will print all the
@@ -52,7 +62,7 @@ class RinexFile:
             return ''
 
         # We get header
-        end_of_header_idx = [i for i, e in enumerate(self.rinex_data) if 'END OF HEADER' in e][0] + 1
+        end_of_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'END OF HEADER' in e) + 1
         str_RinexFile = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
         str_RinexFile.extend(self.rinex_data[end_of_header_idx:end_of_header_idx + 20])
@@ -97,7 +107,26 @@ class RinexFile:
         return
 
 
-    def retrieve_station(self):
+    def write_to_path(self, path, compression = 'gz'):
+        """
+        Will turn rinex_data from list to string, utf-8, then compress as hatanaka
+        and zip to the 'compression' format, then write to file. The 'compression' param
+        will be used as an argument to hatanaka.compress and for naming the output file.
+        Available compressions are those of hatanaka compress function :
+        'gz' (default), 'bz2', 'Z', or 'none'
+        """
+
+        output_data = '\n'.join(self.rinex_data).encode('utf-8')
+        output_data = hatanaka.compress(output_data, compression = compression)
+
+        outputfile = os.path.join(path, self.filename + '.' + compression)
+
+        Path(outputfile).write_bytes(output_data)
+
+        return
+
+
+    def get_station(self):
 
         meta_station = 'MARKER NAME'
 
@@ -114,7 +143,7 @@ class RinexFile:
         return meta_station
 
 
-    def retrieve_date(self):
+    def get_date(self):
 
         meta_date = 'TIME OF FIRST OBS'
 
@@ -190,12 +219,18 @@ class RinexFile:
         Z_meta = antenna_pos_meta[28:42]
         label = antenna_pos_meta[60:]
         # Edit line
-        if X: # Format as 14.4 float. Cut if too large but will not happen
-            X_meta = '{:14.4f}'.format(float(X[-14:]))
+        if X: # Format as 14.4 float. Set to zero if too large but should not happen
+            X_meta = '{:14.4f}'.format(float(X))
+            if len(X_meta) > 14:
+                X_meta = '{:14.4f}'.format(float('0'))
         if Y:
-            Y_meta = '{:14.4f}'.format(float(Y[-14:]))
+            Y_meta = '{:14.4f}'.format(float(Y))
+            if len(Y_meta) > 14:
+                Y_meta = '{:14.4f}'.format(float('0'))
         if Z:
-            Z_meta = '{:14.4f}'.format(float(Z[-14:]))
+            Z_meta = '{:14.4f}'.format(float(Z))
+            if len(Z_meta) > 14:
+                Z_meta = '{:14.4f}'.format(float('0'))
         new_line = X_meta + Y_meta + Z_meta + ' ' * 18 + label
         # Set line
         self.rinex_data[antenna_pos_header_idx] = new_line
@@ -214,12 +249,18 @@ class RinexFile:
         Z_meta = antenna_delta_meta[28:42]
         label = antenna_delta_meta[60:]
         # Edit line
-        if X: # Format as 14.4 float. Cut if too large but will not happen
-            X_meta = '{:14.4f}'.format(float(X[-14:]))
+        if X: # Format as 14.4 float. Set to zero if too large but should not happen
+            X_meta = '{:14.4f}'.format(float(X))
+            if len(X_meta) > 14:
+                X_meta = '{:14.4f}'.format(float('0'))
         if Y:
-            Y_meta = '{:14.4f}'.format(float(Y[-14:]))
+            Y_meta = '{:14.4f}'.format(float(Y))
+            if len(Y_meta) > 14:
+                Y_meta = '{:14.4f}'.format(float('0'))
         if Z:
-            Z_meta = '{:14.4f}'.format(float(Z[-14:]))
+            Z_meta = '{:14.4f}'.format(float(Z))
+            if len(Z_meta) > 14:
+                Z_meta = '{:14.4f}'.format(float('0'))
         new_line = X_meta + Y_meta + Z_meta + ' ' * 18 + label
         # Set line
         self.rinex_data[antenna_delta_header_idx] = new_line
@@ -301,3 +342,33 @@ class RinexFile:
         self.rinex_data[observable_type_header_idx] = new_line
 
         return
+
+
+    def add_comment(self, comment):
+
+        end_of_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'END OF HEADER' in e) + 1
+        last_comment_idx = max(i for i, e in enumerate(self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e)
+
+        new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
+        self.rinex_data.insert(last_comment_idx + 1, new_line)
+
+        return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #EOF
