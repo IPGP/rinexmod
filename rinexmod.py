@@ -55,12 +55,14 @@ OPTIONS :
                        station name within file does not correspond to sitelog.
 -i : --ignore :        Ignore firmware changes between instrumentation periods
                        when getting teqc args info from sitelogs.
--n : --name :          A four characater station code that will be used to rename
-                       input files.
+-n : --name :          A four or nine character station code that will be used 
+                       to rename input files. If it is the keyword LONG_NAME
+                       the an automatic long name RINEX will be set.
+                       (requires --sitelog or --m3g_site_list option).
 -m : --m3g_site_list : path a of a list file containing 9-char. site names from 
                        the M3G database generated with get_m3g_stations.
                        Not mandatory, but nessessary to get the country code 
-                       if not provided the country code will be XXX 
+                       if not provided the country code will be 'XXX'. 
 -s : --single :        Option to provide if you want to run this script on a single
                        rinex file and not on a list of files.
 -r : --reconstruct :   Reconstruct files subdirectory. You have to indicate the
@@ -534,15 +536,15 @@ if __name__ == '__main__':
     parser.add_argument('rinexlist', type=str, help='Input rinex list file to process')
     parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
     parser.add_argument('-t', '--teqcargs', help='Teqc modification command between double quotes (eg "-O.mn \'AGAL\' -O.rt \'LEICA GR25\'")', type=str, default=0)
-    parser.add_argument('-n', '--name', help='Change 4 first letters of file name', type=str, default=0)
-    parser.add_argument('-m', '--m3g_site_list', help='path of a list file containing 9-char. site names from the M3G database', type=str, default=0)
+    parser.add_argument('-n', '--name', help='A four or nine character station code that will be used to rename input files. If it is the keyword LONG_NAME the an automatic long name RINEX will be set. (requires --sitelog or --m3g_site_list option).', type=str, default=0)
+    parser.add_argument('-m', '--m3g_site_list', help="path a of a list file containing 9-char. site names from the M3G database generated with get_m3g_stations. Not mandatory, but nessessary to get the country code if not provided the country code will be 'XXX'.", type=str, default=0)
     parser.add_argument('-s', '--single', help='INPUT is a standalone Rinex file and not a file containing list of Rinex files paths', action='store_true')
     parser.add_argument('-l', '--sitelog', help='Get the Teqc args values from file\'s station\'s sitelog', type=str, default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based teqc arguments when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting teqc args info from sitelogs', action='store_true')
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='count', default=0)
-    parser.add_argument('-g', '--gzip', help='Force gzip compression (recommended to fit IGS standards)', action='store_true', default=0)
+    parser.add_argument('-g', '--gzip', help='Force gzip compression, recommended to fit IGS standards. Uses Z compression per default', action='store_true', default=0)
 
     args = parser.parse_args()
 
