@@ -59,6 +59,12 @@ def get_m3g_sitelogs(sitelogsfolder, delete):
             line = line.split()
 
             # station_name = line[0]
+
+            # If station is declared in M3G but sitelog not available yet
+            if len(line) < 6:
+                print('### ' + line[0] + ' : not available ###')
+                continue
+
             sitelog_url = line[6]
             sitelog_name = line[3]
 

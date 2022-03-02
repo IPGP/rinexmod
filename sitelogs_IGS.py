@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Class
-2021-02-07 Félix Léger - leger@ipgp.fr
+2021-02-07 Félix Léger - felixleger@gmail.com
 """
 
 import os, re
@@ -398,6 +398,91 @@ class Sitelog:
                     ]
 
         return teqcargs, ignored
+
+
+    def rinex_metadata_lines(self, starttime, endtime, rinex_version = '2.11', ignore = False):
+        """
+
+        """
+
+        instrumentation, ignored = self.get_instrumentation(starttime, endtime, ignore)
+
+        if not instrumentation:
+            return '', ignored
+
+        ########### GNSS one-letter codes ###########
+
+        # From https://www.unavco.org/software/data-processing/teqc/tutorial/tutorial.html
+        gnss_codes = {
+                      'GPS': 'G',
+                      'GLO' : '­R',
+                      'GAL' : '­E',
+                      'BDS' : '­C',
+                      'QZSS' : '­J',
+                      'IRNSS' : 'I',
+                      'SBAS' : 'S',
+                      'MIXED' : 'M'
+                      }
+
+        # GNSS system. M if multiple, else, one letter code from gnss_codes dict.
+        observables_type_string = instrumentation['receiver']['Satellite System']
+        if '+' in observables_type_string:
+            observables_type = 'M'
+            observables_type_string = 'MIXED'
+        else:
+            observables_type = gnss_codes[observables_type_string]
+
+        # Converting rinex_version to float
+        rinex_version = float(rinex_version.replace(',', '.'))
+
+        # We construct the headers lines. The formating is the same for rinex2 and rinex3.
+        # Field sizes from page 51-52 of https://files.igs.org/pub/data/format/rinex305.pdf
+        RINEX_VERSION_TYPE  = '{:9.2f}' + ' ' * 11 + 'O' + 'BSERVATION DATA'.ljust(19) + '{:1s}' + '{:19s}' + 'RINEX VERSION / TYPE'
+        MARKER_NAME         = '{:60s}' + 'MARKER NAME'
+        MARKER_NUMBER       = '{:60s}' + 'MARKER NUMBER'
+        OBSERVER_AGENCY     = '{:20s}{:40s}' + 'OBSERVER / AGENCY'
+        RECEIVER            = '{:20s}{:20s}{:20s}' + 'REC # / TYPE / VERS'
+        ANTENNA             = '{:20s}{:20s}' + ' ' * 20 + 'ANT # / TYPE'
+        APPROX_POSITION     = '{:14.4f}{:14.4f}{:14.4f}' + ' ' * 18 + 'APPROX POSITION XYZ'
+        ANTENNA_DELTA       = '{:14.4f}{:14.4f}{:14.4f}' + ' ' * 18 + 'ANTENNA: DELTA H/E/N'
+
+        RINEX_VERSION_TYPE  = RINEX_VERSION_TYPE.format(rinex_version,
+                                                        observables_type,
+                                                        ' : ' + observables_type_string
+                                                        )
+        MARKER_NAME         = MARKER_NAME.format(self.info['1.']['Four Character ID'])
+        MARKER_NUMBER       = MARKER_NUMBER.format(self.info['1.']['Four Character ID'])
+        OBSERVER_AGENCY     = OBSERVER_AGENCY.format(self.info['11.']['Preferred Abbreviation'],
+                                                     self.info['12.']['Preferred Abbreviation']
+                                                     )
+        RECEIVER            = RECEIVER.format(instrumentation['receiver']['Serial Number'],
+                                              instrumentation['receiver']['Receiver Type'],
+                                              instrumentation['receiver']['Firmware Version']
+                                              )
+        ANTENNA             = ANTENNA.format(instrumentation['antenna']['Serial Number'],
+                                             instrumentation['antenna']['Antenna Type']
+                                             )
+        APPROX_POSITION     = APPROX_POSITION.format(float(self.info['2.']['X coordinate (m)']),
+                                                     float(self.info['2.']['Y coordinate (m)']),
+                                                     float(self.info['2.']['Z coordinate (m)'])
+                                                     )
+        ANTENNA_DELTA       = ANTENNA_DELTA.format(float(instrumentation['antenna']['Marker->ARP Up Ecc. (m)']),
+                                                   float(instrumentation['antenna']['Marker->ARP East Ecc(m)']),
+                                                   float(instrumentation['antenna']['Marker->ARP North Ecc(m)'])
+                                                   )
+
+        header_lines = {
+                        'RINEX VERSION / TYPE'      : RINEX_VERSION_TYPE,
+                        'MARKER NAME'               : MARKER_NAME,
+                        'MARKER NUMBER'             : MARKER_NUMBER,
+                        'OBSERVER / AGENCY'         : OBSERVER_AGENCY,
+                        'REC # / TYPE / VERS'       : RECEIVER,
+                        'ANT # / TYPE'              : ANTENNA,
+                        'APPROX POSITION XYZ'       : APPROX_POSITION,
+                        'ANTENNA: DELTA H/E/N'      : ANTENNA_DELTA
+                        }
+
+        return header_lines, ignored
 
 
     def write_json(self, output = None):
