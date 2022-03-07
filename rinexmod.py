@@ -214,7 +214,6 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
             print('# ERROR : The input file is not a list : ' + rinexlist)
             return
 
-
     ### Get the 4 char > 9 char dictionnary from the input list
     if ninecharfile:
         if not os.path.isfile(ninecharfile):
@@ -372,7 +371,7 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
         if sitelog or modification_kw:
             rinexfileobj.add_comment('rinexmoded from {}'.format(modification_source))
         if marker:
-            rinexfileobj.add_comment('file assigned  from {}'.format(modification_source))
+            rinexfileobj.add_comment('file assigned from {}'.format(modification_source))
 
         ##### We convert the file back to Hatanaka Compressed Rinex #####
         if not compression:
