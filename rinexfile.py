@@ -13,7 +13,7 @@ from datetime import datetime
 
 class RinexFile:
     """
-    Will store a compressed rinex file content in a file-like list of strings using
+    Will store a compressed rinex file content in a file-like list of strings
     using the hatanaka library.
     Will then provide methods to modifiy the file's header.
     """
@@ -21,8 +21,15 @@ class RinexFile:
     def __init__(self, rinexfile):
 
         self.path = rinexfile
+        self.size = os.path.getsize(self.path)
         self.filename = self._filename()
+        self.compression = self._get_compression()
         self.rinex_data, self.status = self._load_rinex_data()
+        self.version = self._get_version()
+        self.start_date, self.end_date = self._get_dates()
+        self.sample_rate = self._get_sample_rate()
+        self.file_period = self._get_file_period()
+        self.observable_type = self._get_observable_type()
 
 
     def _load_rinex_data(self):
@@ -40,10 +47,12 @@ class RinexFile:
         # Checking if existing file
         if not os.path.isfile(self.path):
             return None, 1
+        # Daily or hourly, gz or Z compressed hatanaka file
+        pattern_oldname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
+        pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}\.gz')
 
-        pattern = re.compile('....[0-9]{3}.\.[0-9]{2}(d\.((Z)|(gz)))')
-
-        if not pattern.match(os.path.basename(self.path)):
+        if not pattern_oldname.match(os.path.basename(self.path))           \
+               and not pattern_longname.match(os.path.basename(self.path)):
             status = 2
         else:
             status = 0
@@ -69,6 +78,223 @@ class RinexFile:
         return filename
 
 
+    def _get_compression(self):
+
+        compression = os.path.splitext(os.path.basename(self.path))[-1][1:]
+
+        return compression
+
+
+    def _get_version(self):
+
+        """ Get RINEX version """
+
+        if self.status != 0:
+            return ''
+
+        version_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'RINEX VERSION / TYPE' in e)
+        version_header = self.rinex_data[version_header_idx]
+        # Parse line
+        rinex_ver_meta = version_header[0:9].strip()
+
+        return rinex_ver_meta
+
+
+    def _get_dates(self):
+
+        """ Getting start and end date from rinex file.
+        Start date cames from TIME OF FIRST OBS file's header.
+        In RINEX3, there's a TIME OF LAST OBS in the heder but it's not available
+        in RINEX2, so we search for the date of the last observation directly in
+        the data.
+        """
+
+        if self.status != 0:
+            return None, None
+
+        # Getting start date
+        start_meta = 'TIME OF FIRST OBS'
+
+        for line in self.rinex_data:
+            if re.search(start_meta, line):
+                start_meta = line
+                break
+        # If not found
+        if start_meta == 'TIME OF FIRST OBS':
+            return None, None
+
+        start_meta = start_meta.split()
+        start_meta = datetime.strptime(' '.join(start_meta[0:6]) , '%Y %m %d %H %M %S.%f0')
+
+        # Getting end date
+        if self.version[0] == '3':
+            # Pattern of an observation line containing a date
+            date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            # Searching the last one of the file
+            for line in reversed(self.rinex_data):
+                m = re.search(date_pattern, line)
+                if m:
+                    break
+
+            year =  m.group(1)
+
+        elif self.version[0] == '2':
+            # Pattern of an observation line containing a date
+            date_pattern = re.compile(' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
+            # Searching the last one of the file
+            for line in reversed(self.rinex_data):
+                m = re.search(date_pattern, line)
+                if m:
+                    break
+
+            year = '20' + m.group(1)
+
+        # Building a date string
+        end_meta = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
+                   m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
+
+        end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
+
+        return start_meta, end_meta
+
+
+    def _get_sample_rate(self):
+
+        """
+        Getting sample rate from rinex file.
+        We search two consecutive dates and make the difference to get the sample rate
+        """
+
+        if self.status != 0:
+            return None
+
+        # Getting end date
+        if self.version[0] == '3':
+            # Pattern of an observation line containing a date
+            date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+
+        elif self.version[0] == '2':
+            # Pattern of an observation line containing a date
+            date_pattern = re.compile(' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
+
+        # Searching the two first samples
+        first_sample = None
+        second_sample = None
+        i = 0
+        for line in self.rinex_data:
+            m = re.search(date_pattern, line)
+            if m and not first_sample:
+                first_sample = m
+            elif m and first_sample:
+                second_sample = m
+            elif first_sample and second_sample:
+                break
+
+        # Getting end date
+        if self.version[0] == '3':
+            # Pattern of an observation line containing a date
+            first_year = first_sample.group(1)
+            second_year =  second_sample.group(1)
+        elif self.version[0] == '2':
+            # Pattern of an observation line containing a date
+            first_year = '20' + first_sample.group(1)
+            second_year =  '20' + second_sample.group(1)
+
+        # Building a date string
+        first_date = first_year + ' ' + first_sample.group(2) + ' ' + first_sample.group(3) + ' ' + \
+                     first_sample.group(4) + ' ' + first_sample.group(5) + ' ' + first_sample.group(6)
+
+        second_date = second_year + ' ' + second_sample.group(2) + ' ' + second_sample.group(3) + ' ' + \
+                      second_sample.group(4) + ' ' + second_sample.group(5) + ' ' + second_sample.group(6)
+
+        first_date = datetime.strptime(first_date, '%Y %m %d %H %M %S.%f')
+        second_date = datetime.strptime(second_date, '%Y %m %d %H %M %S.%f')
+
+        sample_rate = second_date - first_date
+        sample_rate = sample_rate.total_seconds()
+
+        # Format of sample rate from RINEX3 specs : RINEX Long Filenames
+        if sample_rate <= 0.0001:
+            # XXU – Unspecified
+            sample_rate = 'XXU'
+        elif sample_rate <= 0.01:
+            # XXC – 100 Hertz
+            sample_rate = (str(int(1 / (100 * sample_rate))) + 'C').rjust(3, '0')
+        elif sample_rate < 1:
+            # XXZ – Hertz
+            sample_rate = (str(int(1 / sample_rate)) + 'Z').rjust(3, '0')
+        elif sample_rate < 60:
+            # XXS – Seconds
+            sample_rate = (str(int(sample_rate)) + 'S').rjust(3, '0')
+        elif sample_rate < 3600:
+            # XXM – Minutes
+            sample_rate = (str(int(sample_rate / 60)) + 'M').rjust(3, '0')
+        elif sample_rate < 86400:
+            # XXH – Hours
+            sample_rate = (str(int(sample_rate / 3600)) + 'H').rjust(3, '0')
+        elif sample_rate <= 8553600:
+            # XXD – Days
+            sample_rate = (str(int(sample_rate / 86400)) + 'D').rjust(3, '0')
+        else:
+            # XXU – Unspecified
+            sample_rate = 'XXU'
+
+        return sample_rate
+
+
+    def _get_file_period(self):
+        """
+        Get the file period from the file's name.
+        In long name convention, gets it striaght from the file name.
+        In short name convention, traduces digit to '01H' and '0' to 01D
+        """
+
+        if self.status != 0:
+            return None
+
+        pattern_oldname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}d')
+        pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}\.gz')
+
+        oldname = pattern_oldname.match(self.filename)
+        longname = pattern_longname.match(self.filename)
+
+        if oldname:
+            file_period = oldname.group(1)
+            if file_period.isdigit():
+                # 01D–1 Day
+                file_period = '01D'
+            elif file_period.isalpha():
+                    # 01H–1 Hour
+                    file_period = '01H'
+            else:
+                # 00U-Unspecified
+                file_period = '00U'
+
+        elif longname:
+            file_period = longname.group(2)
+
+        else:
+            # 00U-Unspecified
+            file_period = '00U'
+
+        return file_period
+
+
+    def _get_observable_type(self):
+        """ Parse RINEX VERSION / TYPE line to get observable tpye """
+
+        if self.status != 0:
+            return None
+
+        # Identify line that contains RINEX VERSION / TYPE
+        observable_type_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'RINEX VERSION / TYPE' in e)
+        observable_type_meta = self.rinex_data[observable_type_header_idx]
+        # Parse line
+        observable_type = observable_type_meta[40:41]
+
+        return observable_type
+
+
     def __str__(self):
         """
         Defnies a print method for the rinex file object. Will print all the
@@ -90,15 +316,16 @@ class RinexFile:
         return '\n'.join(str_RinexFile)
 
 
-    def print_metadata(self):
+    def get_metadata(self):
         """
         Returns a printable, with carriage-return, string of metadata lines from
         the header
         """
-        if self.status != 0:
-            return ''
 
-        metadata = []
+        if self.status not in [0,2]:
+            return None
+
+        metadata = {}
 
         metadata_lines = [
                           'RINEX VERSION / TYPE',
@@ -115,12 +342,44 @@ class RinexFile:
         for kw in metadata_lines:
             for line in self.rinex_data:
                 if kw in line:
-                    metadata.append(line)
+                    metadata[kw] = line
                     break
 
-        print('\n'.join(metadata))
+        if not'MARKER NUMBER' in metadata:
+            metadata['MARKER NUMBER'] = ''
 
-        return
+        metadata_parsed = {
+                           'File' : self.path,
+                           'File size (bytes)' : self.size,
+                           'Rinex version' : metadata['RINEX VERSION / TYPE'][0:9].strip(),
+                           'Sample rate' : self.sample_rate,
+                           'File period' : self.file_period,
+                           'Observable type' : metadata['RINEX VERSION / TYPE'][40:60].strip(),
+                           'Marker name' : metadata['MARKER NAME'][0:60].strip(),
+                           'Marker number' : metadata['MARKER NUMBER'][0:60].strip(),
+                           'Operator' : metadata['OBSERVER / AGENCY'][0:20].strip(),
+                           'Agency' : metadata['OBSERVER / AGENCY'][20:40].strip(),
+                           'Receiver serial' : metadata['REC # / TYPE / VERS'][0:20].strip(),
+                           'Receiver type' : metadata['REC # / TYPE / VERS'][20:40].strip(),
+                           'Receiver firmware version' : metadata['REC # / TYPE / VERS'][40:60].strip(),
+                           'Antenna serial' : metadata['ANT # / TYPE'][0:20].strip(),
+                           'Antenna type' : metadata['ANT # / TYPE'][20:40].strip(),
+                           'Antenna position (XYZ)' : '{:14} {:14} {:14}'.format(metadata['APPROX POSITION XYZ'][0:14].strip(),
+                                                               metadata['APPROX POSITION XYZ'][14:28].strip(),
+                                                               metadata['APPROX POSITION XYZ'][28:42].strip()),
+                           'Antenna delta (H/E/N)' :  '{:14} {:14} {:14}'.format(metadata['ANTENNA: DELTA H/E/N'][0:14].strip(),
+                                                                metadata['ANTENNA: DELTA H/E/N'][14:28].strip(),
+                                                                metadata['ANTENNA: DELTA H/E/N'][28:42].strip())
+                          }
+
+        metadata_parsed['Start date and time'] = self.start_date
+        metadata_parsed['Final date and time'] = self.end_date
+
+        metadata_parsed = '\n'.join(['{:28} : {}'.format(key, value) for key, value in metadata_parsed.items()])
+
+        metadata_parsed = '\n' + metadata_parsed + '\n'
+
+        return metadata_parsed
 
 
     def write_to_path(self, path, compression = 'gz'):
@@ -131,6 +390,7 @@ class RinexFile:
         Available compressions are those of hatanaka compress function :
         'gz' (default), 'bz2', 'Z', or 'none'
         """
+
         if self.status != 0:
             return
 
@@ -141,55 +401,63 @@ class RinexFile:
 
         Path(outputfile).write_bytes(output_data)
 
-        return
+        return outputfile
 
 
     def get_station(self):
 
-        if self.status != 0:
-            return ''
-
-        meta_station = 'MARKER NAME'
-
-        for line in self.rinex_data:
-            if re.search(meta_station, line):
-                meta_station = line
-                break
-
-        if meta_station == 'MARKER NAME':
-            return None
-
-        meta_station = meta_station.split(' ')[0].upper()
-
-        return meta_station
-
-
-    def get_date(self):
+        """ Getting station name from the MARKER NAME line in rinex file's header """
 
         if self.status != 0:
             return ''
 
-        meta_date = 'TIME OF FIRST OBS'
-
-        # metadata_list = self.metadata.split('\n')
+        station_meta = 'MARKER NAME'
 
         for line in self.rinex_data:
-            if re.search(meta_date, line):
-                meta_date = line
+            if re.search(station_meta, line):
+                station_meta = line
                 break
 
-        if meta_date == 'TIME OF FIRST OBS':
+        if station_meta == 'MARKER NAME':
             return None
 
-        meta_date = meta_date.split()
-        meta_date = datetime.strptime(' '.join(meta_date[0:6]) , '%Y %m %d %H %M %S.%f0')
+        station_meta = station_meta.split(' ')[0].upper()
 
-        return meta_date
+        return station_meta
+
+
+    def set_marker(self, station):
+
+        if self.status != 0:
+            return
+
+        if not station:
+            return
+
+        # Identify line that contains MARKER NAME
+        marker_name_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'MARKER NAME' in e)
+        marker_name_meta = self.rinex_data[marker_name_header_idx]
+        # Edit line
+        new_line = '{}'.format(station.ljust(60)) + 'MARKER NAME'
+        # Set line
+        self.rinex_data[marker_name_header_idx] = new_line
+
+        # Identify line that contains MARKER NUMBER
+        marker_number_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e)
+        if marker_number_header_idx:
+            new_line = '{}'.format(station.ljust(60)) + 'MARKER NUMBER'
+            # Set line
+            self.rinex_data[marker_number_header_idx] = new_line
+
+        return
 
 
     def set_receiver(self, serial=None, type=None, firmware=None):
 
         if self.status != 0:
+            return
+
+        if not any([serial, type, firmware]):
             return
 
         # Identify line that contains REC # / TYPE / VERS
@@ -219,6 +487,9 @@ class RinexFile:
         if self.status != 0:
             return
 
+        if not any([serial, type]):
+            return
+
         # Identify line that contains ANT # / TYPE
         antenna_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'ANT # / TYPE' in e)
         antenna_meta = self.rinex_data[antenna_header_idx]
@@ -241,6 +512,9 @@ class RinexFile:
     def set_antenna_pos(self, X=None, Y=None, Z=None):
 
         if self.status != 0:
+            return
+
+        if not any([X, Y, Z]):
             return
 
         # Identify line that contains APPROX POSITION XYZ
@@ -276,6 +550,9 @@ class RinexFile:
         if self.status != 0:
             return
 
+        if not any([X, Y, Z]):
+            return
+
         # Identify line that contains ANTENNA: DELTA H/E/N
         antenna_delta_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'ANTENNA: DELTA H/E/N' in e)
         antenna_delta_meta = self.rinex_data[antenna_delta_header_idx]
@@ -304,32 +581,12 @@ class RinexFile:
         return
 
 
-    def set_marker(self, station):
+    def set_agencies(self, operator=None, agency=None):
 
         if self.status != 0:
             return
 
-        # Identify line that contains MARKER NAME
-        marker_name_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'MARKER NAME' in e)
-        marker_name_meta = self.rinex_data[marker_name_header_idx]
-        # Edit line
-        new_line = '{}'.format(station.ljust(60)) + 'MARKER NAME'
-        # Set line
-        self.rinex_data[marker_name_header_idx] = new_line
-
-        # Identify line that contains MARKER NUMBER
-        marker_number_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e)
-        if marker_number_header_idx:
-            new_line = '{}'.format(station.ljust(60)) + 'MARKER NUMBER'
-            # Set line
-            self.rinex_data[marker_number_header_idx] = new_line
-
-        return
-
-
-    def set_agencies(self, operator=None, agency=None):
-
-        if self.status != 0:
+        if not any([operator, agency]):
             return
 
         # Identify line that contains OBSERVER / AGENCY
@@ -356,6 +613,9 @@ class RinexFile:
         if self.status != 0:
             return
 
+        if not observable_type:
+            return
+
         # Identify line that contains RINEX VERSION / TYPE
         observable_type_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'RINEX VERSION / TYPE' in e)
         observable_type_meta = self.rinex_data[observable_type_header_idx]
@@ -379,7 +639,11 @@ class RinexFile:
                           'SBAS' : 'S',
                           'MIXED' : 'M'
                           }
-            observable_type_code = gnss_codes[observable_type]
+            observable_type_code = gnss_codes.get(observable_type)
+
+            if not observable_type_code:
+                observable_type_code = observable_type
+                observable_type = ''
 
         observable_type_meta = observable_type_code[0] + ' : ' + observable_type[:16].ljust(16)
         new_line = rinex_ver_meta + ' ' * 11 + type_of_rinex_file_meta + observable_type_meta + label
@@ -401,22 +665,3 @@ class RinexFile:
         self.rinex_data.insert(last_comment_idx + 1, new_line)
 
         return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        #EOF

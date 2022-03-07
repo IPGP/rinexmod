@@ -15,75 +15,27 @@ https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
 2019-12-13 Félix Léger - leger@ipgp.fr
 """
 
-import subprocess
-import tempfile as tmpf
-import os, sys, re
-from   datetime import datetime
-from   shutil import copy, move
-import hatanaka
-
-
-def teqcisrinex(file):
-    """
-    Calling UNAVCO 'teqc' program via subprocess and returns the probable format
-    of file. Parsing the response to find RINEX in it.
-    https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
-    """
-    # teqc +mdf : returns the format of file
-    p = subprocess.Popen(['teqc', '+mdf', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
-
-    if 'INEX' in out.decode("utf-8"):
-        return True
-    else:
-        return False
-
-
-def teqcmeta(file):
-    """
-    Calling UNAVCO 'teqc' program via subprocess and returns the file's metadata
-    The program must be present on the machine, if not, available there :
-    https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
-    """
-    # teqc +meta : get the metadata
-    p = subprocess.Popen(['teqc', '+meta', file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = p.communicate()
-
-    return out.decode("utf-8")
+from rinexfile import RinexFile
 
 
 def crzmeta(rinexfile):
 
-    # If inputfile doesn't exists, return
-    if not os.path.isfile(rinexfile):
-        print('# ERROR : : The input file doesn\'t exist : ' + rinexfile)
+    # Declare the rinex file as an object
+    rinexfileobj = RinexFile(rinexfile)
+
+    if rinexfileobj.status == 1:
+        print('{:45s} - {}'.format('01 - The specified file does not exists', rinexfile))
         return
 
-    temp_folder = tmpf.mkdtemp()
-
-    success = copy(rinexfile, temp_folder)
-
-    if not success:
-        print('# ERROR - Copy of file to temp directory impossible - ' + rinexfile)
+    if rinexfileobj.status == 3:
+        print('{:45s} - {}'.format('03 - Invalid or empty Zip file', rinexfile))
         return
 
-    tempfile = os.path.join(temp_folder, os.path.basename(rinexfile))
-
-    ##### Lauchning decompress_on_disk to extract Rinex file from archive #####
-    convertedfile = hatanaka.decompress_on_disk(tempfile)
-
-    if not teqcisrinex(convertedfile):
-        print('# ERROR - Invalid Compressed Rinex file - ' + rinexfile)
+    if rinexfileobj.status == 4:
+        print('{:45s} - {}'.format('04 - Invalid Compressed Rinex file', rinexfile))
         return
-    else:
-        metadata = teqcmeta(convertedfile)
-        print('\n' + metadata)
 
-    # Removing the rinex file
-    os.remove(convertedfile)
-    if os.path.isfile(tempfile):
-        os.remove(tempfile)
-    os.rmdir(temp_folder)
+    print(rinexfileobj.get_metadata())
 
     return
 
