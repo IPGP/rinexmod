@@ -21,10 +21,10 @@ class RinexFile:
     def __init__(self, rinexfile):
 
         self.path = rinexfile
-        self.size = os.path.getsize(self.path)
+        self.rinex_data, self.status = self._load_rinex_data()
+        self.size = self._getsize()
         self.filename = self._filename()
         self.compression = self._get_compression()
-        self.rinex_data, self.status = self._load_rinex_data()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
         self.sample_rate = self._get_sample_rate()
@@ -70,6 +70,18 @@ class RinexFile:
         return rinex_data, status
 
 
+    def _getsize(self):
+
+        """ Get RINEX file size """
+
+        if self.status != 0:
+            return 0
+
+        size = os.path.getsize(self.path)
+
+        return size
+
+
     def _filename(self):
         """ Get filename without compression extension """
 
@@ -79,6 +91,9 @@ class RinexFile:
 
 
     def _get_compression(self):
+
+        if self.status != 0:
+            return ''
 
         compression = os.path.splitext(os.path.basename(self.path))[-1][1:]
 
@@ -443,7 +458,7 @@ class RinexFile:
         self.rinex_data[marker_name_header_idx] = new_line
 
         # Identify line that contains MARKER NUMBER
-        marker_number_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e)
+        marker_number_header_idx = next((i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e), None)
         if marker_number_header_idx:
             new_line = '{}'.format(station.ljust(60)) + 'MARKER NUMBER'
             # Set line
