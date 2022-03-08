@@ -389,7 +389,7 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
 
         ### Construct return dict by adding key if doesn't exists and appending file to corresponding list ###
         major_rinex_version = rinexfileobj.version[0]
-
+        # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
         if major_rinex_version not in return_lists:
             return_lists[major_rinex_version] = {}
         if rinexfileobj.sample_rate not in return_lists[major_rinex_version]:
@@ -400,8 +400,6 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
         return_lists[major_rinex_version][rinexfileobj.sample_rate][rinexfileobj.file_period].append(outputfile)
 
     logger.handlers.clear()
-
-    print(return_lists)
 
     return return_lists
 
