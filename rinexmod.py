@@ -227,6 +227,10 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
             for site_key in nine_char_list:
                 nine_char_dict[site_key[:4].lower()] = site_key.strip()
 
+    ### Looping in file list ###
+
+    return_lists = {}
+
     for file in rinexlist:
 
         logger.info('# File : ' + file)
@@ -383,9 +387,23 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
         if verbose:
             logger.info('Output file : ' + outputfile)
 
+        ### Construct return dict by adding key if doesn't exists and appending file to corresponding list ###
+        major_rinex_version = rinexfileobj.version[0]
+
+        if major_rinex_version not in return_lists:
+            return_lists[major_rinex_version] = {}
+        if rinexfileobj.sample_rate not in return_lists[major_rinex_version]:
+            return_lists[major_rinex_version][rinexfileobj.sample_rate] = {}
+        if rinexfileobj.file_period not in return_lists[major_rinex_version][rinexfileobj.sample_rate]:
+            return_lists[major_rinex_version][rinexfileobj.sample_rate][rinexfileobj.file_period] = []
+
+        return_lists[major_rinex_version][rinexfileobj.sample_rate][rinexfileobj.file_period].append(outputfile)
+
     logger.handlers.clear()
 
-    return
+    print(return_lists)
+
+    return return_lists
 
 
 if __name__ == '__main__':
