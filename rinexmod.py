@@ -121,7 +121,7 @@ def teqcmeta(file):
     The program must be present on the machine, if not, available there :
     https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
     """
-    if file.endswith('crx.Z') or file.endswith('crx.gz') or file.endswith('d.Z'):
+    if file.endswith('crx.Z') or file.endswith('crx.gz') or file.endswith('d.Z') or file.endswith('d.gz'):
         workfile = str(hatanaka.decompress_on_disk(file))
         remove_work = True
     else:
@@ -424,7 +424,7 @@ def rinexmod(rinexlist, outputfolder, teqcargs, name, single, sitelog, force, re
 
             ##### Lauchning crz2rnx to extract Rinex file from archive #####
             logger.debug('Converting file to RNX')
-            if not file.endswith('crx.Z') and not file.endswith('crx.gz') and not file.endswith('d.Z'):
+            if not file.endswith('crx.Z') and not file.endswith('crx.gz') and not file.endswith('d.Z') and not file.endswith('d.gz'):
                 logger.error('06 - Invalid Compressed Rinex file - ' + file)
                 continue
             elif not teqcisrinex(file):
