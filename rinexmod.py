@@ -49,8 +49,8 @@ OPTIONS :
 
 -k : --modification_kw :    Header fields that you want to modify.
 -s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
-                            instrumentation informations. The sitelog must be valid
-                            as the script does not check it.
+                            instrumentation informations, or folder containing sitelogs.
+                            The sitelogs must be valid as the script does not check it.
 -f : --force :              Force appliance of sitelog based header arguments when
                             station name within file does not correspond to sitelog.
 -i : --ignore :             Ignore firmware changes between instrumentation periods
@@ -123,6 +123,18 @@ def loggersVerbose(logfile):
     return logger
 
 
+def listfiles(directory, extension):
+    # returns list of paths
+    liste = []
+    extension = extension.lower()
+    for dirpath, dirnames, files in os.walk(directory):
+        for name in files:
+            if name.lower().endswith(extension):
+                file = os.path.join(dirpath, name)
+                liste.append(file)
+    return liste
+
+
 def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression):
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -141,11 +153,13 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
     # If force option provided, check if sitelog option too, if not, not relevant.
     if force and not sitelog:
-        print('# WARNING : --force option is meaningful only when using also --sitelog option')
+        print('# ERROR : --force option is meaningful only when using also --sitelog option with one sitelog provided')
+        return
 
     # If ignore option provided, check if sitelog option too, if not, not relevant.
     if ignore and not sitelog:
-        print('# WARNING : --ignore option is meaningful only when using also --sitelog option')
+        print('# ERROR : --ignore option is meaningful only when using also --sitelog option')
+        return
 
     # If inputfile doesn't exists, return
     if isinstance(rinexlist, list):
@@ -169,15 +183,54 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
     logger = loggersVerbose(logfile)
 
-    ####### Converting sitelog to dict ######
+    ####### Converting sitelog to list of sitelog objects ######
 
     if sitelog:
-        # Creating sitelog object
-        sitelogobj = SiteLog(sitelog)
-        # If sitelog is not parsable
-        if sitelogobj.status != 0:
-            print('# ERROR : The sitelog is not parsable : ' + sitelog)
-            return
+        # Case of one sitelog:
+        if os.path.isfile(sitelog):
+
+            # Creating sitelog object
+            sitelogobj = SiteLog(sitelog)
+            # If sitelog is not parsable
+            if sitelogobj.status != 0:
+                print('# ERROR : The sitelog is not parsable : ' + sitelog)
+                return
+
+            sitelogs = [sitelogobj]
+
+        # Case of a folder
+        elif os.path.isdir(sitelog):
+
+            if force:
+                    print('# ERROR : --force option is meaningful only when providing a sole sitelog and not a folder contaning various ones')
+                    return
+
+            sitelog_extension = '.log'
+            all_sitelogs = listfiles(sitelog, sitelog_extension)
+
+            sitelog_pattern = re.compile('\w{3,9}_\d{8}.log')
+            all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(os.path.basename(file))]
+
+            ### Get last version of sitelogs if multiple available
+            sitelogs = []
+            # We list the available stations to group sitelogs
+            sitelogsta = [os.path.basename(sitelog)[0:4] for sitelog in all_sitelogs]
+
+            for sta in sitelogsta:
+                # Grouping by station
+                sta_sitelogs = [sitelog for sitelog in all_sitelogs if os.path.basename(sitelog)[0:4] == sta]
+                # Getting dates from basename
+                sitelogs_dates = [os.path.splitext(os.path.basename(sitelog))[0][-8:] for sitelog in sta_sitelogs]
+                # Parsing 'em
+                sitelogs_dates = [datetime.strptime(sitelogs_date, '%Y%m%d' ) for sitelogs_date in sitelogs_dates]
+                # We get the max date and put it back to string format.
+                maxdate = max(sitelogs_dates).strftime('%Y%m%d')
+                # We filter the list with the max date string, and get a one entry list, then transform it to string
+                sta_sitelog = [sitelog for sitelog in sta_sitelogs if maxdate in os.path.splitext(os.path.basename(sitelog))[0][-8:]][0]
+                # Creating sitelog object
+                sitelogobj = SiteLog(sta_sitelog)
+                # Appending to list
+                sitelogs.append(sitelogobj)
 
     ####### Checking input keyword modification arguments ######
 
@@ -204,9 +257,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 print('# ERROR : \'{}\' is not an acceptable keyword for header modification.'.format(kw))
                 return
 
-    ########### Looping into file list ###########
-
-    # Opening and reading lines of the file containing list of rinex to proceed
+    ### Opening and reading lines of the file containing list of rinex to proceed
     if alone:
         rinexlist = [rinexlist]
     elif isinstance(rinexlist, list):
@@ -223,13 +274,18 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         if not os.path.isfile(ninecharfile):
             print('# ERROR : The specified 9-chars. list file does not exists : ' + ninecharfile)
             return
-        else:
+        elif longname:
             with open(ninecharfile,"r+")  as F:
                 nine_char_list = F.readlines()
                 nine_char_dict = dict()
 
             for site_key in nine_char_list:
                 nine_char_dict[site_key[:4].lower()] = site_key.strip()
+
+    ### Check that the provided marker is a 4-char station name
+    if marker and len(marker) != 4:
+        print('# ERROR : The marker provided is not 4-char valid : ' + marker)
+        return
 
     ### Looping in file list ###
 
@@ -238,7 +294,6 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
     for file in rinexlist:
 
         logger.info('# File : ' + file)
-
 
         if reconstruct:
             if not reconstruct in file:
@@ -276,9 +331,6 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             logger.error('{:60s} - {}'.format('04 - Invalid Compressed Rinex file', file))
             continue
 
-        if verbose:
-            logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
-
         if marker:
             # We store the old marker name to add a comment in rinex file's header
             modification_source = rinexfileobj.filename[:4]
@@ -304,9 +356,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 site = rinexfileobj.filename[:4].upper() + "00XXX"
 
             if rinexfileobj.file_period == '01D':
-                timeformat = '%Y%j0000' # We mark the file at the start of the day, wh
+                timeformat = '%Y%j0000' # Start of the day
             else:
-                timeformat = '%Y%j%H00'
+                timeformat = '%Y%j%H00' # Start of the hour
 
             rinexfileobj.filename = '_'.join((site.upper(),
                                               rinexfileobj.start_date.strftime(timeformat),
@@ -320,12 +372,27 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
         if sitelog:
 
+            # Station name from the rinex's header line
+            station_meta = rinexfileobj.get_station().lower()
+
+            # Finding the right sitelog. If is list, can not use force. If no sitelog found, do not process.
+            if station_meta not in [sitelog.station for sitelog in sitelogs]:
+                if len(sitelogs) == 1:
+                    if not force:
+                        logger.error('{:60s} - {}'.format('33 - File\'s station does not correspond to provided sitelog - use -f option to force', file))
+                        continue
+                    else:
+                        logger.warning('{:60s} - {}'.format('34 - File\'s station does not correspond to provided sitelog, processing anyway', file))
+                else:
+                    logger.error('{:60s} - {}'.format('33 - No provided sitelog for this file\'s station', file))
+                    continue
+            else:
+                sitelogobj = [sitelog for sitelog in sitelogs if sitelog.station == station_meta][0]
+
             modification_source = sitelogobj.filename
 
             # Station name from the sitelog
             sitelog_sta_code = sitelogobj.info['1.']['Four Character ID'].lower()
-            # Station name from the rinex's header line
-            station_meta = rinexfileobj.get_station().lower()
 
             if sitelog_sta_code != station_meta:
                 if not force:
@@ -347,6 +414,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
             (fourchar_id, observable_type, agencies, receiver, antenna, antenna_pos, antenna_delta) = metadata_vars
 
+            if verbose:
+                logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
+
             # # Apply the modifications to the RinexFile object
             rinexfileobj.set_marker(fourchar_id)
             rinexfileobj.set_receiver(**receiver)
@@ -357,6 +427,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             rinexfileobj.set_observable_type(observable_type)
 
         if modification_kw:
+
+            if verbose:
+                logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
 
             modification_source = 'command line'
 
@@ -385,6 +458,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         if verbose:
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
 
+        # Adding comment in the header
         rinexfileobj.add_comment('rinexmoded on {}'.format(datetime.strftime(now, '%Y-%m-%d %H:%M')))
         if sitelog or modification_kw:
             rinexfileobj.add_comment('rinexmoded from {}'.format(modification_source))
@@ -432,7 +506,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
     parser.add_argument('rinexlist', type=str, help='Input rinex list file to process')
     parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
-    parser.add_argument('-s', '--sitelog', help='Get the rinex header values from file\'s station\'s sitelog', type=str, default=0)
+    parser.add_argument('-s', '--sitelog', help='Get the rinex header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
     parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            station, receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_X_delta, antenna_Y_delta, antenna_Z_delta,

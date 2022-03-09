@@ -60,8 +60,8 @@ OPTIONS :
 
 * -k : --modification_kw :    Header fields that you want to modify.
 * -s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
-                              instrumentation informations. The sitelog must be valid
-                              as the script does not check it.
+                              instrumentation informations, or folder containing sitelogs.
+                              The sitelogs must be valid as the script does not check it.
 * -f : --force :              Force appliance of sitelog based header arguments when
                               station name within file does not correspond to sitelog.
 * -i : --ignore :             Ignore firmware changes between instrumentation periods

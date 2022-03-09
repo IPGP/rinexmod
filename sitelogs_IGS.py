@@ -34,6 +34,7 @@ class SiteLog:
 
         self.path = sitelogfile
         self.filename = os.path.basename(self.path)
+        self.station = self.filename[:4].lower()
         self.info, self.status = self._sitelog2dict()
         if self.info:
             self.instrumentations = self._instrumentations()
