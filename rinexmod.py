@@ -161,6 +161,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         print('# ERROR : --ignore option is meaningful only when using also --sitelog option')
         return
 
+    if ninecharfile and not longname:
+        print('# ERROR : --ninecharfile option is meaningful only when using also --longname option')
+        return
+
     # If inputfile doesn't exists, return
     if isinstance(rinexlist, list):
         pass
@@ -280,13 +284,12 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         if not os.path.isfile(ninecharfile):
             print('# ERROR : The specified 9-chars. list file does not exists : ' + ninecharfile)
             return
-        elif longname:
-            with open(ninecharfile,"r+")  as F:
-                nine_char_list = F.readlines()
-                nine_char_dict = dict()
+        with open(ninecharfile,"r+")  as F:
+            nine_char_list = F.readlines()
+            nine_char_dict = dict()
 
-            for site_key in nine_char_list:
-                nine_char_dict[site_key[:4].lower()] = site_key.strip()
+        for site_key in nine_char_list:
+            nine_char_dict[site_key[:4].lower()] = site_key.strip()
 
     ### Check that the provided marker is a 4-char station name
     if marker and len(marker) != 4:
