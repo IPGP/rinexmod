@@ -21,11 +21,13 @@ class SiteLog:
     the different instrumentation periods, tab containing a start and an end date,
     and for each line a dict of antenna instrumentation an receiver instrumentation.
 
-    3 available methods:
+    4 available methods:
     get_instrumentation takes a start and an end date and returns the instrumentation
     corresponding to the period, if found. Option to ignore firmware version inconsistency.
     teqcargs also takes a start and an end date and returns a string of args to
     pass to teqc so that it will modify a rinex file's header.
+    rinex_metadata_lines will retrun a dict with all header metadatas that is
+    compatible with RinexFile header modifications methods.
     write_json will write the dict of the parsed values from the sitelog to a
     json file.
     """

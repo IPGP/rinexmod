@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Extract metadata from crz file with crz2rnx and teqc.
+Extract metadata from crz file.
 
 EXAMPLE:
 ./crzmeta.py  RINEXFILE
 
 REQUIREMENTS :
 
-You have to have teqc installed and declared in your path.
-The program must be present on the machine, if not, available there :
-https://www.unavco.org/software/data-processing/teqc/teqc.html#executables
+You need Python Hatanaka library from Martin Valgur:
+
+pip install hatanaka
 
 2019-12-13 Félix Léger - leger@ipgp.fr
 """

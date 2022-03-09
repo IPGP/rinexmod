@@ -138,7 +138,7 @@ def listfiles(directory, extension):
 def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression):
     """
     Main function for reading a Rinex list file. It process the list, and apply
-    file name modification, teqc args based header modification, or sitelog-based
+    file name modification, command line based header modification, or sitelog-based
     header modification.
     """
     # If sitelog option, no modification arguments must be provided
