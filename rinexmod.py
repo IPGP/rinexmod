@@ -229,6 +229,12 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 sta_sitelog = [sitelog for sitelog in sta_sitelogs if maxdate in os.path.splitext(os.path.basename(sitelog))[0][-8:]][0]
                 # Creating sitelog object
                 sitelogobj = SiteLog(sta_sitelog)
+
+                # If sitelog is not parsable
+                if sitelogobj.status != 0:
+                    print('# ERROR : The sitelog is not parsable : ' + sitelogobj.path)
+                    return
+
                 # Appending to list
                 sitelogs.append(sitelogobj)
 
