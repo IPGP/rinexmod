@@ -403,13 +403,6 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             # Station name from the sitelog
             sitelog_sta_code = sitelogobj.info['1.']['Four Character ID'].lower()
 
-            if sitelog_sta_code != station_meta:
-                if not force:
-                    logger.error('{:60s} - {}'.format('33 - File\'s station does not correspond to provided sitelog - use -f option to force', file))
-                    continue
-                else:
-                    logger.warning('{:60s} - {}'.format('34 - File\'s station does not correspond to provided sitelog, processing anyway', file))
-
             # Get rinex header values from sitelog infos and start and end time of the file
             # ignore option is to ignore firmware changes between instrumentation periods.
             metadata_vars, ignored  = sitelogobj.rinex_metadata_lines(rinexfileobj.start_date, rinexfileobj.end_date, ignore)
