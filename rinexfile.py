@@ -21,10 +21,9 @@ class RinexFile:
     def __init__(self, rinexfile):
 
         self.path = rinexfile
-        self.rinex_data, self.status = self._load_rinex_data()
-        self.size = self._getsize()
-        self.filename = self._filename()
-        self.compression = self._get_compression()
+        self.rinex_data, self.name_conv, self.status = self._load_rinex_data()
+        self.size = self._get_size()
+        self.filename, self.compression = self._filename()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
         self.sample_rate = self._get_sample_rate()
@@ -35,9 +34,10 @@ class RinexFile:
     def _load_rinex_data(self):
         """
         Load the uncompressed rinex data into a list var using hatanaka library.
-        Will return a table of lines of the uncompressed file, and a status.
-        Status 0 is OK. The other ones corresponds to the errors codes raised in
-        rinexarchive and in rinexmod.
+        Will return a table of lines of the uncompressed file, a 'name_conv' var
+        that indicates if the file is named with the SHORT NAME convention or the
+        LONG NAME cenovetion, and a status. Status 0 is OK. The other ones
+        corresponds to the errors codes raised in rinexarchive and by rinexmod.
         01 - The specified file does not exists
         02 - Not an observation Rinex file
         03 - Invalid  or empty Zip file
@@ -46,31 +46,34 @@ class RinexFile:
 
         # Checking if existing file
         if not os.path.isfile(self.path):
-            return None, 1
+            return None, None, 1
         # Daily or hourly, gz or Z compressed hatanaka file
-        pattern_oldname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
+        pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
         pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}\.gz')
 
-        if not pattern_oldname.match(os.path.basename(self.path))           \
-               and not pattern_longname.match(os.path.basename(self.path)):
-            status = 2
-        else:
+        if pattern_shortname.match(os.path.basename(self.path)):
+            name_conv = 'SHORT'
             status = 0
+        elif pattern_longname.match(os.path.basename(self.path)):
+            name_conv = 'LONG'
+            status = 0
+        else:
+            return None, None, 2
 
         try:
             rinex_data = hatanaka.decompress(self.path).decode('utf-8')
             rinex_data = rinex_data.split('\n')
 
         except ValueError:
-            return None, 3
+            return None, None, 3
 
         except hatanaka.hatanaka.HatanakaException:
-            return None, 4
+            return None, None, 4
 
-        return rinex_data, status
+        return rinex_data, name_conv, status
 
 
-    def _getsize(self):
+    def _get_size(self):
 
         """ Get RINEX file size """
 
@@ -83,21 +86,16 @@ class RinexFile:
 
 
     def _filename(self):
-        """ Get filename without compression extension """
-
-        filename = os.path.splitext(os.path.basename(self.path))[0]
-
-        return filename
-
-
-    def _get_compression(self):
+        """ Get filename and compression extension """
 
         if self.status != 0:
-            return ''
+            return None, None
 
-        compression = os.path.splitext(os.path.basename(self.path))[-1][1:]
+        basename = os.path.splitext(os.path.basename(self.path))
+        filename = basename[0]
+        compression = basename[-1][1:]
 
-        return compression
+        return filename, compression
 
 
     def _get_version(self):
@@ -267,14 +265,8 @@ class RinexFile:
         if self.status != 0:
             return None
 
-        pattern_oldname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}d')
-        pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}\.gz')
-
-        oldname = pattern_oldname.match(self.filename)
-        longname = pattern_longname.match(self.filename)
-
-        if oldname:
-            file_period = oldname.group(1)
+        if self.name_conv == 'SHORT':
+            file_period = self.filename[7:8]
             if file_period.isdigit():
                 # 01D–1 Day
                 file_period = '01D'
@@ -285,8 +277,8 @@ class RinexFile:
                 # 00U-Unspecified
                 file_period = '00U'
 
-        elif longname:
-            file_period = longname.group(2)
+        elif self.name_conv == 'LONG':
+            file_period = self.filename[24:27]
 
         else:
             # 00U-Unspecified

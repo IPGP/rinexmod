@@ -48,7 +48,7 @@ argument, you can not modify files inplace.
 OPTIONS :
 
 -k : --modification_kw :    Header fields that you want to modify.
--l : --sitelog :            Sitelog file in witch rinexmod will find file's period's
+-s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
                             instrumentation informations. The sitelog must be valid
                             as the script does not check it.
 -f : --force :              Force appliance of sitelog based header arguments when
@@ -57,12 +57,16 @@ OPTIONS :
                             when getting headers args info from sitelogs.
 -m : --marker :             A four characater station code that will be used to rename
                             input files.
--9 : --ninecharfile :       path a of a list file containing 9-char. site names from
+-n : --ninecharfile :       path a of a list file containing 9-char. site names from
                             the M3G database generated with get_m3g_stations.
                             Not mandatory, but nessessary to get the country code to rename
                             files to long name standard. If not provided the country code will be XXX.
--s : --lone :               Option to provide if you want to run this script on a lone
+-a : --alone :               Option to provide if you want to run this script on a alone
                             rinex file and not on a list of files.
+-c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
+                            to fit IGS standards), 'Z'. Default value will retrieve
+                            the actual compression of the input file.
+-l : --longname             Rename file using long name rinex convention.
 -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
                             part of the path that is common to all files in the list and
                             that will be replaced with output folder.
@@ -119,7 +123,7 @@ def loggersVerbose(logfile):
     return logger
 
 
-def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression):
+def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, teqc args based header modification, or sitelog-based
@@ -130,9 +134,9 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
         print('# ERROR : If you get metadata from sitelog, don\'t provide arguments for modification (-k, --modification_kw option) !')
         return
 
-    # If no name, modification_kw and sitelog, return
-    if not sitelog and not modification_kw and not marker and not name:
-        print('# ERROR : No action asked, provide at least one of the following args : --sitelog, --modification_kw, --marker, --name.')
+    # If no longname, modification_kw and sitelog, return
+    if not sitelog and not modification_kw and not marker and not longname:
+        print('# ERROR : No action asked, provide at least one of the following args : --sitelog, --modification_kw, --marker, --longname.')
         return
 
     # If force option provided, check if sitelog option too, if not, not relevant.
@@ -203,7 +207,7 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
     ########### Looping into file list ###########
 
     # Opening and reading lines of the file containing list of rinex to proceed
-    if lone:
+    if alone:
         rinexlist = [rinexlist]
     elif isinstance(rinexlist, list):
         pass
@@ -276,10 +280,15 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
 
         if marker:
+            # We store the old marker name to add a comment in rinex file's header
+            modification_source = rinexfileobj.filename[:4]
             # We set the station in the filename to the new marker
-            rinexfileobj.filename = marker.lower() + rinexfileobj.filename[4:]
+            if rinexfileobj.name_conv == 'SHORT':
+                rinexfileobj.filename = marker.lower() + rinexfileobj.filename[4:]
+            else:
+                rinexfileobj.filename = marker.upper() + rinexfileobj.filename[4:]
 
-        if name:
+        if longname:
             # We rename the file to the rinex long name convention
             # Get the site 9-char name
             if ninecharfile:
@@ -287,7 +296,7 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
                     logger.warning('{:60s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
                     site = rinexfileobj.filename[:4].upper() + "00XXX"
                 else:
-                    site = nine_char_dict[rinexfileobj.filename[:4].lower()]
+                    site = nine_char_dict[rinexfileobj.filename[:4].lower()].upper()
             # elif sitelog: # XXXXXXX probleme si multiples sitelogs
             #     site = os.path.basename(sitelog)[:9].upper()
             else:
@@ -295,15 +304,19 @@ def rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, recons
                 site = rinexfileobj.filename[:4].upper() + "00XXX"
 
             if rinexfileobj.file_period == '01D':
-                timeformat = '%Y%j0000'
+                timeformat = '%Y%j0000' # We mark the file at the start of the day, wh
             else:
-                timeformat = '%Y%j%H%M'
+                timeformat = '%Y%j%H00'
 
-            rinexfileobj.filename = '_'.join((site,
+            rinexfileobj.filename = '_'.join((site.upper(),
                                               rinexfileobj.start_date.strftime(timeformat),
                                               rinexfileobj.file_period,
                                               rinexfileobj.sample_rate,
                                               rinexfileobj.observable_type + 'O.rnx')) # O for observation
+
+            if not compression:
+                # If not specified, we set compression to gz when file changed to longname
+                compression = 'gz'
 
         if sitelog:
 
@@ -425,13 +438,13 @@ if __name__ == '__main__':
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
                                                            operator, agency, observables''', nargs='*', action=ParseKwargs, default=0)
     parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker', type=str, default=0)
-    parser.add_argument('-9', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
+    parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\')', default=0)
-    parser.add_argument('-n', '--name', help='Rename file using long name rinex convention', action='store_true', default=0)
+    parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention', action='store_true', default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
-    parser.add_argument('-l', '--lone', help='INPUT is a lone Rinex file and not a file containing list of Rinex files paths', action='store_true')
+    parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
     parser.add_argument('-v', '--verbose', help='Prompt file\'s metadata before and after modifications.', action='store_true', default=0)
 
     args = parser.parse_args()
@@ -439,9 +452,9 @@ if __name__ == '__main__':
     rinexlist = args.rinexlist
     outputfolder = args.outputfolder
     marker = args.marker
-    name = args.name
+    longname = args.longname
     ninecharfile = args.ninecharfile
-    lone = args.lone
+    alone = args.alone
     sitelog = args.sitelog
     force = args.force
     ignore = args.ignore
@@ -450,4 +463,4 @@ if __name__ == '__main__':
     verbose = args.verbose
     modification_kw = args.modification_kw
 
-    rinexmod(rinexlist, outputfolder, marker, name, lone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression)
+    rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression)

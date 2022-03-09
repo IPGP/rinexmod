@@ -59,24 +59,28 @@ USE :
 OPTIONS :
 
 * -k : --modification_kw :    Header fields that you want to modify.
-* -l : --sitelog :            Sitelog file in witch rinexmod will find file's period's
-                            instrumentation informations. The sitelog must be valid
-                            as the script does not check it.
+* -s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
+                              instrumentation informations. The sitelog must be valid
+                              as the script does not check it.
 * -f : --force :              Force appliance of sitelog based header arguments when
-                            station name within file does not correspond to sitelog.
+                              station name within file does not correspond to sitelog.
 * -i : --ignore :             Ignore firmware changes between instrumentation periods
-                            when getting headers args info from sitelogs.
+                              when getting headers args info from sitelogs.
 * -m : --marker :             A four characater station code that will be used to rename
-                            input files.
-* -9 : --ninecharfile :       path a of a list file containing 9-char. site names from
-                            the M3G database generated with get_m3g_stations.
-                            Not mandatory, but nessessary to get the country code to rename
-                            files to long name standard. If not provided the country code will be XXX.
-* -s : --lone :               Option to provide if you want to run this script on a lone
-                            rinex file and not on a list of files.
+                              input files.
+* -n : --ninecharfile :       path a of a list file containing 9-char. site names from
+                              the M3G database generated with get_m3g_stations.
+                              Not mandatory, but nessessary to get the country code to rename
+                              files to long name standard. If not provided the country code will be XXX.
+* -a : --alone :              Option to provide if you want to run this script on a lone
+                              rinex file and not on a list of files.
+* -c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
+                              to fit IGS standards), 'Z'. Default value will retrieve
+                              the actual compression of the input file.
+* -l : --longname             Rename file using long name rinex convention.
 * -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
-                            part of the path that is common to all files in the list and
-                            that will be replaced with output folder.
+                              part of the path that is common to all files in the list and
+                              that will be replaced with output folder.
 * -v : --verbose:             Will prompt file's metadata before and after modifications.
 
 EXAMPLES:
