@@ -215,6 +215,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             sitelog_pattern = re.compile('\w{3,9}_\d{8}.log')
             all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(os.path.basename(file))]
 
+            if verbose:
+                logger.info('**** All sitelogs detected:')
+                for sl in all_sitelogs:
+                    logger.info(sl)
+
             ### Get last version of sitelogs if multiple available
             sitelogs = []
             # We list the available stations to group sitelogs
@@ -241,6 +246,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
                 # Appending to list
                 sitelogs.append(sitelogobj)
+
+            if verbose:
+                logger.info('**** Most recent sitelogs selected:')
+                for sl in sitelogs:
+                    logger.info(sl.path)
 
     ####### Checking input keyword modification arguments ######
 
@@ -382,7 +392,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         if sitelog:
 
             # Station name from the rinex's header line
-            station_meta = rinexfileobj.get_station().lower()
+            station_meta = rinexfileobj.get_station().lower()[:4]
 
             # Finding the right sitelog. If is list, can not use force. If no sitelog found, do not process.
             if station_meta not in [sitelog.station for sitelog in sitelogs]:
