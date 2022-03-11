@@ -132,7 +132,7 @@ def listfiles(directory, extension):
             if name.lower().endswith(extension):
                 file = os.path.join(dirpath, name)
                 liste.append(file)
-    return liste
+    return list(sorted(liste))
 
 
 def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression):
@@ -392,7 +392,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         if sitelog:
 
             # Station name from the rinex's header line
-            station_meta = rinexfileobj.get_station().lower()[:4]
+            # station_meta = rinexfileobj.get_station().lower()[:4]
+            station_meta = rinexfileobj.filename[:4].lower() 
+
+            if verbose:
+                logger.info('Searching corresponding sitelog for station:' + station_meta) 
 
             # Finding the right sitelog. If is list, can not use force. If no sitelog found, do not process.
             if station_meta not in [sitelog.station for sitelog in sitelogs]:
