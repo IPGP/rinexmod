@@ -206,8 +206,8 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         elif os.path.isdir(sitelog):
 
             if force:
-                    print('# ERROR : --force option is meaningful only when providing a sole sitelog and not a folder contaning various ones')
-                    return
+                print('# ERROR : --force option is meaningful only when providing a sole sitelog and not a folder contaning various ones')
+                return
 
             sitelog_extension = '.log'
             all_sitelogs = listfiles(sitelog, sitelog_extension)
