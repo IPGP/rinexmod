@@ -95,8 +95,6 @@ class RinexFile:
         filename = basename[0]
         compression = basename[-1][1:]
 
-        print(basename, compression)
-
         return filename, compression
 
 
