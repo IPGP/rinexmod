@@ -387,16 +387,16 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
             if not compression:
                 # If not specified, we set compression to gz when file changed to longname
-                compression = 'gz'
+                this_compression = 'gz'
 
         if sitelog:
 
             # Station name from the rinex's header line
             # station_meta = rinexfileobj.get_station().lower()[:4]
-            station_meta = rinexfileobj.filename[:4].lower() 
+            station_meta = rinexfileobj.filename[:4].lower()
 
             if verbose:
-                logger.info('Searching corresponding sitelog for station:' + station_meta) 
+                logger.info('Searching corresponding sitelog for station : ' + station_meta)
 
             # Finding the right sitelog. If is list, can not use force. If no sitelog found, do not process.
             if station_meta not in [sitelog.station for sitelog in sitelogs]:
@@ -483,9 +483,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
         ##### We convert the file back to Hatanaka Compressed Rinex #####
         if not compression:
-            compression = rinexfileobj.compression
+            this_compression = rinexfileobj.compression
 
-        outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = compression)
+        outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = this_compression)
 
         if verbose:
             logger.info('Output file : ' + outputfile)
