@@ -484,6 +484,8 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         ##### We convert the file back to Hatanaka Compressed Rinex #####
         if not compression:
             this_compression = rinexfileobj.compression
+        else:
+            this_compression = compression
 
         outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = this_compression)
 
