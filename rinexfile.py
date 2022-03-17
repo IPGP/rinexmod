@@ -404,6 +404,14 @@ class RinexFile:
         output_data = '\n'.join(self.rinex_data).encode('utf-8')
         output_data = hatanaka.compress(output_data, compression = compression)
 
+        ### manage compressed extension
+        if "rnx" in self.filename:
+            filename_out = self.filename.replace("rnx","crx") 
+        elif ".o" in self.filename:
+            filename_out = self.filename.replace(".o",".d") 
+        else:
+            filename_out = self.filename
+
         outputfile = os.path.join(path, self.filename + '.' + compression)
 
         Path(outputfile).write_bytes(output_data)
