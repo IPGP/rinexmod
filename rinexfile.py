@@ -412,7 +412,7 @@ class RinexFile:
         else:
             filename_out = self.filename
 
-        outputfile = os.path.join(path, self.filename + '.' + compression)
+        outputfile = os.path.join(path, filename_out + '.' + compression)
 
         Path(outputfile).write_bytes(output_data)
 
