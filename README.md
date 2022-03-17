@@ -1,6 +1,6 @@
 #  rinexmod
 
-Tool to batch modify headers of RINEX Hatakana compressed files from a teqc command or a sitelog and optionnaly batch rename them.
+Tool to batch modify headers of RINEX Hatakana compressed files from the command line or a sitelog and optionnaly batch rename them.
 
 2021-02-07 Félix Léger - leger@ipgp.fr
 
@@ -18,7 +18,7 @@ This project is composed of 4 scripts.
 
 # rinexmod.py
 
-Two ways of passing parameters to teqc are possible:
+Two ways of passing parameters to modifiy headers are possible:
 
 * --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
                       Acceptable_keywords are : station, receiver_serial, receiver_type, receiver_fw,
@@ -126,7 +126,7 @@ EXAMPLES:
 
 # crzmeta.py
 
-The script will permit to extract a crz file's metadata with crz2rnx and teqc.
+The script will permit to extract a crz file's metadata.
 
 USE :
 

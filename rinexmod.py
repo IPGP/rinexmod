@@ -135,7 +135,7 @@ def listfiles(directory, extension):
     return list(sorted(liste))
 
 
-def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression):
+def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -172,6 +172,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         print('# ERROR : The input file doesn\'t exist : ' + rinexlist)
         return
 
+    if output_logs and not os.path.isdir(output_logs):
+        print('# ERROR : The specified output folder for logs doesn\'t exist : ' + output_logs)
+        return
+
     outputfolder = os.path.abspath(outputfolder)
 
     if not os.path.isdir(outputfolder):
@@ -183,7 +187,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
     # Creating log file
     now = datetime.now()
     dt = datetime.strftime(now, '%Y%m%d%H%M%S')
-    logfile = os.path.join(outputfolder, dt + '_' + 'rinexmod.log')
+
+    if output_logs:
+        logfile = os.path.join(output_logs, dt + '_' + 'rinexmod_errors.log')
+    else:
+        logfile = os.path.join(outputfolder, dt + '_' + 'rinexmod_errors.log')
 
     logger = loggersVerbose(logfile)
 
@@ -374,10 +382,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 logger.warning('{:60s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
                 site = rinexfileobj.filename[:4].upper() + "00XXX"
 
-            if rinexfileobj.file_period == '01D':
-                timeformat = '%Y%j0000' # Start of the day
-            else:
-                timeformat = '%Y%j%H00' # Start of the hour
+            # if rinexfileobj.file_period == '01D':
+            #     timeformat = '%Y%j0000' # Start of the day
+            # else:
+            #     timeformat = '%Y%j%H00' # Start of the hour
+            timeformat = '%Y%j%H%M' # Compliant to the longname convention
 
             rinexfileobj.filename = '_'.join((site.upper(),
                                               rinexfileobj.start_date.strftime(timeformat),
@@ -537,22 +546,24 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
+    parser.add_argument('-o', '--output_logs', help='Folder where to write output logs', action='store_true')
     parser.add_argument('-v', '--verbose', help='Prompt file\'s metadata before and after modifications.', action='store_true', default=0)
 
     args = parser.parse_args()
 
     rinexlist = args.rinexlist
     outputfolder = args.outputfolder
-    marker = args.marker
-    longname = args.longname
-    ninecharfile = args.ninecharfile
-    alone = args.alone
     sitelog = args.sitelog
-    force = args.force
-    ignore = args.ignore
+    modification_kw = args.modification_kw
+    marker = args.marker
+    ninecharfile = args.ninecharfile
     reconstruct = args.reconstruct
     compression = args.compression
+    longname = args.longname
+    force = args.force
+    ignore = args.ignore
+    alone = args.alone
+    output_logs = args.output_logs
     verbose = args.verbose
-    modification_kw = args.modification_kw
 
-    rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression)
+    rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs)
