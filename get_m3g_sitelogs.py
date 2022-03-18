@@ -71,6 +71,9 @@ def get_m3g_sitelogs(sitelogsfolder, delete):
             print('### ' + sitelog_name + ' ###')
 
             # Dowload the sitelog
+            # r = requests.get(sitelog_url, allow_redirects=True)
+            # print(r.status_code)
+            # open(os.path.join(obs_path, sitelog_name), 'wb').write(r.content)
             subprocess.call(['wget', '--no-check-certificate', sitelog_url, '-q', '-O', os.path.join(obs_path, sitelog_name)])
 
 
