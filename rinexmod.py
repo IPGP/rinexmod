@@ -388,7 +388,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             #     timeformat = '%Y%j%H00' # Start of the hour
             timeformat = '%Y%j%H%M' # Compliant to the longname convention
 
+            data_source = "R" # we just consider receiver as data source for  the moment
+
             rinexfileobj.filename = '_'.join((site.upper(),
+                                              data_source, 
                                               rinexfileobj.start_date.strftime(timeformat),
                                               rinexfileobj.file_period,
                                               rinexfileobj.sample_rate,
