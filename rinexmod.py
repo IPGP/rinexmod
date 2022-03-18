@@ -391,7 +391,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             data_source = "R" # we just consider receiver as data source for  the moment
 
             rinexfileobj.filename = '_'.join((site.upper(),
-                                              data_source, 
+                                              data_source,
                                               rinexfileobj.start_date.strftime(timeformat),
                                               rinexfileobj.file_period,
                                               rinexfileobj.sample_rate,
@@ -549,7 +549,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
-    parser.add_argument('-o', '--output_logs', help='Folder where to write output logs', action='store_true')
+    parser.add_argument('-o', '--output_logs', help='Folder where to write output logs', type=str)
     parser.add_argument('-v', '--verbose', help='Prompt file\'s metadata before and after modifications.', action='store_true', default=0)
 
     args = parser.parse_args()
