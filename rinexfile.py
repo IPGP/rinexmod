@@ -7,6 +7,7 @@ Class
 
 import os, re
 import hatanaka
+import numpy as np
 from pathlib import Path
 from datetime import datetime
 
@@ -194,41 +195,49 @@ class RinexFile:
         first_sample = None
         second_sample = None
         i = 0
+        imax = 100
+
+        Samples_stack = []
+
         for line in self.rinex_data:
             m = re.search(date_pattern, line)
-            if m and not first_sample:
-                first_sample = m
-            elif m and first_sample:
-                second_sample = m
-            elif first_sample and second_sample:
+            if m and i <= imax:
+                Samples_stack.append(m)
+                i += 1
+            elif i > imax:
                 break
+            else:
+                continue
 
-        if not first_sample or not second_sample:
+        if i < 2:
             self.status = 5
             return None
 
         # Getting end date
         if self.version[0] == '3':
             # Pattern of an observation line containing a date
-            first_year = first_sample.group(1)
-            second_year =  second_sample.group(1)
+            year_prefix = "" 
         elif self.version[0] == '2':
             # Pattern of an observation line containing a date
-            first_year = '20' + first_sample.group(1)
-            second_year =  '20' + second_sample.group(1)
+            year_prefix = "20" 
 
         # Building a date string
-        first_date = first_year + ' ' + first_sample.group(2) + ' ' + first_sample.group(3) + ' ' + \
-                     first_sample.group(4) + ' ' + first_sample.group(5) + ' ' + first_sample.group(6)
+        def date_conv(sample):
+            first_date = year_prefix + sample.group(1) + ' ' + sample.group(2) + ' ' + sample.group(3) + ' ' + \
+                         sample.group(4) + ' ' + sample.group(5) + ' ' + sample.group(6)
 
-        second_date = second_year + ' ' + second_sample.group(2) + ' ' + second_sample.group(3) + ' ' + \
-                      second_sample.group(4) + ' ' + second_sample.group(5) + ' ' + second_sample.group(6)
+            first_date = datetime.strptime(first_date, '%Y %m %d %H %M %S.%f')
+            return first_date 
 
-        first_date = datetime.strptime(first_date, '%Y %m %d %H %M %S.%f')
-        second_date = datetime.strptime(second_date, '%Y %m %d %H %M %S.%f')
+        Samples_stack = [date_conv(d) for d in Samples_stack]
+        Samples_rate_diff = list(np.diff(Samples_stack))
 
-        sample_rate = second_date - first_date
-        sample_rate = sample_rate.total_seconds()
+        def most_frequent(List):
+            return max(set(List), key = List.count)
+
+        ## min is more logical than most frequent
+        sample_rate = most_frequent(Samples_rate_diff).total_seconds()
+        sample_rate = min(Samples_rate_diff).total_seconds()
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
         if sample_rate <= 0.0001:

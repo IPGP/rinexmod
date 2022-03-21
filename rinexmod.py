@@ -302,7 +302,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         if not os.path.isfile(ninecharfile):
             print('# ERROR : The specified 9-chars. list file does not exists : ' + ninecharfile)
             return
-        with open(ninecharfile,"r+")  as F:
+        with open(ninecharfile,"r")  as F:
             nine_char_list = F.readlines()
             nine_char_dict = dict()
 
