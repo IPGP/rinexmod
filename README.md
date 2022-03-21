@@ -160,6 +160,10 @@ The Zip file is corrupted or empty
 
 The CRX Hatanaka file is corrupted.
 
+05 - Less than two epochs in the file, reject
+
+Not enought data in the file to extract a sample rate, and data not relevant because insuficient. Reject the file.
+
 30 - Input and output folders are the same !
 
 The file will not be proceeded as rinexmod does not modify files inplace. Check your outputfolder.

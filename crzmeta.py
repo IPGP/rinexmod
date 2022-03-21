@@ -27,12 +27,20 @@ def crzmeta(rinexfile):
         print('{:45s} - {}'.format('01 - The specified file does not exists', rinexfile))
         return
 
+    if rinexfileobj.status == 2:
+        print('{:45s} - {}'.format('02 - Not an observation Rinex file', rinexfile))
+        return
+
     if rinexfileobj.status == 3:
         print('{:45s} - {}'.format('03 - Invalid or empty Zip file', rinexfile))
         return
 
     if rinexfileobj.status == 4:
         print('{:45s} - {}'.format('04 - Invalid Compressed Rinex file', rinexfile))
+        return
+
+    if rinexfileobj.status == 5:
+        print('{:45s} - {}'.format('05 -Less than two epochs in the file', rinexfile))
         return
 
     print(rinexfileobj.get_metadata())

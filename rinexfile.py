@@ -203,6 +203,10 @@ class RinexFile:
             elif first_sample and second_sample:
                 break
 
+        if not first_sample or not second_sample:
+            self.status = 5
+            return None
+
         # Getting end date
         if self.version[0] == '3':
             # Pattern of an observation line containing a date
@@ -406,9 +410,9 @@ class RinexFile:
 
         ### manage compressed extension
         if "rnx" in self.filename:
-            filename_out = self.filename.replace("rnx","crx") 
+            filename_out = self.filename.replace("rnx","crx")
         elif ".o" in self.filename:
-            filename_out = self.filename.replace(".o",".d") 
+            filename_out = self.filename.replace(".o",".d")
         else:
             filename_out = self.filename
 

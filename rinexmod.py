@@ -358,6 +358,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             logger.error('{:60s} - {}'.format('04 - Invalid Compressed Rinex file', file))
             continue
 
+        if rinexfileobj.status == 5:
+            logger.error('{:60s} - {}'.format('05 - Less than two epochs in the file', file))
+            continue
+
         if marker:
             # We store the old marker name to add a comment in rinex file's header
             modification_source = rinexfileobj.filename[:4]
