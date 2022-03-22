@@ -135,7 +135,7 @@ def listfiles(directory, extension):
     return list(sorted(liste))
 
 
-def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs):
+def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -189,9 +189,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
     dt = datetime.strftime(now, '%Y%m%d%H%M%S')
 
     if output_logs:
-        logfile = os.path.join(output_logs, dt + '_' + 'rinexmod_errors.log')
+        logfolder = output_logs
     else:
-        logfile = os.path.join(outputfolder, dt + '_' + 'rinexmod_errors.log')
+        logfolder = outputfolder
+
+    logfile = os.path.join(logfolder, dt + '_' + 'rinexmod_errors.log')
 
     logger = loggersVerbose(logfile)
 
@@ -522,6 +524,20 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
     logger.handlers.clear()
 
+    if write:
+         # Writing an output file for each RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD lists
+        for rinex_version in return_lists:
+            for sample_rate in return_lists[rinex_version]:
+                for file_period in return_lists[rinex_version][sample_rate]:
+
+                    this_outputfile = '_'.join(['RINEX' + rinex_version, sample_rate, file_period, datetime.strftime(now, '%Y%m%d%H%M'), 'delivery.lst'])
+                    this_outputfile = os.path.join(logfolder, this_outputfile)
+
+                    # Writting output to temporary file and copying it them to target files
+                    with open(this_outputfile, 'w') as f:
+                        f.writelines('{}\n'.format(line) for line in return_lists[rinex_version][sample_rate][file_period])
+                        print('# Output rinex list written to ' + this_outputfile)
+
     return return_lists
 
 
@@ -554,6 +570,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
     parser.add_argument('-o', '--output_logs', help='Folder where to write output logs', type=str)
+    parser.add_argument('-w', '--write', help='Write (rinex version, sample rate, file period) dependant output lists', action='store_true')
     parser.add_argument('-v', '--verbose', help='Prompt file\'s metadata before and after modifications.', action='store_true', default=0)
 
     args = parser.parse_args()
@@ -571,6 +588,7 @@ if __name__ == '__main__':
     ignore = args.ignore
     alone = args.alone
     output_logs = args.output_logs
+    write = args.write
     verbose = args.verbose
 
-    rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs)
+    rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write)
