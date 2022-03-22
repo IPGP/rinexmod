@@ -388,11 +388,14 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 logger.warning('{:60s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
                 site = rinexfileobj.filename[:4].upper() + "00XXX"
 
-            # if rinexfileobj.file_period == '01D':
-            #     timeformat = '%Y%j0000' # Start of the day
-            # else:
-            #     timeformat = '%Y%j%H00' # Start of the hour
-            timeformat = '%Y%j%H%M' # Compliant to the longname convention
+            if rinexfileobj.file_period == '01D':
+                if rinexfileobj.session:
+                    timeformat = '%Y%j%H%M'
+                else:
+                    timeformat = '%Y%j0000' # Start of the day
+            else:
+                timeformat = '%Y%j%H00' # Start of the hour
+            # timeformat = '%Y%j%H%M' # Compliant to the longname convention
 
             data_source = "R" # we just consider receiver as data source for  the moment
 

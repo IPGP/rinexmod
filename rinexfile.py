@@ -28,7 +28,7 @@ class RinexFile:
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
         self.sample_rate = self._get_sample_rate()
-        self.file_period = self._get_file_period()
+        self.file_period, self.session = self._get_file_period()
         self.observable_type = self._get_observable_type()
 
 
@@ -216,10 +216,10 @@ class RinexFile:
         # Getting end date
         if self.version[0] == '3':
             # Pattern of an observation line containing a date
-            year_prefix = "" 
+            year_prefix = ""
         elif self.version[0] == '2':
             # Pattern of an observation line containing a date
-            year_prefix = "20" 
+            year_prefix = "20"
 
         # Building a date string
         def date_conv(sample):
@@ -227,7 +227,7 @@ class RinexFile:
                          sample.group(4) + ' ' + sample.group(5) + ' ' + sample.group(6)
 
             first_date = datetime.strptime(first_date, '%Y %m %d %H %M %S.%f')
-            return first_date 
+            return first_date
 
         Samples_stack = [date_conv(d) for d in Samples_stack]
         Samples_rate_diff = list(np.diff(Samples_stack))
@@ -278,9 +278,14 @@ class RinexFile:
         if self.status != 0:
             return None
 
+        session = False
+
         if self.name_conv == 'SHORT':
             file_period = self.filename[7:8]
+            print(file_period)
             if file_period.isdigit():
+                if file_period != '0':
+                    session = True
                 # 01D–1 Day
                 file_period = '01D'
             elif file_period.isalpha():
@@ -297,7 +302,7 @@ class RinexFile:
             # 00U-Unspecified
             file_period = '00U'
 
-        return file_period
+        return file_period, session
 
 
     def _get_observable_type(self):
