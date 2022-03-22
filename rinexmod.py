@@ -180,7 +180,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
     if not os.path.isdir(outputfolder):
         # mkdirs ???
-        os.mkdir(outputfolder)
+        os.makedirs(outputfolder)
 
     ########### Logging levels ###########
 
