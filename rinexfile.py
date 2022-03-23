@@ -9,7 +9,7 @@ import os, re
 import hatanaka
 import numpy as np
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class RinexFile:
@@ -182,6 +182,18 @@ class RinexFile:
         if self.status != 0:
             return None
 
+        # Removing this test on INTERVAL header line because not reliable (at least in IPGP data set)
+        # sr_meta = 'INTERVAL'
+        #
+        # for line in self.rinex_data:
+        #     if re.search(sr_meta, line):
+        #         sr_meta = line
+        #         break
+        # # If not found
+        # if sr_meta != 'INTERVAL':
+        #
+        #     return sr_meta
+
         # Getting end date
         if self.version[0] == '3':
             # Pattern of an observation line containing a date
@@ -209,7 +221,7 @@ class RinexFile:
             else:
                 continue
 
-        if i < 2:
+        if i <= 2:
             self.status = 5
             return None
 
@@ -223,43 +235,52 @@ class RinexFile:
 
         # Building a date string
         def date_conv(sample):
-            first_date = year_prefix + sample.group(1) + ' ' + sample.group(2) + ' ' + sample.group(3) + ' ' + \
+            date = year_prefix + sample.group(1) + ' ' + sample.group(2) + ' ' + sample.group(3) + ' ' + \
                          sample.group(4) + ' ' + sample.group(5) + ' ' + sample.group(6)
 
-            first_date = datetime.strptime(first_date, '%Y %m %d %H %M %S.%f')
-            return first_date
+            date = datetime.strptime(date, '%Y %m %d %H %M %S.%f')
+            return date
 
         Samples_stack = [date_conv(d) for d in Samples_stack]
         Samples_rate_diff = list(np.diff(Samples_stack))
+        # Removing 0 values - potential doubles in epochs
+        Samples_rate_diff = [d for d in Samples_rate_diff if d != timedelta(seconds=0)]
 
-        def most_frequent(List):
-            return max(set(List), key = List.count)
-
-        ## min is more logical than most frequent
-        sample_rate = most_frequent(Samples_rate_diff).total_seconds()
+        # def most_frequent(List):
+        #     return max(set(List), key = List.count)
+        #
+        # sample_rate = most_frequent(Samples_rate_diff).total_seconds()
+        # min is more logical than most frequent
         sample_rate = min(Samples_rate_diff).total_seconds()
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
+        # We round samples rates to avoid leap-seconds related problems
         if sample_rate <= 0.0001:
             # XXU – Unspecified
             sample_rate = 'XXU'
         elif sample_rate <= 0.01:
             # XXC – 100 Hertz
+            sample_rate = round(sample_rate, 4)
             sample_rate = (str(int(1 / (100 * sample_rate))) + 'C').rjust(3, '0')
         elif sample_rate < 1:
             # XXZ – Hertz
+            sample_rate = round(sample_rate, 2)
             sample_rate = (str(int(1 / sample_rate)) + 'Z').rjust(3, '0')
         elif sample_rate < 60:
             # XXS – Seconds
+            sample_rate = round(sample_rate, 0)
             sample_rate = (str(int(sample_rate)) + 'S').rjust(3, '0')
         elif sample_rate < 3600:
             # XXM – Minutes
+            sample_rate = round(sample_rate, 0)
             sample_rate = (str(int(sample_rate / 60)) + 'M').rjust(3, '0')
         elif sample_rate < 86400:
             # XXH – Hours
+            sample_rate = round(sample_rate, 0)
             sample_rate = (str(int(sample_rate / 3600)) + 'H').rjust(3, '0')
         elif sample_rate <= 8553600:
             # XXD – Days
+            sample_rate = round(sample_rate, 0)
             sample_rate = (str(int(sample_rate / 86400)) + 'D').rjust(3, '0')
         else:
             # XXU – Unspecified
@@ -276,7 +297,7 @@ class RinexFile:
         """
 
         if self.status != 0:
-            return None
+            return None, None
 
         session = False
 
