@@ -282,7 +282,6 @@ class RinexFile:
 
         if self.name_conv == 'SHORT':
             file_period = self.filename[7:8]
-            print(file_period)
             if file_period.isdigit():
                 if file_period != '0':
                     session = True
