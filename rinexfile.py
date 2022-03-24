@@ -10,7 +10,7 @@ import hatanaka
 import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
-
+# import matplotlib.pyplot as plt
 
 class RinexFile:
     """
@@ -176,7 +176,10 @@ class RinexFile:
 
         """
         Getting sample rate from rinex file.
-        We search two consecutive dates and make the difference to get the sample rate
+        We get all the samples dates and get intervals. We then remove 0 ones (due to potential double samples).
+        Then, we set the most frequent value as sample rate, and if more than 3 % of the intervals are different
+        from this sample rate, we set the sample rate as unknown (XXU).
+        We then round the obtained value and translate it to a rinex 3 longname compliant format.
         """
 
         if self.status != 0:
@@ -194,44 +197,27 @@ class RinexFile:
         #
         #     return sr_meta
 
-        # Getting end date
+        # Date lines pattern
         if self.version[0] == '3':
-            # Pattern of an observation line containing a date
+            # Pattern of an observation line containing a date - RINEX 3
             date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            year_prefix = "" # Prefix of year for date formatting
 
         elif self.version[0] == '2':
-            # Pattern of an observation line containing a date
+            # Pattern of an observation line containing a date - RINEX 2
             date_pattern = re.compile(' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
-
-        # Searching the two first samples
-        first_sample = None
-        second_sample = None
-        i = 0
-        imax = 100
+            year_prefix = "20" # Prefix of year for date formatting
 
         Samples_stack = []
 
-        for line in self.rinex_data:
-            m = re.search(date_pattern, line)
-            if m and i <= imax:
+        for line in self.rinex_data: # We get all the epochs dates
+            if  m := re.search(date_pattern, line):
                 Samples_stack.append(m)
-                i += 1
-            elif i > imax:
-                break
-            else:
-                continue
 
-        if i <= 2:
+        # If less than 2 samples, can't get a sample rate
+        if len(Samples_stack) < 2:
             self.status = 5
             return None
-
-        # Getting end date
-        if self.version[0] == '3':
-            # Pattern of an observation line containing a date
-            year_prefix = ""
-        elif self.version[0] == '2':
-            # Pattern of an observation line containing a date
-            year_prefix = "20"
 
         # Building a date string
         def date_conv(sample):
@@ -241,17 +227,27 @@ class RinexFile:
             date = datetime.strptime(date, '%Y %m %d %H %M %S.%f')
             return date
 
-        Samples_stack = [date_conv(d) for d in Samples_stack]
-        Samples_rate_diff = list(np.diff(Samples_stack))
-        # Removing 0 values - potential doubles in epochs
-        Samples_rate_diff = [d for d in Samples_rate_diff if d != timedelta(seconds=0)]
+        Samples_stack = [date_conv(d) for d in Samples_stack] # Format dates to datetime
+        Samples_rate_diff = np.diff(Samples_stack) # Getting intervals
+        # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
+        Samples_rate_diff = [diff.total_seconds() for diff in Samples_rate_diff if diff != timedelta(seconds=0)]
 
-        # def most_frequent(List):
-        #     return max(set(List), key = List.count)
-        #
-        # sample_rate = most_frequent(Samples_rate_diff).total_seconds()
-        # min is more logical than most frequent
-        sample_rate = min(Samples_rate_diff).total_seconds()
+        # If less than one interval after removing 0 values, can't get a sample rate
+        if len(Samples_rate_diff) < 1:
+            self.status = 5
+            return None
+
+        # If less than 2 intervals, can't compare intervals
+        if len(Samples_rate_diff) < 2:
+            return 'XXU'
+
+        # Most frequent
+        sample_rate = max(set(Samples_rate_diff), key = Samples_rate_diff.count)
+
+        # Counting the intervals that are not equal to the most frequent
+        num_bad_sp = len([diff for diff in Samples_rate_diff if diff != sample_rate])
+        if num_bad_sp / len(Samples_rate_diff) > 0.03: # Don't set sample rate to files
+            return 'XXU'                               # with too much variation (here, 3%)
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
         # We round samples rates to avoid leap-seconds related problems
