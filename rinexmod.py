@@ -457,6 +457,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             # # Apply the modifications to the RinexFile object
             rinexfileobj.set_marker(fourchar_id)
             rinexfileobj.set_receiver(**receiver)
+            rinexfileobj.set_interval(rinexfileobj.sample_rate_numeric)
             rinexfileobj.set_antenna(**antenna)
             rinexfileobj.set_antenna_pos(**antenna_pos)
             rinexfileobj.set_antenna_delta(**antenna_delta)

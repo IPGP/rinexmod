@@ -27,7 +27,7 @@ class RinexFile:
         self.filename, self.compression = self._filename()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
-        self.sample_rate = self._get_sample_rate()
+        self.sample_rate, self.sample_rate_numeric  = self._get_sample_rate()
         self.file_period, self.session = self._get_file_period()
         self.observable_type = self._get_observable_type()
 
@@ -176,6 +176,7 @@ class RinexFile:
 
         """
         Getting sample rate from rinex file.
+        The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value 
         We get all the samples dates and get intervals. We then remove 0 ones (due to potential double samples).
         Then, we set the most frequent value as sample rate, and if more than 3 % of the intervals are different
         from this sample rate, we set the sample rate as unknown (XXU).
@@ -183,7 +184,7 @@ class RinexFile:
         """
 
         if self.status != 0:
-            return None
+            return None,None
 
         # Removing this test on INTERVAL header line because not reliable (at least in IPGP data set)
         # sr_meta = 'INTERVAL'
@@ -217,7 +218,7 @@ class RinexFile:
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
             self.status = 5
-            return None
+            return None,None
 
         # Building a date string
         def date_conv(sample):
@@ -235,11 +236,11 @@ class RinexFile:
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = 5
-            return None
+            return None,None
 
         # If less than 2 intervals, can't compare intervals
         if len(Samples_rate_diff) < 2:
-            return 'XXU'
+            return 'XXU',0.
 
         # Most frequent
         sample_rate = max(set(Samples_rate_diff), key = Samples_rate_diff.count)
@@ -247,42 +248,42 @@ class RinexFile:
         # Counting the intervals that are not equal to the most frequent
         num_bad_sp = len([diff for diff in Samples_rate_diff if diff != sample_rate])
         if num_bad_sp / len(Samples_rate_diff) > 0.03: # Don't set sample rate to files
-            return 'XXU'                               # with too much variation (here, 3%)
+            return 'XXU',0.
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
         # We round samples rates to avoid leap-seconds related problems
         if sample_rate <= 0.0001:
             # XXU – Unspecified
-            sample_rate = 'XXU'
+            sample_rate_str = 'XXU'
         elif sample_rate <= 0.01:
             # XXC – 100 Hertz
             sample_rate = round(sample_rate, 4)
-            sample_rate = (str(int(1 / (100 * sample_rate))) + 'C').rjust(3, '0')
+            sample_rate_str = (str(int(1 / (100 * sample_rate))) + 'C').rjust(3, '0')
         elif sample_rate < 1:
             # XXZ – Hertz
             sample_rate = round(sample_rate, 2)
-            sample_rate = (str(int(1 / sample_rate)) + 'Z').rjust(3, '0')
+            sample_rate_str = (str(int(1 / sample_rate)) + 'Z').rjust(3, '0')
         elif sample_rate < 60:
             # XXS – Seconds
             sample_rate = round(sample_rate, 0)
-            sample_rate = (str(int(sample_rate)) + 'S').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate)) + 'S').rjust(3, '0')
         elif sample_rate < 3600:
             # XXM – Minutes
             sample_rate = round(sample_rate, 0)
-            sample_rate = (str(int(sample_rate / 60)) + 'M').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate / 60)) + 'M').rjust(3, '0')
         elif sample_rate < 86400:
             # XXH – Hours
             sample_rate = round(sample_rate, 0)
-            sample_rate = (str(int(sample_rate / 3600)) + 'H').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate / 3600)) + 'H').rjust(3, '0')
         elif sample_rate <= 8553600:
             # XXD – Days
             sample_rate = round(sample_rate, 0)
-            sample_rate = (str(int(sample_rate / 86400)) + 'D').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate / 86400)) + 'D').rjust(3, '0')
         else:
             # XXU – Unspecified
-            sample_rate = 'XXU'
+            sample_rate_str = 'XXU'
 
-        return sample_rate
+        return sample_rate_str,sample_rate
 
 
     def _get_file_period(self):
@@ -554,6 +555,38 @@ class RinexFile:
         new_line = serial_meta + type_meta + ' ' * 20 + label
         # Set line
         self.rinex_data[antenna_header_idx] = new_line
+
+        return
+
+    def set_interval(self, sample_rate=None):
+
+        if self.status != 0:
+            return
+
+        if not any([sample_rate]):
+            return
+
+        # Identify line that contains INTERVAL
+        if np.any(['INTERVAL' in e for e in self.rinex_data]):
+            line_exists = True
+            interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'INTERVAL' in e)
+            interval_meta = self.rinex_data[interval_idx]
+            label = interval_meta[60:]
+        else:
+            line_exists = False 
+            interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'TIME OF FIRST OBS' in e)
+            label = "INTERVAL"
+
+        # Parse line
+        sample_rate_meta = "{:10.3f}".format(float(sample_rate))
+
+        new_line = sample_rate_meta + ' ' * 50 + label
+
+        # Set line
+        if line_exists:  
+            self.rinex_data[interval_idx] = new_line
+        else:
+            self.rinex_data.insert(interval_idx,new_line)
 
         return
 
