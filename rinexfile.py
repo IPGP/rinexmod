@@ -234,10 +234,6 @@ class RinexFile:
         # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
         Samples_rate_diff = [diff.total_seconds() for diff in Samples_rate_diff if diff != timedelta(seconds=0)]
 
-        if plot:
-            plt.plot(Samples_rate_diff)
-            plt.show()
-
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = 5
@@ -252,7 +248,16 @@ class RinexFile:
 
         # Counting the intervals that are not equal to the most frequent
         num_bad_sp = len([diff for diff in Samples_rate_diff if diff != sample_rate])
-        if num_bad_sp / len(Samples_rate_diff) > 0.03: # Don't set sample rate to files
+
+        non_nominal_interval_percent = num_bad_sp / len(Samples_rate_diff)
+
+        if plot:
+            print('{:29} : {}'.format('Sample intervals not nominals', str(non_nominal_interval_percent * 100) + ' %'))
+            print()
+            plt.plot(Samples_rate_diff)
+            plt.show()
+
+        if non_nominal_interval_percent > 0.03: # Don't set sample rate to files
             return 'XXU',0.
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
@@ -422,7 +427,7 @@ class RinexFile:
         metadata_parsed['Start date and time'] = self.start_date
         metadata_parsed['Final date and time'] = self.end_date
 
-        metadata_parsed = '\n'.join(['{:28} : {}'.format(key, value) for key, value in metadata_parsed.items()])
+        metadata_parsed = '\n'.join(['{:29} : {}'.format(key, value) for key, value in metadata_parsed.items()])
 
         metadata_parsed = '\n' + metadata_parsed + '\n'
 
@@ -562,6 +567,7 @@ class RinexFile:
         self.rinex_data[antenna_header_idx] = new_line
 
         return
+
 
     def set_interval(self, sample_rate=None):
 
