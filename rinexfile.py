@@ -10,7 +10,7 @@ import hatanaka
 import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 class RinexFile:
     """
@@ -19,7 +19,7 @@ class RinexFile:
     Will then provide methods to modifiy the file's header.
     """
 
-    def __init__(self, rinexfile):
+    def __init__(self, rinexfile, plot=False):
 
         self.path = rinexfile
         self.rinex_data, self.name_conv, self.status = self._load_rinex_data()
@@ -27,7 +27,7 @@ class RinexFile:
         self.filename, self.compression = self._filename()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
-        self.sample_rate, self.sample_rate_numeric  = self._get_sample_rate()
+        self.sample_rate, self.sample_rate_numeric  = self._get_sample_rate(plot)
         self.file_period, self.session = self._get_file_period()
         self.observable_type = self._get_observable_type()
 
@@ -172,15 +172,16 @@ class RinexFile:
         return start_meta, end_meta
 
 
-    def _get_sample_rate(self):
+    def _get_sample_rate(self, plot=False):
 
         """
         Getting sample rate from rinex file.
-        The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value 
+        The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value
         We get all the samples dates and get intervals. We then remove 0 ones (due to potential double samples).
         Then, we set the most frequent value as sample rate, and if more than 3 % of the intervals are different
         from this sample rate, we set the sample rate as unknown (XXU).
         We then round the obtained value and translate it to a rinex 3 longname compliant format.
+        If plot is set to True, will plot the samples intervals.
         """
 
         if self.status != 0:
@@ -232,6 +233,10 @@ class RinexFile:
         Samples_rate_diff = np.diff(Samples_stack) # Getting intervals
         # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
         Samples_rate_diff = [diff.total_seconds() for diff in Samples_rate_diff if diff != timedelta(seconds=0)]
+
+        if plot:
+            plt.plot(Samples_rate_diff)
+            plt.show()
 
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
@@ -573,7 +578,7 @@ class RinexFile:
             interval_meta = self.rinex_data[interval_idx]
             label = interval_meta[60:]
         else:
-            line_exists = False 
+            line_exists = False
             interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'TIME OF FIRST OBS' in e)
             label = "INTERVAL"
 
@@ -583,7 +588,7 @@ class RinexFile:
         new_line = sample_rate_meta + ' ' * 50 + label
 
         # Set line
-        if line_exists:  
+        if line_exists:
             self.rinex_data[interval_idx] = new_line
         else:
             self.rinex_data.insert(interval_idx,new_line)

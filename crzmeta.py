@@ -3,8 +3,10 @@
 """
 Extract metadata from crz file.
 
+With -p option, will plot the file's samples intervals
+
 EXAMPLE:
-./crzmeta.py  RINEXFILE
+./crzmeta.py  RINEXFILE (-p)
 
 REQUIREMENTS :
 
@@ -18,10 +20,10 @@ pip install hatanaka
 from rinexfile import RinexFile
 
 
-def crzmeta(rinexfile):
+def crzmeta(rinexfile, plot):
 
     # Declare the rinex file as an object
-    rinexfileobj = RinexFile(rinexfile)
+    rinexfileobj = RinexFile(rinexfile, plot=False)
 
     if rinexfileobj.status == 1:
         print('{:45s} - {}'.format('01 - The specified file does not exists', rinexfile))
@@ -45,6 +47,11 @@ def crzmeta(rinexfile):
 
     print(rinexfileobj.get_metadata())
 
+    # As the plot is created in object instanciation, we reinstanciate it
+    # in order to print metadata before ploting samples
+    if plot:
+        rinexfileobj = RinexFile(rinexfile, plot)
+
     return
 
 
@@ -55,8 +62,10 @@ if __name__ == '__main__':
     # Parsing Args
     parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
     parser.add_argument('rinexfile', type=str, help='Input rinex list file to process')
+    parser.add_argument('-p', '--plot', help='Plot file\'s samples intervals', action='store_true', default=0)
     args = parser.parse_args()
 
     rinexfile = args.rinexfile
+    plot = args.plot
 
-    crzmeta(rinexfile)
+    crzmeta(rinexfile, plot)
