@@ -578,21 +578,27 @@ class RinexFile:
             return
 
         # Identify line that contains INTERVAL
-
         line_exists = False 
+        idx = -1
         for e in self.rinex_data:
+            idx += 1
             if "INTERVAL" in e:
                 line_exists = True
+                interval_idx = idx
                 break
-            if "END OF HEADER" in e:
+            elif 'TIME OF FIRST OBS' in e:
+                interval_idx = idx
+            elif "END OF HEADER" in e:
                 break
+            else:
+                continue
 
         if line_exists:
-            interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'INTERVAL' in e)
+            #interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'INTERVAL' in e)
             interval_meta = self.rinex_data[interval_idx]
             label = interval_meta[60:]
         else:
-            interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'TIME OF FIRST OBS' in e)
+            #interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'TIME OF FIRST OBS' in e)
             label = "INTERVAL"
 
         # Parse line
