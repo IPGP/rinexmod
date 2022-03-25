@@ -178,7 +178,7 @@ class RinexFile:
         Getting sample rate from rinex file.
         The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value
         We get all the samples dates and get intervals. We then remove 0 ones (due to potential double samples).
-        Then, we set the most frequent value as sample rate, and if more than 3 % of the intervals are different
+        Then, we set the most frequent value as sample rate, and if more than 10% of the intervals are different
         from this sample rate, we set the sample rate as unknown (XXU).
         We then round the obtained value and translate it to a rinex 3 longname compliant format.
         If plot is set to True, will plot the samples intervals.
@@ -257,7 +257,9 @@ class RinexFile:
             plt.plot(Samples_rate_diff)
             plt.show()
 
-        if non_nominal_interval_percent > 0.03: # Don't set sample rate to files
+        if non_nominal_interval_percent > 0.1: # Don't set sample rate to files
+                                               # That have more that 10% of non
+                                               # nominal sample rate
             return 'XXU',0.
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
@@ -578,7 +580,7 @@ class RinexFile:
             return
 
         # Identify line that contains INTERVAL
-        line_exists = False 
+        line_exists = False
         idx = -1
         for e in self.rinex_data:
             idx += 1
