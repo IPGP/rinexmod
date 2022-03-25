@@ -12,6 +12,19 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
+def search_idx_value(data,field):
+    """
+    find the index (line number) of a researched filed in the RINEX data
+    """
+    idx = -1
+    for e in data:
+        idx += 1
+        if field in e:
+            out_idx = idx
+            break
+    return out_idx
+
+
 class RinexFile:
     """
     Will store a compressed rinex file content in a file-like list of strings
@@ -106,7 +119,7 @@ class RinexFile:
         if self.status != 0:
             return ''
 
-        version_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'RINEX VERSION / TYPE' in e)
+        version_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE')
         version_header = self.rinex_data[version_header_idx]
         # Parse line
         rinex_ver_meta = version_header[0:9].strip()
@@ -339,7 +352,7 @@ class RinexFile:
             return None
 
         # Identify line that contains RINEX VERSION / TYPE
-        observable_type_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'RINEX VERSION / TYPE' in e)
+        observable_type_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE')
         observable_type_meta = self.rinex_data[observable_type_header_idx]
         # Parse line
         observable_type = observable_type_meta[40:41]
@@ -356,7 +369,7 @@ class RinexFile:
             return ''
 
         # We get header
-        end_of_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'END OF HEADER' in e) + 1
+        end_of_header_idx = search_idx_value(self.rinex_data,'END OF HEADER') + 1
         str_RinexFile = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
         str_RinexFile.extend(self.rinex_data[end_of_header_idx:end_of_header_idx + 20])
@@ -495,7 +508,7 @@ class RinexFile:
             return
 
         # Identify line that contains MARKER NAME
-        marker_name_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'MARKER NAME' in e)
+        marker_name_header_idx = search_idx_value(self.rinex_data, 'MARKER NAME')
         marker_name_meta = self.rinex_data[marker_name_header_idx]
         # Edit line
         new_line = '{}'.format(station.ljust(60)) + 'MARKER NAME'
@@ -521,7 +534,7 @@ class RinexFile:
             return
 
         # Identify line that contains REC # / TYPE / VERS
-        receiver_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'REC # / TYPE / VERS' in e)
+        receiver_header_idx = search_idx_value(self.rinex_data, 'REC # / TYPE / VERS')
         receiver_meta = self.rinex_data[receiver_header_idx]
         # Parse line
         serial_meta = receiver_meta[0:20]
@@ -551,7 +564,7 @@ class RinexFile:
             return
 
         # Identify line that contains ANT # / TYPE
-        antenna_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'ANT # / TYPE' in e)
+        antenna_header_idx = search_idx_value(self.rinex_data, 'ANT # / TYPE' )
         antenna_meta = self.rinex_data[antenna_header_idx]
         # Parse line
         serial_meta = antenna_meta[0:20]
@@ -624,7 +637,7 @@ class RinexFile:
             return
 
         # Identify line that contains APPROX POSITION XYZ
-        antenna_pos_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'APPROX POSITION XYZ' in e)
+        antenna_pos_header_idx = search_idx_value(self.rinex_data, 'APPROX POSITION XYZ' )
         antenna_pos_meta = self.rinex_data[antenna_pos_header_idx]
         # Parse line
         X_meta = antenna_pos_meta[0:14]
@@ -660,7 +673,7 @@ class RinexFile:
             return
 
         # Identify line that contains ANTENNA: DELTA H/E/N
-        antenna_delta_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'ANTENNA: DELTA H/E/N' in e)
+        antenna_delta_header_idx = search_idx_value(self.rinex_data, 'ANTENNA: DELTA H/E/N')
         antenna_delta_meta = self.rinex_data[antenna_delta_header_idx]
         # Parse line
         X_meta = antenna_delta_meta[0:14]
@@ -696,7 +709,7 @@ class RinexFile:
             return
 
         # Identify line that contains OBSERVER / AGENCY
-        agencies_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'OBSERVER / AGENCY' in e)
+        agencies_header_idx = search_idx_value(self.rinex_data, 'OBSERVER / AGENCY')
         agencies_meta = self.rinex_data[agencies_header_idx]
         # Parse line
         operator_meta = agencies_meta[0:20]
@@ -723,7 +736,7 @@ class RinexFile:
             return
 
         # Identify line that contains RINEX VERSION / TYPE
-        observable_type_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'RINEX VERSION / TYPE' in e)
+        observable_type_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE') 
         observable_type_meta = self.rinex_data[observable_type_header_idx]
         # Parse line
         rinex_ver_meta = observable_type_meta[0:9]
@@ -764,7 +777,7 @@ class RinexFile:
         if self.status != 0:
             return
 
-        end_of_header_idx = next(i for i, e in enumerate(self.rinex_data) if 'END OF HEADER' in e) + 1
+        end_of_header_idx = search_idx_value(self.rinex_data, 'END OF HEADER') + 1
         last_comment_idx = max(i for i, e in enumerate(self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e)
 
         new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
