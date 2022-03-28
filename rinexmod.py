@@ -326,7 +326,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
         if reconstruct:
             if not reconstruct in file:
-                logger.error('{:60s} - {}'.format('31 - The subfolder can not be reconstructed for file', file))
+                logger.error('{:110s} - {}'.format('31 - The subfolder can not be reconstructed for file', file))
                 continue
 
             # We construct the output path with relative path between file name and parameter
@@ -338,30 +338,30 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             myoutputfolder = outputfolder
 
         if os.path.abspath(os.path.dirname(file)) == myoutputfolder:
-            logger.error('{:60s} - {}'.format('30 - Input and output folders are the same !', file))
+            logger.error('{:110s} - {}'.format('30 - Input and output folders are the same !', file))
             continue
 
         # Declare the rinex file as an object
         rinexfileobj = RinexFile(file)
 
         if rinexfileobj.status == 1:
-            logger.error('{:60s} - {}'.format('01 - The specified file does not exists', file))
+            logger.error('{:110s} - {}'.format('01 - The specified file does not exists', file))
             continue
 
         if rinexfileobj.status == 2:
-            logger.error('{:60s} - {}'.format('02 - Not an observation Rinex file', file))
+            logger.error('{:110s} - {}'.format('02 - Not an observation Rinex file', file))
             continue
 
         if rinexfileobj.status == 3:
-            logger.error('{:60s} - {}'.format('03 - Invalid or empty Zip file', file))
+            logger.error('{:110s} - {}'.format('03 - Invalid or empty Zip file', file))
             continue
 
         if rinexfileobj.status == 4:
-            logger.error('{:60s} - {}'.format('04 - Invalid Compressed Rinex file', file))
+            logger.error('{:110s} - {}'.format('04 - Invalid Compressed Rinex file', file))
             continue
 
         if rinexfileobj.status == 5:
-            logger.error('{:60s} - {}'.format('05 - Less than two epochs in the file', file))
+            logger.error('{:110s} - {}'.format('05 - Less than two epochs in the file', file))
             continue
 
         if marker:
@@ -378,14 +378,14 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             # Get the site 9-char name
             if ninecharfile:
                 if not rinexfileobj.filename[:4].lower() in nine_char_dict:
-                    logger.warning('{:60s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
+                    logger.warning('{:110s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
                     site = rinexfileobj.filename[:4].upper() + "00XXX"
                 else:
                     site = nine_char_dict[rinexfileobj.filename[:4].lower()].upper()
             # elif sitelog: # XXXXXXX probleme si multiples sitelogs
             #     site = os.path.basename(sitelog)[:9].upper()
             else:
-                logger.warning('{:60s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
+                logger.warning('{:110s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
                 site = rinexfileobj.filename[:4].upper() + "00XXX"
 
             if rinexfileobj.file_period == '01D':
@@ -423,12 +423,12 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             if station_meta not in [sitelog.station for sitelog in sitelogs]:
                 if len(sitelogs) == 1:
                     if not force:
-                        logger.error('{:60s} - {}'.format('33 - File\'s station does not correspond to provided sitelog - use -f option to force', file))
+                        logger.error('{:110s} - {}'.format('33 - File\'s station does not correspond to provided sitelog - use -f option to force', file))
                         continue
                     else:
-                        logger.warning('{:60s} - {}'.format('34 - File\'s station does not correspond to provided sitelog, processing anyway', file))
+                        logger.warning('{:110s} - {}'.format('34 - File\'s station does not correspond to provided sitelog, processing anyway', file))
                 else:
-                    logger.error('{:60s} - {}'.format('33 - No provided sitelog for this file\'s station', file))
+                    logger.error('{:110s} - {}'.format('33 - No provided sitelog for this file\'s station', file))
                     continue
             else:
                 sitelogobj = [sitelog for sitelog in sitelogs if sitelog.station == station_meta][0]
@@ -443,11 +443,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             metadata_vars, ignored  = sitelogobj.rinex_metadata_lines(rinexfileobj.start_date, rinexfileobj.end_date, ignore)
 
             if not metadata_vars:
-                logger.error('{:60s} - {}'.format('35 - No instrumentation corresponding to the data period on the sitelog', file))
+                logger.error('{:110s} - {}'.format('35 - No instrumentation corresponding to the data period on the sitelog', file))
                 continue
 
             if ignored:
-                logger.warning('{:60s} - {}'.format('36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway', file))
+                logger.warning('{:110s} - {}'.format('36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway', file))
 
             (fourchar_id, observable_type, agencies, receiver, antenna, antenna_pos, antenna_delta) = metadata_vars
 

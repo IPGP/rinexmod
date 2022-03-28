@@ -23,7 +23,7 @@ from rinexfile import RinexFile
 def crzmeta(rinexfile, plot):
 
     # Declare the rinex file as an object
-    rinexfileobj = RinexFile(rinexfile, plot=False)
+    rinexfileobj = RinexFile(rinexfile)
 
     if rinexfileobj.status == 1:
         print('{:45s} - {}'.format('01 - The specified file does not exists', rinexfile))
@@ -47,10 +47,9 @@ def crzmeta(rinexfile, plot):
 
     print(rinexfileobj.get_metadata())
 
-    # As the plot is created in object instanciation, we reinstanciate it
-    # in order to print metadata before ploting samples
+    # We reload _get_sample_rate method with plot set to true
     if plot:
-        rinexfileobj = RinexFile(rinexfile, plot)
+        rinexfileobj._get_sample_rate(plot = True)
 
     return
 

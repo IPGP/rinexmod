@@ -12,7 +12,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
-def search_idx_value(data,field):
+def search_idx_value(data, field):
     """
     find the index (line number) of a researched filed in the RINEX data
     """
@@ -738,7 +738,7 @@ class RinexFile:
             return
 
         # Identify line that contains RINEX VERSION / TYPE
-        observable_type_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE') 
+        observable_type_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE')
         observable_type_meta = self.rinex_data[observable_type_header_idx]
         # Parse line
         rinex_ver_meta = observable_type_meta[0:9]
