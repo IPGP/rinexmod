@@ -108,7 +108,7 @@ def loggersVerbose(logfile):
     prompthandler = logging.StreamHandler()
 
     promptformatter = logging.Formatter('%(asctime)s - %(levelname)-7s - %(message)s')
-    fileformatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fileformatter = logging.Formatter('%(asctime)s - %(levelname)-7s - %(message)s')
 
     prompthandler.setFormatter(promptformatter)
     filehandler.setFormatter(fileformatter)

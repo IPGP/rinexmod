@@ -17,6 +17,7 @@ def search_idx_value(data, field):
     find the index (line number) of a researched filed in the RINEX data
     """
     idx = -1
+    out_idx = None
     for e in data:
         idx += 1
         if field in e:
