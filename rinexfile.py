@@ -31,6 +31,12 @@ class RinexFile:
     Will store a compressed rinex file content in a file-like list of strings
     using the hatanaka library.
     Will then provide methods to modifiy the file's header.
+    The method to get the sample rate will read the whole file and will set as
+    unknow sample rate files that have more than 10% of non-nominam sample rate.
+    The method to get the file duration is based on reading the file name and
+    not the data.
+    A method to write the file in selected compression is also available.
+    The get_metadata method permits to have a printable string of all file's metadata.
     """
 
     def __init__(self, rinexfile, plot=False):
@@ -51,8 +57,8 @@ class RinexFile:
         Load the uncompressed rinex data into a list var using hatanaka library.
         Will return a table of lines of the uncompressed file, a 'name_conv' var
         that indicates if the file is named with the SHORT NAME convention or the
-        LONG NAME cenovetion, and a status. Status 0 is OK. The other ones
-        corresponds to the errors codes raised in rinexarchive and by rinexmod.
+        LONG NAME convetion, and a status. Status 0 is OK. The other ones
+        corresponds to the errors codes raised by rinexarchive and by rinexmod.
         01 - The specified file does not exists
         02 - Not an observation Rinex file
         03 - Invalid  or empty Zip file
@@ -194,6 +200,9 @@ class RinexFile:
         We get all the samples dates and get intervals. We then remove 0 ones (due to potential double samples).
         Then, we set the most frequent value as sample rate, and if more than 10% of the intervals are different
         from this sample rate, we set the sample rate as unknown (XXU).
+        If there is not enought samples to compute an interval (less than two samples), we raise an error
+        with error code 5. If there is only two samples, i.e. one interval, we set the sample rate to
+        unknown because we can not compute a most frequent interval.
         We then round the obtained value and translate it to a rinex 3 longname compliant format.
         If plot is set to True, will plot the samples intervals.
         """
@@ -473,7 +482,10 @@ class RinexFile:
         else:
             filename_out = self.filename
 
-        outputfile = os.path.join(path, filename_out + '.' + compression)
+        if compression == 'none':
+            outputfile = os.path.join(path, filename_out)
+        else:
+            outputfile = os.path.join(path, filename_out + '.' + compression)
 
         Path(outputfile).write_bytes(output_data)
 
@@ -776,7 +788,9 @@ class RinexFile:
 
 
     def add_comment(self, comment):
-
+        '''
+        We add the argument comment line at the end of the header
+        '''
         if self.status != 0:
             return
 

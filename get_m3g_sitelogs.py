@@ -11,6 +11,20 @@ This script will get last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
 The -d --delete option will delete old version as to get only last version even
 in a name changing case.
+USE :
+
+
+* OUTPUTFOLDER : Folder where to write the downloaded sitelogs.
+
+OPTION :
+
+* -d : delete : Delete old sitelogs in storage folder. This permits to have only
+                the last version, as version changing sitelogs changes of name.
+
+EXAMPLE:
+
+./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
+
 2021-10-18 FL
 """
 

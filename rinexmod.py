@@ -2,22 +2,22 @@
 # -*- coding: utf-8 -*-
 """
 This script takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the rinex files modifiy the file's header. It then write them back to Hanakata
+loop the rinex files list to modifiy the file's header. It then write them back to Hanakata
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another station code. It can write
-those files with the long name naming convention.
+those files with the long name naming convention with the --longname option.
 
 Two ways of passing parameters to modifiy headers are possible:
 
-* --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
+--modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
                       Acceptable_keywords are : station, receiver_serial, receiver_type, receiver_fw,
                       antenna_serial, antenna_type, antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
                       antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
-                      operator, agency, observables
+                      operator, agency, observables.
 
-* --sitelog  : you pass a sitelog file. The script will treat only files corresponding to
-               the same station as the provided sitelog. You then have to pass a list
-               of files comming from the right station. If not, they will be rejected.
+--sitelog  : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
+               containing sitelogs. You then have to pass a list of files and the script will
+               assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
                and use them to extract from the sitelog the station instrumentation
                of the corresponding period and fill file's header with following infos :
@@ -39,7 +39,10 @@ Two ways of passing parameters to modifiy headers are possible:
 
 You can not provide both --modification_kw and --sitelog options.
 
-USAGE :
+The script will add two comment lines, one indicating the source of the modifiaction
+(sitelog or arguments) and the other the timestamp of the modification.
+
+USE :
 
 RINEXLIST : Rinex list file
 OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory
@@ -59,6 +62,8 @@ OPTIONS :
                             input files.
 -n : --ninecharfile :       path a of a list file containing 9-char. site names from
                             the M3G database generated with get_m3g_stations.
+                            This will be used for longname file's renaming.
+-l : --longname             Rename file using long name rinex convention.
                             Not mandatory, but nessessary to get the country code to rename
                             files to long name standard. If not provided the country code will be XXX.
 -a : --alone :               Option to provide if you want to run this script on a alone
@@ -66,16 +71,19 @@ OPTIONS :
 -c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
                             to fit IGS standards), 'Z'. Default value will retrieve
                             the actual compression of the input file.
--l : --longname             Rename file using long name rinex convention.
 -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
                             part of the path that is common to all files in the list and
                             that will be replaced with output folder.
+-o : --output_logs :        Folder where to write output log. If not provided, logs
+                            will be written to OUTPUTFOLDER.
+-w : --write :              Write (rinex version, sample rate, file period, observatory)
+                            dependant output lists to log folder.
 -v : --verbose:             Will prompt file's metadata before and after modifications.
 
 EXAMPLES:
 
-./rinexmod.py  RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-s) (-r /ROOTFOLDER/) (-v)
-./rinexmod.py  RINEXLIST OUTPUTFOLDER (-l ./sitelogsfolder/stationsitelog.log) (-m AGAL) (-s) (-r /ROOTFOLDER/) (-f) (-i) (-v)
+./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 
 REQUIREMENTS :
 

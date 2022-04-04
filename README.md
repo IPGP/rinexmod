@@ -1,6 +1,6 @@
 #  rinexmod
 
-Tool to batch modify headers of RINEX Hatakana compressed files from the command line or a sitelog and optionnaly batch rename them.
+Tool to batch modify headers of RINEX Hatakana compressed files from command line arguments or from a sitelog and optionnaly batch rename them.
 
 2021-02-07 Félix Léger - leger@ipgp.fr
 
@@ -8,13 +8,15 @@ Tool to batch modify headers of RINEX Hatakana compressed files from the command
 
 This project is composed of 4 scripts.
 
-* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz), loop the rinex files and modifiy the file's header. It then write them back to Hanakata compressed format in an output folder. It also allows renaming the files by changing the four first characters with another station code.  It can write those files with the long name naming convention. Two ways of passing parameters to modifiy headers are possible, passing the headers fields values args as an argument, or passing a sitelog as an argument. In this case, the script will treat only files corresponding to the same station as the provided sitelog, and will take the start and end time of each proceeded file and use them to extract the right station instrumentation from the sitelog.
+* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
+loop the rinex files list to modifiy the file's header. It then write them back to Hanakata
+compressed format in an output folder. It permits also to rename the files changing
+the four first characters of the file name with another station code. It can write
+those files with the long name naming convention with the --longname option.
 
 * get_m3g_sitelogs.py will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder.
 
-* batch_rinexmod.py will read a folder and extract rinex files, or read directly a file containing a list of rinex files. It will then identify the corresponding sitelogs, and launch rinexmod.py for each of the sitelog and station rinex file pairs. It can also launch get_m3g_sitelogs.py as an option to be sure to use last sitelogs version.
-
-* crzmeta.py will extract rinex file's header information and prompt the result. This permits to access quickly the header information without uncompressing manually the file.
+* crzmeta.py will extract rinex file's header information and prompt the result. This permits to access quickly the header informations without uncompressing manually the file. It's a teqc-free equivalent of teqc +meta.
 
 # rinexmod.py
 
@@ -24,12 +26,11 @@ Two ways of passing parameters to modifiy headers are possible:
                       Acceptable_keywords are : station, receiver_serial, receiver_type, receiver_fw,
                       antenna_serial, antenna_type, antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
                       antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
-                      operator, agency, observables
+                      operator, agency, observables.
 
-
-* --sitelog  : you pass a sitelog file. The script will treat only files corresponding to
-               the same station as the provided sitelog. You then have to pass a list
-               of files comming from the right station. If not, they will be rejected.
+* --sitelog  : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
+               containing sitelogs. You then have to pass a list of files and the script will
+               assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
                and use them to extract from the sitelog the station instrumentation
                of the corresponding period and fill file's header with following infos :
@@ -51,46 +52,59 @@ Two ways of passing parameters to modifiy headers are possible:
 
 You can not provide both --modification_kw and --sitelog options.
 
+The script will add two comment lines, one indicating the source of the modifiaction
+(sitelog or arguments) and the other the timestamp of the modification.
+
 USE :
 
-* RINEXLIST : Rinex list file
-* OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory argument, you can not modify files inplace.
+RINEXLIST : Rinex list file
+OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory
+argument, you can not modify files inplace.
 
 OPTIONS :
 
 * -k : --modification_kw :    Header fields that you want to modify.
 * -s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
-                              instrumentation informations, or folder containing sitelogs.
-                              The sitelogs must be valid as the script does not check it.
+                            instrumentation informations, or folder containing sitelogs.
+                            The sitelogs must be valid as the script does not check it.
 * -f : --force :              Force appliance of sitelog based header arguments when
-                              station name within file does not correspond to sitelog.
+                            station name within file does not correspond to sitelog.
 * -i : --ignore :             Ignore firmware changes between instrumentation periods
-                              when getting headers args info from sitelogs.
+                            when getting headers args info from sitelogs.
 * -m : --marker :             A four characater station code that will be used to rename
-                              input files.
+                            input files.
 * -n : --ninecharfile :       path a of a list file containing 9-char. site names from
-                              the M3G database generated with get_m3g_stations.
-                              Not mandatory, but nessessary to get the country code to rename
-                              files to long name standard. If not provided the country code will be XXX.
-* -a : --alone :              Option to provide if you want to run this script on a lone
-                              rinex file and not on a list of files.
-* -c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
-                              to fit IGS standards), 'Z'. Default value will retrieve
-                              the actual compression of the input file.
+                            the M3G database generated with get_m3g_stations.
+                            This will be used for longname file's renaming.
 * -l : --longname             Rename file using long name rinex convention.
+                            Not mandatory, but nessessary to get the country code to rename
+                            files to long name standard. If not provided the country code will be XXX.
+* -a : --alone :               Option to provide if you want to run this script on a alone
+                            rinex file and not on a list of files.
+* -c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
+                            to fit IGS standards), 'Z'. Default value will retrieve
+                            the actual compression of the input file.
 * -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
-                              part of the path that is common to all files in the list and
-                              that will be replaced with output folder.
+                            part of the path that is common to all files in the list and
+                            that will be replaced with output folder.
+* -o : --output_logs :        Folder where to write output log. If not provided, logs
+                            will be written to OUTPUTFOLDER.
+* -w : --write :              Write (rinex version, sample rate, file period, observatory)
+                            dependant output lists to log folder.
 * -v : --verbose:             Will prompt file's metadata before and after modifications.
 
 EXAMPLES:
 
-./rinexmod.py  RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-s) (-r /ROOTFOLDER/) (-v)
-./rinexmod.py  RINEXLIST OUTPUTFOLDER (-l ./sitelogsfolder/stationsitelog.log) (-m AGAL) (-s) (-r /ROOTFOLDER/) (-f) (-i) (-v)
+ ./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+ ./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+
 
 # get_m3g_sitelogs.py
 
-This script will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder set in 'observatories'.
+This script will get last version of sitelogs from M3G repository and write them
+in an observatory dependent subfolder set in 'observatories'.
+The -d --delete option will delete old version as to get only last version even
+in a name changing case.
 
 USE :
 
@@ -104,39 +118,27 @@ EXAMPLE:
 
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 
-# batch_rinexmod.py
-
-This script will read a folder and extract rinex files, or read directly a file containing a list of files. For each of those files, it will lauch rinexmod function, that will fill the file's header with informations gathered from the corresponding sitelog, read in the 'sitelogsfolder' folder.
-Sitelogs can be updated during the process using --update option. The corrected files will be written to 'outputfolder' folder, and subfolders will be reconstructed. The part of the path that is common to all files must be indictaed in 'reconstruct' and this part of the path will be replaced with output folder.
-All those 3 variables ('sitelogsfolder', 'outputfolder' and 'reconstruct') are stored in the batch_rinexmod.cfg ini file.
-
-USE:
-
-* RINEXFOLDER : folder where rinexfiles will be scanned.
-* RINEXLIST : list of rinex files.
-
-OPTION :
-
-* -u : update : Update sitelogs in corresponding folder using get_m3g_sitelogs.py script.
-
-EXAMPLES:
-
-	./batch_rinexmod.py  RINEXLIST (-u)
-	./batch_rinexmod.py  RINEXFOLDER (-u)
 
 # crzmeta.py
 
-The script will permit to extract a crz file's metadata.
+Extract metadata from crz file.
 
-USE :
+With -p option, will plot the file's samples intervals
 
-	./crzmeta.py RINEXFILE
+EXAMPLE:
+./crzmeta.py  RINEXFILE (-p)
 
 # Requirements
 
-The tool is in Python 3, you must have it installed on your machine. Install Hatanaka for RINEX decompression.
+The tool is in Python 3, you must have it installed on your machine.
+
+You need Python Hatanaka library from Martin Valgur:
 
  pip install hatanaka
+
+You need matplotlib for plotting samples intervals with crzmeta
+
+ pip install matplotlib
 
 # rinexmod error messages
 
