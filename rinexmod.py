@@ -308,16 +308,17 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             return
 
     ### Get the 4 char > 9 char dictionnary from the input list
+    nine_char_dict = dict() # in any case, nine_char_dict is initialized
     if ninecharfile:
         if not os.path.isfile(ninecharfile):
             print('# ERROR : The specified 9-chars. list file does not exists : ' + ninecharfile)
             return
         with open(ninecharfile,"r")  as F:
             nine_char_list = F.readlines()
-            nine_char_dict = dict()
-
+        
         for site_key in nine_char_list:
             nine_char_dict[site_key[:4].lower()] = site_key.strip()
+        
 
     ### Check that the provided marker is a 4-char station name
     if marker and len(marker) != 4:
@@ -376,43 +377,41 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             # We store the old marker name to add a comment in rinex file's header
             modification_source = rinexfileobj.filename[:4]
             # We set the station in the filename to the new marker
-            if rinexfileobj.name_conv == 'SHORT':
+            if rinexfileobj.name_conv == 'SHORT': ### short name case
                 rinexfileobj.filename = marker.lower() + rinexfileobj.filename[4:]
-            else:
+            else: ### long name case
                 rinexfileobj.filename = marker.upper() + rinexfileobj.filename[4:]
 
         if longname:
             # We rename the file to the rinex long name convention
             # Get the site 9-char name
-            if ninecharfile:
-                if not rinexfileobj.filename[:4].lower() in nine_char_dict:
-                    logger.warning('{:110s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
-                    site = rinexfileobj.filename[:4].upper() + "00XXX"
-                else:
-                    site = nine_char_dict[rinexfileobj.filename[:4].lower()].upper()
-            # elif sitelog: # XXXXXXX probleme si multiples sitelogs
-            #     site = os.path.basename(sitelog)[:9].upper()
-            else:
+            if not ninecharfile or not rinexfileobj.get_site_from_filename('lower',True) in nine_char_dict:
                 logger.warning('{:110s} - {}'.format('32 - Station\'s country not retrevied, will not be properly renamed', file))
-                site = rinexfileobj.filename[:4].upper() + "00XXX"
-
-            if rinexfileobj.file_period == '01D':
-                if rinexfileobj.session:
-                    timeformat = '%Y%j%H%M'
-                else:
-                    timeformat = '%Y%j0000' # Start of the day
+                monum_country = "00XXX"
             else:
-                timeformat = '%Y%j%H00' # Start of the hour
-            # timeformat = '%Y%j%H%M' # Compliant to the longname convention
+                monum_country = nine_char_dict[rinexfileobj.get_site_from_filename('lower',True)].upper()[4:]
+                
+                
+            rinexfileobj.get_longname(monum_country,inplace=True)
 
-            data_source = "R" # we just consider receiver as data source for  the moment
 
-            rinexfileobj.filename = '_'.join((site.upper(),
-                                              data_source,
-                                              rinexfileobj.start_date.strftime(timeformat),
-                                              rinexfileobj.file_period,
-                                              rinexfileobj.sample_rate,
-                                              rinexfileobj.observable_type + 'O.rnx')) # O for observation
+            # if rinexfileobj.file_period == '01D':
+            #     if rinexfileobj.session:
+            #         timeformat = '%Y%j%H%M'
+            #     else:
+            #         timeformat = '%Y%j0000' # Start of the day
+            # else:
+            #     timeformat = '%Y%j%H00' # Start of the hour
+            # # timeformat = '%Y%j%H%M' # Compliant to the longname convention
+
+            # data_source = "R" # we just consider receiver as data source for  the moment
+
+            # rinexfileobj.filename = '_'.join((site.upper(),
+            #                                   data_source,
+            #                                   rinexfileobj.start_date.strftime(timeformat),
+            #                                   rinexfileobj.file_period,
+            #                                   rinexfileobj.sample_rate,
+            #                                   rinexfileobj.observable_type + 'O.rnx')) # O for observation
 
             if not compression:
                 # If not specified, we set compression to gz when file changed to longname
@@ -422,7 +421,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
             # Station name from the rinex's header line
             # station_meta = rinexfileobj.get_station().lower()[:4]
-            station_meta = rinexfileobj.filename[:4].lower()
+            station_meta = rinexfileobj.get_site_from_filename('lower',True)
 
             if verbose:
                 logger.info('Searching corresponding sitelog for station : ' + station_meta)
