@@ -397,7 +397,7 @@ class RinexFile:
     def get_metadata(self):
         """
         Returns a printable, with carriage-return, string of metadata lines from
-        the header
+        the header, and a python dict of the same information.
         """
 
         if self.status not in [0,2]:
@@ -456,7 +456,6 @@ class RinexFile:
         metadata_string = '\n'.join(['{:29} : {}'.format(key, value) for key, value in metadata_parsed.items()])
 
         metadata_string = '\n' + metadata_string + '\n'
-
 
         return metadata_string, metadata_parsed
 
