@@ -237,8 +237,8 @@ class RinexFile:
         Samples_stack = []
 
         for line in self.rinex_data: # We get all the epochs dates
-            if  m := re.search(date_pattern, line):
-                Samples_stack.append(m)
+            if re.search(date_pattern, line):
+                Samples_stack.append(re.search(date_pattern, line))
 
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
@@ -513,38 +513,38 @@ class RinexFile:
         station_meta = station_meta.split(' ')[0].upper()
 
         return station_meta
-    
+
     def get_site_from_filename(self,case='lower',only_4char=False):
-        
+
         """ Getting site name from the filename """
 
         if only_4char:
             cut = 4
         else:
             cut = None
-            
+
         if case == 'lower':
             return self.filename[:cut].lower()
         elif case == 'upper':
             return self.filename[:cut].upper()
-                    
-        
-    
-    
+
+
+
+
     def get_longname(self,
                      monum_country = "00XXX",
                      data_source="R",
                      ext='.rnx',
                      inplace=False):
-        
+
         """
         generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
         """
-        
+
         site_9char = self.get_site_from_filename('upper',True) + monum_country
-        
-        
+
+
         if self.file_period == '01D':
             if self.session:
                 timeformat = '%Y%j%H%M'
@@ -559,38 +559,38 @@ class RinexFile:
                              self.file_period,
                              self.sample_rate,
                              self.observable_type + 'O' + ext)) # O for observation
-            
+
         if inplace:
             self.filename = longname
-                    
+
         return longname
-                    
-            
-            
+
+
+
     def get_shortname(self,inplace=False):
-        
+
         """
         generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
         """
-        
+
         site_4char = self.get_site_from_filename('lower',True)
-        
+
         if self.file_period == '01D':
-            timeformat = '%j0.%yo' 
+            timeformat = '%j0.%yo'
         else:
             Alphabet = list(map(chr, range(97, 123)))
             timeformat = '%j' + Alphabet[self.start_date.hour] + '.%yo'  # Start of the hour
 
         shortname = site_4char + self.start_date.strftime(timeformat)
-    
+
         if inplace:
             self.filename = shortname
-                    
+
         return shortname
-    
-    
-    
+
+
+
 
     def set_marker(self, station):
 
