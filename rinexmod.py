@@ -413,10 +413,6 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             #                                   rinexfileobj.sample_rate,
             #                                   rinexfileobj.observable_type + 'O.rnx')) # O for observation
 
-            if not compression:
-                # If not specified, we set compression to gz when file changed to longname
-                this_compression = 'gz'
-
         if sitelog:
 
             # Station name from the rinex's header line
@@ -511,7 +507,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             rinexfileobj.add_comment('file assigned from {}'.format(modification_source))
 
         ##### We convert the file back to Hatanaka Compressed Rinex #####
-        if not compression:
+        if longname and not compression:
+            # If not specified, we set compression to gz when file changed to longname
+            this_compression = 'gz'
+        elif not compression:
             this_compression = rinexfileobj.compression
         else:
             this_compression = compression

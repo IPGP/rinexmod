@@ -514,6 +514,7 @@ class RinexFile:
 
         return station_meta
 
+
     def get_site_from_filename(self,case='lower',only_4char=False):
 
         """ Getting site name from the filename """
@@ -529,13 +530,7 @@ class RinexFile:
             return self.filename[:cut].upper()
 
 
-
-
-    def get_longname(self,
-                     monum_country = "00XXX",
-                     data_source="R",
-                     ext='.rnx',
-                     inplace=False):
+    def get_longname(self, monum_country = "00XXX", data_source="R", ext='.rnx', inplace=False):
 
         """
         generate the long RINEX filename
@@ -566,7 +561,6 @@ class RinexFile:
         return longname
 
 
-
     def get_shortname(self,inplace=False):
 
         """
@@ -588,8 +582,6 @@ class RinexFile:
             self.filename = shortname
 
         return shortname
-
-
 
 
     def set_marker(self, station):
