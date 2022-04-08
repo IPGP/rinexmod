@@ -70,7 +70,7 @@ class RinexFile:
             return None, None, 1
         # Daily or hourly, gz or Z compressed hatanaka file
         pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
-        pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}\.gz')
+        pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
 
         if pattern_shortname.match(os.path.basename(self.path)):
             name_conv = 'SHORT'
@@ -79,6 +79,7 @@ class RinexFile:
             name_conv = 'LONG'
             status = 0
         else:
+            print('rinex filename does not match a regular name: ' + os.path.basename(self.path))
             return None, None, 2
 
         try:
@@ -492,9 +493,9 @@ class RinexFile:
         return outputfile
 
 
-    def get_station(self):
+    def get_site_from_header(self):
 
-        """ Getting station name from the MARKER NAME line in rinex file's header """
+        """ Getting site name from the MARKER NAME line in rinex file's header """
 
         if self.status != 0:
             return ''
@@ -512,7 +513,84 @@ class RinexFile:
         station_meta = station_meta.split(' ')[0].upper()
 
         return station_meta
+    
+    def get_site_from_filename(self,case='lower',only_4char=False):
+        
+        """ Getting site name from the filename """
 
+        if only_4char:
+            cut = 4
+        else:
+            cut = None
+            
+        if case == 'lower':
+            return self.filename[:cut].lower()
+        elif case == 'upper':
+            return self.filename[:cut].upper()
+                    
+        
+    
+    
+    def get_longname(self,
+                     monum_country = "00XXX",
+                     data_source="R",
+                     ext='.rnx',
+                     inplace=False):
+        
+        """
+        generate the long RINEX filename
+        can be stored directly as filename attribute with inplace = True
+        """
+        
+        site_9char = self.get_site_from_filename('upper',True) + monum_country
+        
+        
+        if self.file_period == '01D':
+            if self.session:
+                timeformat = '%Y%j%H%M'
+            else:
+                timeformat = '%Y%j0000' # Start of the day
+        else:
+            timeformat = '%Y%j%H00' # Start of the hour
+
+        longname = '_'.join((site_9char.upper(),
+                             data_source,
+                             self.start_date.strftime(timeformat),
+                             self.file_period,
+                             self.sample_rate,
+                             self.observable_type + 'O' + ext)) # O for observation
+            
+        if inplace:
+            self.filename = longname
+                    
+        return longname
+                    
+            
+            
+    def get_shortname(self,inplace=False):
+        
+        """
+        generate the short RINEX filename
+        can be stored directly as filename attribute with inplace = True
+        """
+        
+        site_4char = self.get_site_from_filename('lower',True)
+        
+        if self.file_period == '01D':
+            timeformat = '%j0.%yo' 
+        else:
+            Alphabet = list(map(chr, range(97, 123)))
+            timeformat = '%j' + Alphabet[self.start_date.hour] + '.%yo'  # Start of the hour
+
+        shortname = site_4char + self.start_date.strftime(timeformat)
+    
+        if inplace:
+            self.filename = shortname
+                    
+        return shortname
+    
+    
+    
 
     def set_marker(self, station):
 
