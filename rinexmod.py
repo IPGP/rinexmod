@@ -315,10 +315,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             return
         with open(ninecharfile,"r")  as F:
             nine_char_list = F.readlines()
-        
+
         for site_key in nine_char_list:
             nine_char_dict[site_key[:4].lower()] = site_key.strip()
-        
+
 
     ### Check that the provided marker is a 4-char station name
     if marker and len(marker) != 4:
@@ -390,8 +390,8 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 monum_country = "00XXX"
             else:
                 monum_country = nine_char_dict[rinexfileobj.get_site_from_filename('lower',True)].upper()[4:]
-                
-                
+
+
             rinexfileobj.get_longname(monum_country,inplace=True)
 
 
@@ -459,7 +459,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             (fourchar_id, observable_type, agencies, receiver, antenna, antenna_pos, antenna_delta) = metadata_vars
 
             if verbose:
-                logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
+                logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
             # # Apply the modifications to the RinexFile object
             rinexfileobj.set_marker(fourchar_id)
@@ -474,7 +474,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         if modification_kw:
 
             if verbose:
-                logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
+                logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
             modification_source = 'command line'
 
@@ -501,7 +501,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             rinexfileobj.set_observable_type(modification_kw.get('observables'))
 
         if verbose:
-            logger.info('File Metadata :\n' + rinexfileobj.get_metadata())
+            logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
         # Adding comment in the header
         rinexfileobj.add_comment('rinexmoded on {}'.format(datetime.strftime(now, '%Y-%m-%d %H:%M')))

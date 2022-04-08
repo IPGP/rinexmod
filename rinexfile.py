@@ -319,7 +319,7 @@ class RinexFile:
             # XXU – Unspecified
             sample_rate_str = 'XXU'
 
-        return sample_rate_str,sample_rate
+        return sample_rate_str, sample_rate
 
 
     def _get_file_period(self):
@@ -453,11 +453,12 @@ class RinexFile:
         metadata_parsed['Start date and time'] = self.start_date
         metadata_parsed['Final date and time'] = self.end_date
 
-        metadata_parsed = '\n'.join(['{:29} : {}'.format(key, value) for key, value in metadata_parsed.items()])
+        metadata_string = '\n'.join(['{:29} : {}'.format(key, value) for key, value in metadata_parsed.items()])
 
-        metadata_parsed = '\n' + metadata_parsed + '\n'
+        metadata_string = '\n' + metadata_string + '\n'
 
-        return metadata_parsed
+
+        return metadata_string, metadata_parsed
 
 
     def write_to_path(self, path, compression = 'gz'):
