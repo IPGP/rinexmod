@@ -44,12 +44,13 @@ class RinexFile:
         self.path = rinexfile
         self.rinex_data, self.name_conv, self.status = self._load_rinex_data()
         self.size = self._get_size()
-        self.filename, self.compression = self._filename()
+        self.compression, self.hatanka_input = self._get_compression()
+        self.filename = self._filename()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
         self.sample_rate, self.sample_rate_numeric  = self._get_sample_rate(plot)
         self.file_period, self.session = self._get_file_period()
-        self.observable_type = self._get_observable_type()
+        self.sat_system = self._get_sat_system()
 
 
     def _load_rinex_data(self):
@@ -107,17 +108,59 @@ class RinexFile:
         return size
 
 
+    def _get_compression(self):
+        """
+        get the compression type (compress,hatanaka)
+        compress is a string: gz, Z, 7z
+        hatanaka is a bool 
+        """
+        
+        basename = os.path.basename(self.path)
+       
+        if basename.lower().endswith('z'):
+            compress = os.path.splitext(basename)[1][1:]
+        else:
+            compress = None
+                
+        if self.name_conv == "SHORT":
+            
+            if compress:
+                type_letter = basename.split('.')[-2][-1]
+            else:
+                type_letter = basename[-1]
+                
+            if type_letter == "d":
+                hatanaka = True
+            else:
+                hatanaka = False
+    
+        else: ### LONG name
+            if compress:
+                type_ext = basename.split('.')[-2][-3:]
+            else:
+                type_ext = basename[-3:]
+                
+            if type_ext == "crx":
+                hatanaka = True
+            else:
+                hatanaka = False          
+                
+        return compress , hatanaka 
+
+
     def _filename(self):
         """ Get filename and compression extension """
 
         if self.status != 0:
-            return None, None
-
-        basename = os.path.splitext(os.path.basename(self.path))
-        filename = basename[0]
-        compression = basename[-1][1:]
-
-        return filename, compression
+            return None
+        
+        if not self.compression:
+            filename = os.path.basename(self.path)
+        else:
+            basename = os.path.splitext(os.path.basename(self.path))
+            filename = basename[0]
+            
+        return filename
 
 
     def _get_version(self):
@@ -164,7 +207,8 @@ class RinexFile:
         # Getting end date
         if self.version[0] == '3':
             # Pattern of an observation line containing a date
-            date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            ## date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            date_pattern = re.compile('> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
             # Searching the last one of the file
             for line in reversed(self.rinex_data):
                 m = re.search(date_pattern, line)
@@ -191,6 +235,7 @@ class RinexFile:
         end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
 
         return start_meta, end_meta
+
 
 
     def _get_sample_rate(self, plot=False):
@@ -226,7 +271,8 @@ class RinexFile:
         # Date lines pattern
         if self.version[0] == '3':
             # Pattern of an observation line containing a date - RINEX 3
-            date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            #date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            date_pattern = re.compile('> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
             year_prefix = "" # Prefix of year for date formatting
 
         elif self.version[0] == '2':
@@ -277,7 +323,6 @@ class RinexFile:
 
         if plot:
             print('{:29} : {}'.format('Sample intervals not nominals', str(non_nominal_interval_percent * 100) + ' %'))
-            print()
             plt.plot(Samples_rate_diff)
             plt.show()
 
@@ -358,20 +403,20 @@ class RinexFile:
         return file_period, session
 
 
-    def _get_observable_type(self):
-        """ Parse RINEX VERSION / TYPE line to get observable tpye """
+    def _get_sat_system(self):
+        """ Parse RINEX VERSION / TYPE line to get observable type """
 
         if self.status != 0:
             return None
 
         # Identify line that contains RINEX VERSION / TYPE
-        observable_type_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE')
-        observable_type_meta = self.rinex_data[observable_type_header_idx]
+        sat_system_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE')
+        sat_system_meta = self.rinex_data[sat_system_header_idx]
         # Parse line
-        observable_type = observable_type_meta[40:41]
+        sat_system = sat_system_meta[40:41]
 
-        return observable_type
-
+        return sat_system
+    
 
     def __str__(self):
         """
@@ -534,15 +579,44 @@ class RinexFile:
     def get_longname(self,
                      monum_country = "00XXX",
                      data_source="R",
-                     ext='.rnx',
+                     obs_type = 'O',
+                     ext='auto',
+                     compression='auto',
+
                      inplace=False):
         
         """
         generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
+        
+        ext : 
+            'auto' (based on the RinexFile attribute) or manual : 'rnx' or 'crx'
+            is given without dot as 1st character
+
+        compression : 
+            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
+            is given without dot as 1st character
         """
         
         site_9char = self.get_site_from_filename('upper',True) + monum_country
+        
+        if ext == "auto" and self.hatanka_input:
+            ext = 'crx'
+        elif ext == "auto" and not self.hatanka_input:
+            ext = 'rnx'
+        else:
+            ext = 'rnx'
+            
+        ext = '.' + ext
+        
+        if compression == 'auto' and self.compression:
+            compression = '.' + self.compression
+        elif compression == 'auto' and not self.compression:
+            compression = ''
+        else: ## when a manual compression arg is given
+            compression = '.' + compression
+        
+            
         
         
         if self.file_period == '01D':
@@ -558,8 +632,7 @@ class RinexFile:
                              self.start_date.strftime(timeformat),
                              self.file_period,
                              self.sample_rate,
-                             self.observable_type + 'O' + ext)) # O for observation
-            
+                             self.sat_system + obs_type + ext + compression)) 
         if inplace:
             self.filename = longname
                     
@@ -567,20 +640,38 @@ class RinexFile:
                     
             
             
-    def get_shortname(self,inplace=False):
+    def get_shortname(self,
+                      file_type='auto',
+                      compression='auto',
+                      inplace=False):
         
         """
         generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
+        file_type : 
+            'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
+        compression : 
+            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
+            is given without dot as 1st character
         """
+        
+        if file_type == 'auto' and self.hatanka_input:
+            file_type = 'd'
+        elif  file_type == 'auto' and not self.hatanka_input:
+            file_type = 'o'        
+            
+        if compression == 'auto':
+            compression = self.compression
         
         site_4char = self.get_site_from_filename('lower',True)
         
+        compression = '.' + compression
+        
         if self.file_period == '01D':
-            timeformat = '%j0.%yo' 
+            timeformat = '%j0.%y' + file_type + compression
         else:
             Alphabet = list(map(chr, range(97, 123)))
-            timeformat = '%j' + Alphabet[self.start_date.hour] + '.%yo'  # Start of the hour
+            timeformat = '%j' + Alphabet[self.start_date.hour] + '.%y' + file_type + compression
 
         shortname = site_4char + self.start_date.strftime(timeformat)
     
@@ -820,26 +911,26 @@ class RinexFile:
         return
 
 
-    def set_observable_type(self, observable_type):
+    def set_sat_system(self, sat_system):
 
         if self.status != 0:
             return
 
-        if not observable_type:
+        if not sat_system:
             return
 
         # Identify line that contains RINEX VERSION / TYPE
-        observable_type_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE')
-        observable_type_meta = self.rinex_data[observable_type_header_idx]
+        sat_system_header_idx = search_idx_value(self.rinex_data,'RINEX VERSION / TYPE')
+        sat_system_meta = self.rinex_data[sat_system_header_idx]
         # Parse line
-        rinex_ver_meta = observable_type_meta[0:9]
-        type_of_rinex_file_meta = observable_type_meta[20:40]
-        # observable_type_meta = observable_type_meta[40:60]
-        label = observable_type_meta[60:]
+        rinex_ver_meta = sat_system_meta[0:9]
+        type_of_rinex_file_meta = sat_system_meta[20:40]
+        # sat_system_meta = sat_system_meta[40:60]
+        label = sat_system_meta[60:]
         # Edit line
-        if '+' in observable_type:
-            observable_type = 'MIXED'
-            observable_type_code = 'M'
+        if '+' in sat_system:
+            sat_system = 'MIXED'
+            sat_system_code = 'M'
         else:
             gnss_codes = {
                           'GPS': 'G',
@@ -851,16 +942,16 @@ class RinexFile:
                           'SBAS' : 'S',
                           'MIXED' : 'M'
                           }
-            observable_type_code = gnss_codes.get(observable_type)
+            sat_system_code = gnss_codes.get(sat_system)
 
-            if not observable_type_code:
-                observable_type_code = observable_type
-                observable_type = ''
+            if not sat_system_code:
+                sat_system_code = sat_system
+                sat_system = ''
 
-        observable_type_meta = observable_type_code[0] + ' : ' + observable_type[:16].ljust(16)
-        new_line = rinex_ver_meta + ' ' * 11 + type_of_rinex_file_meta + observable_type_meta + label
+        sat_system_meta = sat_system_code[0] + ' : ' + sat_system[:16].ljust(16)
+        new_line = rinex_ver_meta + ' ' * 11 + type_of_rinex_file_meta + sat_system_meta + label
         # Set line
-        self.rinex_data[observable_type_header_idx] = new_line
+        self.rinex_data[sat_system_header_idx] = new_line
 
         return
 
