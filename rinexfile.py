@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
+
 def search_idx_value(data, field):
     """
     find the index (line number) of a researched filed in the RINEX data
@@ -51,6 +52,27 @@ class RinexFile:
         self.sample_rate, self.sample_rate_numeric  = self._get_sample_rate(plot)
         self.file_period, self.session = self._get_file_period()
         self.sat_system = self._get_sat_system()
+
+
+    def __str__(self):
+        """
+        Defnies a print method for the rinex file object. Will print all the
+        header, plus 20 lines of data, plus the number of not printed lines.
+        """
+        if self.rinex_data == None:
+            return ''
+
+        # We get header
+        end_of_header_idx = search_idx_value(self.rinex_data,'END OF HEADER') + 1
+        str_RinexFile = self.rinex_data[0:end_of_header_idx]
+        # We add 20 lines of data
+        str_RinexFile.extend(self.rinex_data[end_of_header_idx:end_of_header_idx + 20])
+        # We add a line that contains the number of lines not to be printed
+        lengh = len(self.rinex_data) - len(str_RinexFile) -20
+        cutted_lines_rep = ' ' * 20 + '[' + '{} lines hidden'.format(lengh).center(40, '.') + ']' + ' ' * 20
+        str_RinexFile.append(cutted_lines_rep)
+
+        return '\n'.join(str_RinexFile)
 
 
     def _load_rinex_data(self):
@@ -112,40 +134,40 @@ class RinexFile:
         """
         get the compression type (compress,hatanaka)
         compress is a string: gz, Z, 7z
-        hatanaka is a bool 
+        hatanaka is a bool
         """
-        
+
         basename = os.path.basename(self.path)
-       
+
         if basename.lower().endswith('z'):
             compress = os.path.splitext(basename)[1][1:]
         else:
             compress = None
-                
+
         if self.name_conv == "SHORT":
-            
+
             if compress:
                 type_letter = basename.split('.')[-2][-1]
             else:
                 type_letter = basename[-1]
-                
+
             if type_letter == "d":
                 hatanaka = True
             else:
                 hatanaka = False
-    
+
         else: ### LONG name
             if compress:
                 type_ext = basename.split('.')[-2][-3:]
             else:
                 type_ext = basename[-3:]
-                
+
             if type_ext == "crx":
                 hatanaka = True
             else:
-                hatanaka = False          
-                
-        return compress , hatanaka 
+                hatanaka = False
+
+        return compress , hatanaka
 
 
     def _filename(self):
@@ -153,13 +175,13 @@ class RinexFile:
 
         if self.status != 0:
             return None
-        
+
         if not self.compression:
             filename = os.path.basename(self.path)
         else:
             basename = os.path.splitext(os.path.basename(self.path))
             filename = basename[0]
-            
+
         return filename
 
 
@@ -235,7 +257,6 @@ class RinexFile:
         end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
 
         return start_meta, end_meta
-
 
 
     def _get_sample_rate(self, plot=False):
@@ -418,27 +439,6 @@ class RinexFile:
         sat_system = sat_system_meta[40:41]
 
         return sat_system
-    
-
-    def __str__(self):
-        """
-        Defnies a print method for the rinex file object. Will print all the
-        header, plus 20 lines of data, plus the number of not printed lines.
-        """
-        if self.rinex_data == None:
-            return ''
-
-        # We get header
-        end_of_header_idx = search_idx_value(self.rinex_data,'END OF HEADER') + 1
-        str_RinexFile = self.rinex_data[0:end_of_header_idx]
-        # We add 20 lines of data
-        str_RinexFile.extend(self.rinex_data[end_of_header_idx:end_of_header_idx + 20])
-        # We add a line that contains the number of lines not to be printed
-        lengh = len(self.rinex_data) - len(str_RinexFile) -20
-        cutted_lines_rep = ' ' * 20 + '[' + '{} lines hidden'.format(lengh).center(40, '.') + ']' + ' ' * 20
-        str_RinexFile.append(cutted_lines_rep)
-
-        return '\n'.join(str_RinexFile)
 
 
     def get_metadata(self):
@@ -507,39 +507,6 @@ class RinexFile:
         return metadata_string, metadata_parsed
 
 
-    def write_to_path(self, path, compression = 'gz'):
-        """
-        Will turn rinex_data from list to string, utf-8, then compress as hatanaka
-        and zip to the 'compression' format, then write to file. The 'compression' param
-        will be used as an argument to hatanaka.compress and for naming the output file.
-        Available compressions are those of hatanaka compress function :
-        'gz' (default), 'bz2', 'Z', or 'none'
-        """
-
-        if self.status != 0:
-            return
-
-        output_data = '\n'.join(self.rinex_data).encode('utf-8')
-        output_data = hatanaka.compress(output_data, compression = compression)
-
-        ### manage compressed extension
-        if "rnx" in self.filename:
-            filename_out = self.filename.replace("rnx","crx")
-        elif ".o" in self.filename:
-            filename_out = self.filename.replace(".o",".d")
-        else:
-            filename_out = self.filename
-
-        if compression == 'none':
-            outputfile = os.path.join(path, filename_out)
-        else:
-            outputfile = os.path.join(path, filename_out + '.' + compression)
-
-        Path(outputfile).write_bytes(output_data)
-
-        return outputfile
-
-
     def get_site_from_header(self):
 
         """ Getting site name from the MARKER NAME line in rinex file's header """
@@ -575,40 +542,34 @@ class RinexFile:
             return self.filename[:cut].lower()
         elif case == 'upper':
             return self.filename[:cut].upper()
-    
-    def get_longname(self,
-                     monum_country = "00XXX",
-                     data_source="R",
-                     obs_type = 'O',
-                     ext='auto',
-                     compression='auto',
 
-                     inplace=False):
-        
+
+    def get_longname(self, monum_country="00XXX", data_source="R", obs_type='O', ext='auto', compression='auto', inplace=False):
+
         """
         generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
-        
-        ext : 
+
+        ext :
             'auto' (based on the RinexFile attribute) or manual : 'rnx' or 'crx'
             is given without dot as 1st character
 
-        compression : 
+        compression :
             'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
             is given without dot as 1st character
         """
 
         site_9char = self.get_site_from_filename('upper',True) + monum_country
-        
+
         if ext == "auto" and self.hatanka_input:
             ext = 'crx'
         elif ext == "auto" and not self.hatanka_input:
             ext = 'rnx'
         else:
             ext = 'rnx'
-            
+
         ext = '.' + ext
-        
+
         if compression == 'auto' and self.compression:
             compression = '.' + self.compression
         elif compression == 'auto' and not self.compression:
@@ -629,27 +590,23 @@ class RinexFile:
                              self.start_date.strftime(timeformat),
                              self.file_period,
                              self.sample_rate,
-                             self.sat_system + obs_type + ext + compression)) 
+                             self.sat_system + obs_type + ext + compression))
 
         if inplace:
             self.filename = longname
 
         return longname
 
-            
-            
-    def get_shortname(self,
-                      file_type='auto',
-                      compression='auto',
-                      inplace=False):
+
+    def get_shortname(self, file_type='auto', compression='auto', inplace=False):
         """
         generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
-        
-        file_type : 
+
+        file_type :
             'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
-            
-        compression : 
+
+        compression :
             'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
             is given without dot as 1st character
         """
@@ -657,17 +614,17 @@ class RinexFile:
         if file_type == 'auto' and self.hatanka_input:
             file_type = 'd'
         elif  file_type == 'auto' and not self.hatanka_input:
-            file_type = 'o'        
-            
+            file_type = 'o'
+
         if compression == 'auto':
             compression = self.compression
-        
+
         site_4char = self.get_site_from_filename('lower',True)
-        
+
         compression = '.' + compression
-        
+
         print(self.file_period)
-        
+
         if self.file_period == '01D':
             timeformat = '%j0.%y' + file_type + compression
         else:
@@ -969,3 +926,36 @@ class RinexFile:
         self.rinex_data.insert(last_comment_idx + 1, new_line)
 
         return
+
+
+    def write_to_path(self, path, compression = 'gz'):
+        """
+        Will turn rinex_data from list to string, utf-8, then compress as hatanaka
+        and zip to the 'compression' format, then write to file. The 'compression' param
+        will be used as an argument to hatanaka.compress and for naming the output file.
+        Available compressions are those of hatanaka compress function :
+        'gz' (default), 'bz2', 'Z', or 'none'
+        """
+
+        if self.status != 0:
+            return
+
+        output_data = '\n'.join(self.rinex_data).encode('utf-8')
+        output_data = hatanaka.compress(output_data, compression = compression)
+
+        ### manage compressed extension
+        if "rnx" in self.filename:
+            filename_out = self.filename.replace("rnx","crx")
+        elif ".o" in self.filename:
+            filename_out = self.filename.replace(".o",".d")
+        else:
+            filename_out = self.filename
+
+        if compression == 'none':
+            outputfile = os.path.join(path, filename_out)
+        else:
+            outputfile = os.path.join(path, filename_out + '.' + compression)
+
+        Path(outputfile).write_bytes(output_data)
+
+        return outputfile
