@@ -283,12 +283,13 @@ class RinexFile:
         Samples_stack = []
 
         for line in self.rinex_data: # We get all the epochs dates
-            if  m := re.search(date_pattern, line):
-                Samples_stack.append(m)
-
+            if re.search(date_pattern, line):
+                Samples_stack.append(re.search(date_pattern, line))
+                
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
             self.status = 5
+            print("# ERROR: _get_sample_rate: less than 2 samples found, , can't get a sample rate",Samples_stack)
             return None,None
 
         # Building a date string
@@ -307,6 +308,7 @@ class RinexFile:
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = 5
+            print("# ERROR: _get_sample_rate: less than one interval after removing 0 values",Samples_rate_diff)
             return None,None
 
         # If less than 2 intervals, can't compare intervals
@@ -648,8 +650,10 @@ class RinexFile:
         """
         generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
+        
         file_type : 
             'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
+            
         compression : 
             'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
             is given without dot as 1st character
@@ -666,6 +670,8 @@ class RinexFile:
         site_4char = self.get_site_from_filename('lower',True)
         
         compression = '.' + compression
+        
+        print(self.file_period)
         
         if self.file_period == '01D':
             timeformat = '%j0.%y' + file_type + compression
