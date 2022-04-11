@@ -285,7 +285,7 @@ class RinexFile:
         for line in self.rinex_data: # We get all the epochs dates
             if re.search(date_pattern, line):
                 Samples_stack.append(re.search(date_pattern, line))
-                
+
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
             self.status = 5
@@ -366,7 +366,7 @@ class RinexFile:
             # XXU – Unspecified
             sample_rate_str = 'XXU'
 
-        return sample_rate_str,sample_rate
+        return sample_rate_str, sample_rate
 
 
     def _get_file_period(self):
@@ -444,7 +444,7 @@ class RinexFile:
     def get_metadata(self):
         """
         Returns a printable, with carriage-return, string of metadata lines from
-        the header
+        the header, and a python dict of the same information.
         """
 
         if self.status not in [0,2]:
@@ -500,11 +500,11 @@ class RinexFile:
         metadata_parsed['Start date and time'] = self.start_date
         metadata_parsed['Final date and time'] = self.end_date
 
-        metadata_parsed = '\n'.join(['{:29} : {}'.format(key, value) for key, value in metadata_parsed.items()])
+        metadata_string = '\n'.join(['{:29} : {}'.format(key, value) for key, value in metadata_parsed.items()])
 
-        metadata_parsed = '\n' + metadata_parsed + '\n'
+        metadata_string = '\n' + metadata_string + '\n'
 
-        return metadata_parsed
+        return metadata_string, metadata_parsed
 
 
     def write_to_path(self, path, compression = 'gz'):
@@ -560,23 +560,21 @@ class RinexFile:
         station_meta = station_meta.split(' ')[0].upper()
 
         return station_meta
-    
+
+
     def get_site_from_filename(self,case='lower',only_4char=False):
-        
+
         """ Getting site name from the filename """
 
         if only_4char:
             cut = 4
         else:
             cut = None
-            
+
         if case == 'lower':
             return self.filename[:cut].lower()
         elif case == 'upper':
             return self.filename[:cut].upper()
-                    
-        
-    
     
     def get_longname(self,
                      monum_country = "00XXX",
@@ -599,7 +597,7 @@ class RinexFile:
             'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
             is given without dot as 1st character
         """
-        
+
         site_9char = self.get_site_from_filename('upper',True) + monum_country
         
         if ext == "auto" and self.hatanka_input:
@@ -617,10 +615,7 @@ class RinexFile:
             compression = ''
         else: ## when a manual compression arg is given
             compression = '.' + compression
-        
-            
-        
-        
+
         if self.file_period == '01D':
             if self.session:
                 timeformat = '%Y%j%H%M'
@@ -635,18 +630,18 @@ class RinexFile:
                              self.file_period,
                              self.sample_rate,
                              self.sat_system + obs_type + ext + compression)) 
+
         if inplace:
             self.filename = longname
-                    
+
         return longname
-                    
+
             
             
     def get_shortname(self,
                       file_type='auto',
                       compression='auto',
                       inplace=False):
-        
         """
         generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
@@ -658,7 +653,7 @@ class RinexFile:
             'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
             is given without dot as 1st character
         """
-        
+
         if file_type == 'auto' and self.hatanka_input:
             file_type = 'd'
         elif  file_type == 'auto' and not self.hatanka_input:
@@ -680,14 +675,12 @@ class RinexFile:
             timeformat = '%j' + Alphabet[self.start_date.hour] + '.%y' + file_type + compression
 
         shortname = site_4char + self.start_date.strftime(timeformat)
-    
+
         if inplace:
             self.filename = shortname
-                    
+
         return shortname
-    
-    
-    
+
 
     def set_marker(self, station):
 
