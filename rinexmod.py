@@ -28,7 +28,7 @@ Two ways of passing parameters to modifiy headers are possible:
                        Receiver Type
                        Serial Number
                        Firmware Version
-                       Satellite System (will translate this info to one-letter code, see RinexFile.set_observable_type())
+                       Satellite System (will translate this info to one-letter code, see RinexFile.set_sat_system())
                        Antenna Type
                        Serial Number
                        Marker->ARP Up Ecc. (m)
@@ -465,7 +465,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             rinexfileobj.set_antenna_pos(**antenna_pos)
             rinexfileobj.set_antenna_delta(**antenna_delta)
             rinexfileobj.set_agencies(**agencies)
-            rinexfileobj.set_observable_type(observable_type)
+            rinexfileobj.set_sat_system(observable_type)
 
         if modification_kw:
 
@@ -494,7 +494,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             rinexfileobj.set_agencies(modification_kw.get('operator'),
                                       modification_kw.get('agency'))
 
-            rinexfileobj.set_observable_type(modification_kw.get('observables'))
+            rinexfileobj.set_sat_system(modification_kw.get('observables'))
 
         if verbose:
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
