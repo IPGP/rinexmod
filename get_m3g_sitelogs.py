@@ -11,6 +11,8 @@ This script will get last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
 The -d --delete option will delete old version as to get only last version even
 in a name changing case.
+The -o --obsevatory option will download sitelogs for the specified observatory
+only. Possible values : OVSM|OVSG|OVPF 
 USE :
 
 
@@ -21,14 +23,17 @@ OPTION :
 * -d : delete : Delete old sitelogs in storage folder. This permits to have only
                 the last version, as version changing sitelogs changes of name.
 
+* -o : observatory: A four character observatory ID that will be used to filter
+                    sitelogs to download. Valid values are : OVSM|OVSG|OVPF.
+
 EXAMPLE:
 
-./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
+./get_m3g_sitelogs.py OUTPUTFOLDER (-d) (-o OVSM|OVSG|OVPF)
 
 2021-10-18 FL
 """
 
-def get_m3g_sitelogs(sitelogsfolder, delete):
+def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None):
 
     # M3G country webservice. We use countries to filter IPGP's obs stations.
     country_url = 'https://gnss-metadata.eu/v1/sitelog/metadata-list?country='
@@ -38,6 +43,11 @@ def get_m3g_sitelogs(sitelogsfolder, delete):
     observatories = {'MTQ' : 'OVSM',
                      'GLP' : 'OVSG',
                      'REU' : 'OVPF'}
+
+    # If an observatory ID is given, only download its sitelogs
+    if observatory in observatories.values():
+        obs_key = list(observatories.keys())[list(observatories.values()).index(observatory)]
+        observatories = {obs_key: observatories[obs_key]}
 
     # Check that output folder exists
     if not os.path.exists(sitelogsfolder):
@@ -122,9 +132,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get all IPGP sitelogs in the last version for M3G repository')
     parser.add_argument('sitelogsfolder', type=str, help='Output folder where to store downloaded sitelogs')
     parser.add_argument('-d', '--delete', help='Delete old sitelogs in storage folder', action='store_true')
+    parser.add_argument('-o', '--observatory', help='Download sitelog for a single observatory (OVSM|OVSG|OVPF)',
+                        type=str, choices=['OVSM', 'OVSG', 'OVPF'], default=None)
 
     args = parser.parse_args()
     sitelogsfolder = args.sitelogsfolder
     delete = args.delete
+    observatory = args.observatory
 
-    get_m3g_sitelogs(sitelogsfolder, delete)
+    get_m3g_sitelogs(sitelogsfolder, delete, observatory)
