@@ -516,7 +516,12 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
         else:
             output_compression = compression
 
-        outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = output_compression)
+        # Writing output file
+        try:
+            outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = output_compression)
+        except hatanaka.hatanaka.HatanakaException:
+            logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', file))
+            continue
 
         if verbose:
             logger.info('Output file : ' + outputfile)
