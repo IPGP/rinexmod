@@ -564,7 +564,7 @@ if __name__ == '__main__':
 
     # Parsing Args
     parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
-    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process')
+    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process (see also -a/--alone for a single input file)')
     parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
     parser.add_argument('-s', '--sitelog', help='Get the rinex header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
     parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
