@@ -139,11 +139,13 @@ class RinexFile:
 
         basename = os.path.basename(self.path)
 
+        #### find compress
         if basename.lower().endswith('z'):
             compress = os.path.splitext(basename)[1][1:]
         else:
             compress = None
 
+        #### find hatanaka  
         if self.name_conv == "SHORT":
 
             if compress:
@@ -934,16 +936,24 @@ class RinexFile:
         and zip to the 'compression' format, then write to file. The 'compression' param
         will be used as an argument to hatanaka.compress and for naming the output file.
         Available compressions are those of hatanaka compress function :
-        'gz' (default), 'bz2', 'Z', or 'none'
+        'gz' (default), 'bz2', 'Z', 'none' (string, compliant with hatanaka module) or 
+        None (NoneType, compliant with the rinex object initialisation)
         """
 
         if self.status != 0:
             return
 
         output_data = '\n'.join(self.rinex_data).encode('utf-8')
-        output_data = hatanaka.compress(output_data, compression = compression)
+        
+        # make the compression compliant with hatanaka module
+        if not compression:
+            comp_htnk_inp = 'none'
+        else:
+            comp_htnk_inp = compression  
 
-        ### manage compressed extension
+        output_data = hatanaka.compress(output_data, compression = comp_htnk_inp)
+
+        ### manage hatanaka compression extension
         if "rnx" in self.filename:
             filename_out = self.filename.replace("rnx","crx")
         elif ".o" in self.filename:
@@ -951,7 +961,8 @@ class RinexFile:
         else:
             filename_out = self.filename
 
-        if compression == 'none':
+        ### manage low-level compression extension
+        if compression in ('none',None):
             outputfile = os.path.join(path, filename_out)
         else:
             outputfile = os.path.join(path, filename_out + '.' + compression)

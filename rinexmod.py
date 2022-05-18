@@ -69,7 +69,7 @@ OPTIONS :
 -a : --alone :               Option to provide if you want to run this script on a alone
                             rinex file and not on a list of files.
 -c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
-                            to fit IGS standards), 'Z'. Default value will retrieve
+                            to fit IGS standards), 'Z' or 'none'. Default value will retrieve
                             the actual compression of the input file.
 -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
                             part of the path that is common to all files in the list and
@@ -508,14 +508,14 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
         ##### We convert the file back to Hatanaka Compressed Rinex #####
         if longname and not compression:
-            # If not specified, we set compression to gz when file changed to longname
-            this_compression = 'gz'
+            # If not specified, we force compression to gz when file changed to longname
+            used_compression = 'gz'
         elif not compression:
-            this_compression = rinexfileobj.compression
+            used_compression = rinexfileobj.compression
         else:
-            this_compression = compression
+            used_compression = compression
 
-        outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = this_compression)
+        outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = used_compression)
 
         if verbose:
             logger.info('Output file : ' + outputfile)
@@ -574,7 +574,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker', type=str, default=0)
     parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
-    parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\')', default=0)
+    parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)
     parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention', action='store_true', default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
