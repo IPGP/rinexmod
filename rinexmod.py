@@ -60,6 +60,7 @@ OPTIONS :
                             when getting headers args info from sitelogs.
 -m : --marker :             A four characater station code that will be used to rename
                             input files.
+                            (does not apply to the header\'s MARKER NAME)
 -n : --ninecharfile :       path a of a list file containing 9-char. site names from
                             the M3G database generated with get_m3g_stations.
                             This will be used for longname file's renaming.
@@ -500,7 +501,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
         # Adding comment in the header
-        rinexfileobj.add_comment(("RinexMod","METADATA UPDATE"),add_pgm_cmt=True)
+        rinexfileobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
         rinexfileobj.add_comment('rinexmoded on {}'.format(datetime.strftime(now, '%Y-%m-%d %H:%M')))
         if sitelog or modification_kw:
             rinexfileobj.add_comment('rinexmoded from {}'.format(modification_source))
@@ -572,7 +573,7 @@ if __name__ == '__main__':
                                                            station, receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
                                                            operator, agency, observables''', nargs='*', action=ParseKwargs, default=0)
-    parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker', type=str, default=0)
+    parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker (does not apply to the header\'s MARKER NAME)', type=str, default=0)
     parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)

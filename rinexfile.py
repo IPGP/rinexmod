@@ -91,9 +91,13 @@ class RinexFile:
         # Checking if existing file
         if not os.path.isfile(self.path):
             return None, None, 1
+            
         # Daily or hourly, gz or Z compressed hatanaka file
-        pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
-        pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
+        # pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
+        
+        # Daily or hourly, hatanaka or not, gz or Z compressed file
+        pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
+        pattern_longname  = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
 
         if pattern_shortname.match(os.path.basename(self.path)):
             name_conv = 'SHORT'
@@ -132,8 +136,8 @@ class RinexFile:
 
     def _get_compression(self):
         """
-        get the compression type (compress,hatanaka)
-        compress is a string: gz, Z, 7z
+        get the compression type as a 2-tuple (compress,hatanaka)
+        compress is None or a string: gz, Z, 7z
         hatanaka is a bool
         """
 
@@ -971,10 +975,12 @@ class RinexFile:
         output_data = hatanaka.compress(output_data, compression = comp_htnk_inp)
 
         ### manage hatanaka compression extension
+        # RNX3
         if "rnx" in self.filename:
             filename_out = self.filename.replace("rnx","crx")
-        elif ".o" in self.filename:
-            filename_out = self.filename.replace(".o",".d")
+        # RNX2
+        elif self.filename[-1] in "o":
+            filename_out = self.filename[:-1] + "d"
         else:
             filename_out = self.filename
 
