@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 def search_idx_value(data, field):
     """
-    find the index (line number) of a researched filed in the RINEX data
+    find the index (line number) of a researched field in the RINEX data
     """
     idx = -1
     out_idx = None
@@ -139,13 +139,13 @@ class RinexFile:
 
         basename = os.path.basename(self.path)
 
-        #### find compress
+        ###### find compress value
         if basename.lower().endswith('z'):
             compress = os.path.splitext(basename)[1][1:]
         else:
             compress = None
 
-        #### find hatanaka  
+        ###### find hatanaka value
         if self.name_conv == "SHORT":
 
             if compress:
@@ -946,6 +946,7 @@ class RinexFile:
         output_data = '\n'.join(self.rinex_data).encode('utf-8')
         
         # make the compression compliant with hatanaka module
+        # (accept only 'none' as string)
         if not compression:
             comp_htnk_inp = 'none'
         else:

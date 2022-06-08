@@ -63,12 +63,12 @@ OPTIONS :
 -n : --ninecharfile :       path a of a list file containing 9-char. site names from
                             the M3G database generated with get_m3g_stations.
                             This will be used for longname file's renaming.
--l : --longname             Rename file using long name rinex convention.
                             Not mandatory, but nessessary to get the country code to rename
                             files to long name standard. If not provided the country code will be XXX.
--a : --alone :               Option to provide if you want to run this script on a alone
+-l : --longname             Rename file using long name rinex convention (force gzip compression).
+-a : --alone :              Option to provide if you want to run this script on a alone
                             rinex file and not on a list of files.
--c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
+-c : --compression :        Set file's compression. Acceptables values : 'gz' (recommended
                             to fit IGS standards), 'Z' or 'none'. Default value will retrieve
                             the actual compression of the input file.
 -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
@@ -575,7 +575,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)
-    parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention', action='store_true', default=0)
+    parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention (force gzip compression).', action='store_true', default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
