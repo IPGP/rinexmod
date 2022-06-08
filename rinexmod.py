@@ -500,6 +500,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
         # Adding comment in the header
+        rinexfileobj.add_comment(("RinexMod","METADATA UPDATE"),add_pgm_cmt=True)
         rinexfileobj.add_comment('rinexmoded on {}'.format(datetime.strftime(now, '%Y-%m-%d %H:%M')))
         if sitelog or modification_kw:
             rinexfileobj.add_comment('rinexmoded from {}'.format(modification_source))

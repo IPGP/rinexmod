@@ -914,18 +914,34 @@ class RinexFile:
         return
 
 
-    def add_comment(self, comment):
+    def add_comment(self, comment, add_pgm_cmt=False):
         '''
         We add the argument comment line at the end of the header
+        Append as last per default
+        
+        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line 
+        Then comment is a 2-tuple (program,run_by)
         '''
         if self.status != 0:
             return
 
         end_of_header_idx = search_idx_value(self.rinex_data, 'END OF HEADER') + 1
-        last_comment_idx = max(i for i, e in enumerate(self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e)
+        Idx = [i for i, e in enumerate(self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e]
+        
+        if not add_pgm_cmt:
+            last_comment_idx = max(Idx)
+            new_comment_idx = last_comment_idx + 1
+            new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
+            
+        else:
+            first_comment_idx = min(Idx)
+            new_comment_idx = first_comment_idx
+            program,run_by=comment
+            date=datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+            new_line = '{:20}{:20}{:20}{:}'.format(program,run_by,date,'COMMENT')
 
-        new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
-        self.rinex_data.insert(last_comment_idx + 1, new_line)
+            
+        self.rinex_data.insert(new_comment_idx, new_line)
 
         return
 
