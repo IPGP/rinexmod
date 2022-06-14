@@ -136,7 +136,7 @@ class RinexFile:
 
     def _get_compression(self):
         """
-        get the compression type as a 2-tuple (compress,hatanaka)
+        get the compression type in a 2-tuple: (compress,hatanaka)
         compress is None or a string: gz, Z, 7z
         hatanaka is a bool
         """
@@ -177,7 +177,7 @@ class RinexFile:
 
 
     def _filename(self):
-        """ Get filename and compression extension """
+        """ Get filename WITHOUT its compression extension """
 
         if self.status != 0:
             return None
@@ -580,8 +580,11 @@ class RinexFile:
             compression = '.' + self.compression
         elif compression == 'auto' and not self.compression:
             compression = ''
-        else: ## when a manual compression arg is given
+        elif compression != "": ## when a manual compression arg is given, and is not void 
             compression = '.' + compression
+        else:
+            compression = ''
+
 
         if self.file_period == '01D':
             if self.session:
@@ -627,7 +630,8 @@ class RinexFile:
 
         site_4char = self.get_site_from_filename('lower',True)
 
-        compression = '.' + compression
+        if compression != "":
+            compression = '.' + compression
 
         print(self.file_period)
 

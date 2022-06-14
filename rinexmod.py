@@ -393,8 +393,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 monum_country = nine_char_dict[rinexfileobj.get_site_from_filename('lower',True)].upper()[4:]
 
 
-            rinexfileobj.get_longname(monum_country,inplace=True)
-
+            rinexfileobj.get_longname(monum_country,inplace=True,compression='')
+            # NB: here the compression type must be forced to ''
+            #     it will be added later (around line 510)
 
             # if rinexfileobj.file_period == '01D':
             #     if rinexfileobj.session:
@@ -510,14 +511,19 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
         ##### We convert the file back to Hatanaka Compressed Rinex #####
         if longname and not compression:
-            # If not specified, we force compression to gz when file changed to longname
-            used_compression = 'gz'
+            # If not specified, we set compression to gz when file changed to longname
+            output_compression = 'gz'
         elif not compression:
-            used_compression = rinexfileobj.compression
+            output_compression = rinexfileobj.compression
         else:
-            used_compression = compression
+            output_compression = compression
 
-        outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = used_compression)
+        # Writing output file
+        try:
+            outputfile = rinexfileobj.write_to_path(myoutputfolder, compression = output_compression)
+        except hatanaka.hatanaka.HatanakaException:
+            logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', file))
+            continue
 
         if verbose:
             logger.info('Output file : ' + outputfile)
