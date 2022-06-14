@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 def search_idx_value(data, field):
     """
-    find the index (line number) of a researched filed in the RINEX data
+    find the index (line number) of a researched field in the RINEX data
     """
     idx = -1
     out_idx = None
@@ -91,9 +91,13 @@ class RinexFile:
         # Checking if existing file
         if not os.path.isfile(self.path):
             return None, None, 1
+            
         # Daily or hourly, gz or Z compressed hatanaka file
-        pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
-        pattern_longname = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
+        # pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(d\.((Z)|(gz)))')
+        
+        # Daily or hourly, hatanaka or not, gz or Z compressed file
+        pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
+        pattern_longname  = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
 
         if pattern_shortname.match(os.path.basename(self.path)):
             name_conv = 'SHORT'
@@ -133,17 +137,19 @@ class RinexFile:
     def _get_compression(self):
         """
         get the compression type in a 2-tuple: (compress,hatanaka)
-        compress is a string: gz, Z, 7z
+        compress is None or a string: gz, Z, 7z
         hatanaka is a bool
         """
 
         basename = os.path.basename(self.path)
 
+        ###### find compress value
         if basename.lower().endswith('z'):
             compress = os.path.splitext(basename)[1][1:]
         else:
             compress = None
 
+        ###### find hatanaka value
         if self.name_conv == "SHORT":
 
             if compress:
@@ -916,18 +922,34 @@ class RinexFile:
         return
 
 
-    def add_comment(self, comment):
+    def add_comment(self, comment, add_pgm_cmt=False):
         '''
         We add the argument comment line at the end of the header
+        Append as last per default
+        
+        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line 
+        Then comment is a 2-tuple (program,run_by)
         '''
         if self.status != 0:
             return
 
         end_of_header_idx = search_idx_value(self.rinex_data, 'END OF HEADER') + 1
-        last_comment_idx = max(i for i, e in enumerate(self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e)
+        Idx = [i for i, e in enumerate(self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e]
+        
+        if not add_pgm_cmt:
+            last_comment_idx = max(Idx)
+            new_comment_idx = last_comment_idx + 1
+            new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
+            
+        else:
+            first_comment_idx = min(Idx)
+            new_comment_idx = first_comment_idx
+            program,run_by=comment
+            date=datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+            new_line = '{:20}{:20}{:20}{:}'.format(program,run_by,date,'COMMENT')
 
-        new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
-        self.rinex_data.insert(last_comment_idx + 1, new_line)
+            
+        self.rinex_data.insert(new_comment_idx, new_line)
 
         return
 
@@ -938,24 +960,36 @@ class RinexFile:
         and zip to the 'compression' format, then write to file. The 'compression' param
         will be used as an argument to hatanaka.compress and for naming the output file.
         Available compressions are those of hatanaka compress function :
-        'gz' (default), 'bz2', 'Z', or 'none'
+        'gz' (default), 'bz2', 'Z', 'none' (string, compliant with hatanaka module) or 
+        None (NoneType, compliant with the rinex object initialisation)
         """
 
         if self.status != 0:
             return
 
         output_data = '\n'.join(self.rinex_data).encode('utf-8')
-        output_data = hatanaka.compress(output_data, compression = compression)
+        
+        # make the compression compliant with hatanaka module
+        # (accept only 'none' as string)
+        if not compression:
+            comp_htnk_inp = 'none'
+        else:
+            comp_htnk_inp = compression  
 
-        ### manage compressed extension
+        output_data = hatanaka.compress(output_data, compression = comp_htnk_inp)
+
+        ### manage hatanaka compression extension
+        # RNX3
         if "rnx" in self.filename:
             filename_out = self.filename.replace("rnx","crx")
-        elif ".o" in self.filename:
-            filename_out = self.filename.replace(".o",".d")
+        # RNX2
+        elif self.filename[-1] in "o":
+            filename_out = self.filename[:-1] + "d"
         else:
             filename_out = self.filename
 
-        if compression == 'none':
+        ### manage low-level compression extension
+        if compression in ('none',None):
             outputfile = os.path.join(path, filename_out)
         else:
             outputfile = os.path.join(path, filename_out + '.' + compression)

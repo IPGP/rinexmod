@@ -60,16 +60,17 @@ OPTIONS :
                             when getting headers args info from sitelogs.
 -m : --marker :             A four characater station code that will be used to rename
                             input files.
+                            (does not apply to the header\'s MARKER NAME)
 -n : --ninecharfile :       path a of a list file containing 9-char. site names from
                             the M3G database generated with get_m3g_stations.
                             This will be used for longname file's renaming.
--l : --longname             Rename file using long name rinex convention.
                             Not mandatory, but nessessary to get the country code to rename
                             files to long name standard. If not provided the country code will be XXX.
--a : --alone :               Option to provide if you want to run this script on a alone
+-l : --longname             Rename file using long name rinex convention (force gzip compression).
+-a : --alone :              Option to provide if you want to run this script on a alone
                             rinex file and not on a list of files.
--c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
-                            to fit IGS standards), 'Z'. Default value will retrieve
+-c : --compression :        Set file's compression. Acceptables values : 'gz' (recommended
+                            to fit IGS standards), 'Z' or 'none'. Default value will retrieve
                             the actual compression of the input file.
 -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
                             part of the path that is common to all files in the list and
@@ -501,6 +502,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
         # Adding comment in the header
+        rinexfileobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
         rinexfileobj.add_comment('rinexmoded on {}'.format(datetime.strftime(now, '%Y-%m-%d %H:%M')))
         if sitelog or modification_kw:
             rinexfileobj.add_comment('rinexmoded from {}'.format(modification_source))
@@ -570,18 +572,18 @@ if __name__ == '__main__':
 
     # Parsing Args
     parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
-    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process')
+    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process (see also -a/--alone for a single input file)')
     parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
     parser.add_argument('-s', '--sitelog', help='Get the rinex header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
     parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            station, receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
                                                            operator, agency, observables''', nargs='*', action=ParseKwargs, default=0)
-    parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker', type=str, default=0)
+    parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker (does not apply to the header\'s MARKER NAME)', type=str, default=0)
     parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
     parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
-    parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\')', default=0)
-    parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention', action='store_true', default=0)
+    parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)
+    parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention (force gzip compression).', action='store_true', default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
