@@ -947,7 +947,6 @@ class RinexFile:
             program,run_by=comment
             date=datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
             new_line = '{:20}{:20}{:20}{:}'.format(program,run_by,date,'COMMENT')
-
             
         self.rinex_data.insert(new_comment_idx, new_line)
 

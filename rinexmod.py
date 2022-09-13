@@ -75,7 +75,6 @@ OPTIONS :
 -r : --relative :           Reconstruct files relative subdirectory. You have to indicate the
                             part of the path that is common to all files in the list and
                             that will be replaced with output folder.
-                            (equivalent to Rsync's -R).
 -o : --output_logs :        Folder where to write output log. If not provided, logs
                             will be written to OUTPUTFOLDER.
 -w : --write :              Write (rinex version, sample rate, file period, observatory)
@@ -337,7 +336,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
         if relative:
             if not relative in file:
-                logger.error('{:110s} - {}'.format('31 - The subfolder can not be reconstructed for file', file))
+                logger.error('{:110s} - {}'.format('31 - The relative subfolder can not be reconstructed for file', file))
                 continue
 
             # We construct the output path with relative path between file name and parameter
