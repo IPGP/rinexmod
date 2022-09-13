@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
 
+
+### low level functions
 def search_idx_value(data, field):
     """
     find the index (line number) of a researched field in the RINEX data

@@ -101,6 +101,7 @@ import logging
 from sitelogs_IGS import SiteLog
 from rinexfile import RinexFile
 import hatanaka
+import subprocess
 
 
 def loggersVerbose(logfile):
@@ -143,6 +144,14 @@ def listfiles(directory, extension):
                 liste.append(file)
     return list(sorted(liste))
 
+#get Git hash (to get a version number-equivalent of the RinexMod used)
+def get_git_revision_short_hash():
+    script_path = os.path.dirname(os.path.realpath(__file__))
+    cmd = ['git','--git-dir',script_path + '/.git','rev-parse','--short','HEAD']
+    try:
+        return subprocess.check_output(cmd).decode('ascii').strip()[:7]
+    except:
+        return "xxxxxxx" 
 
 def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, relative, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write):
     """
@@ -502,7 +511,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
         # Adding comment in the header
-        rinexfileobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
+        vers_num=get_git_revision_short_hash()
+        #rinexfileobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
+        rinexfileobj.add_comment(("RinexMod "+vers_num,"METADATA UPDATE"),add_pgm_cmt=True)
         rinexfileobj.add_comment('rinexmoded on {}'.format(datetime.strftime(now, '%Y-%m-%d %H:%M')))
         if sitelog or modification_kw:
             rinexfileobj.add_comment('rinexmoded from {}'.format(modification_source))
