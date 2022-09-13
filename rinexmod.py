@@ -66,13 +66,13 @@ OPTIONS :
                             This will be used for longname file's renaming.
                             Not mandatory, but nessessary to get the country code to rename
                             files to long name standard. If not provided the country code will be XXX.
--l : --longname             Rename file using long name rinex convention (force gzip compression).
+-l : --longname :           Rename file using long name rinex convention (force gzip compression).
 -a : --alone :              Option to provide if you want to run this script on a alone
                             rinex file and not on a list of files.
 -c : --compression :        Set file's compression. Acceptables values : 'gz' (recommended
                             to fit IGS standards), 'Z' or 'none'. Default value will retrieve
                             the actual compression of the input file.
--r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
+-r : --relative :           Reconstruct files relative subdirectory. You have to indicate the
                             part of the path that is common to all files in the list and
                             that will be replaced with output folder.
 -o : --output_logs :        Folder where to write output log. If not provided, logs
@@ -153,7 +153,7 @@ def get_git_revision_short_hash():
     except:
         return "xxxxxxx" 
 
-def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write):
+def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, relative, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -343,13 +343,13 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
         logger.info('# File : ' + file)
 
-        if reconstruct:
-            if not reconstruct in file:
-                logger.error('{:110s} - {}'.format('31 - The subfolder can not be reconstructed for file', file))
+        if relative:
+            if not relative in file:
+                logger.error('{:110s} - {}'.format('31 - The relative subfolder can not be reconstructed for file', file))
                 continue
 
             # We construct the output path with relative path between file name and parameter
-            relpath = os.path.relpath(os.path.dirname(file), reconstruct)
+            relpath = os.path.relpath(os.path.dirname(file), relative)
             myoutputfolder = os.path.join(outputfolder, relpath)
             if not os.path.isdir(myoutputfolder):
                 os.makedirs(myoutputfolder)
@@ -592,7 +592,7 @@ if __name__ == '__main__':
                                                            operator, agency, observables''', nargs='*', action=ParseKwargs, default=0)
     parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker (does not apply to the header\'s MARKER NAME)', type=str, default=0)
     parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
-    parser.add_argument('-r', '--reconstruct', help='Reconstruct files subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
+    parser.add_argument('-r', '--relative', help='Reconstruct files relative subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)
     parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention (force gzip compression).', action='store_true', default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
@@ -610,7 +610,7 @@ if __name__ == '__main__':
     modification_kw = args.modification_kw
     marker = args.marker
     ninecharfile = args.ninecharfile
-    reconstruct = args.reconstruct
+    relative = args.relative
     compression = args.compression
     longname = args.longname
     force = args.force
@@ -620,4 +620,4 @@ if __name__ == '__main__':
     write = args.write
     verbose = args.verbose
 
-    rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, reconstruct, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write)
+    rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, relative, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write)
