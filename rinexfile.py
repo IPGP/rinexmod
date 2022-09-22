@@ -651,7 +651,7 @@ class RinexFile:
         return shortname
 
 
-    def set_marker(self, station):
+    def set_marker(self, station, number=None):
 
         if self.status != 0:
             return
@@ -661,19 +661,30 @@ class RinexFile:
 
         # Identify line that contains MARKER NAME
         marker_name_header_idx = search_idx_value(self.rinex_data, 'MARKER NAME')
-        marker_name_meta = self.rinex_data[marker_name_header_idx]
         # Edit line
         new_line = '{}'.format(station.ljust(60)) + 'MARKER NAME'
-        # Set line
-        self.rinex_data[marker_name_header_idx] = new_line
-
-        # Identify line that contains MARKER NUMBER
-        marker_number_header_idx = next((i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e), None)
-        if marker_number_header_idx:
-            new_line = '{}'.format(station.ljust(60)) + 'MARKER NUMBER'
+        if marker_name_header_idx:
+            #marker_name_meta = self.rinex_data[marker_name_header_idx]
             # Set line
-            self.rinex_data[marker_number_header_idx] = new_line
+            self.rinex_data[marker_name_header_idx] = new_line
+        else:
+            pgm_header_idx = search_idx_value(self.rinex_data, 'PGM / RUN BY / DATE')
+            self.rinex_data[pgm_header_idx+1] = new_line
 
+
+        if number:
+            # Identify line that contains MARKER NUMBER
+            ## marker_number_header_idx = next((i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e), None)
+            marker_number_header_idx = search_idx_value(self.rinex_data, 'MARKER NUMBER')
+            # Edit line
+            new_line = '{}'.format(number.ljust(60)) + 'MARKER NUMBER'
+            if marker_number_header_idx: # The line exsits
+                # Set line
+                self.rinex_data[marker_number_header_idx] = new_line
+            else: # The line does not exsits
+                # Set line
+                self.rinex_data[marker_name_header_idx + 1] = new_line            
+                
         return
 
 

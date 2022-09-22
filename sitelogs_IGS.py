@@ -416,6 +416,7 @@ class SiteLog:
             return None, ignored
 
         fourchar_id        = self.info['1.']['Four Character ID']
+        domes_id           = self.info['1.']['IERS DOMES Number']
 
         observable_type = instrumentation['receiver']['Satellite System']
 
@@ -438,6 +439,7 @@ class SiteLog:
                            'Z' : instrumentation['antenna']['Marker->ARP North Ecc(m)']}
 
         metadata_vars = (fourchar_id,
+                       domes_id,
                        observable_type,
                        agencies,
                        receiver,
