@@ -463,13 +463,13 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             if ignored:
                 logger.warning('{:110s} - {}'.format('36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway', file))
 
-            (fourchar_id, observable_type, agencies, receiver, antenna, antenna_pos, antenna_delta) = metadata_vars
+            (fourchar_id, domes_id, observable_type, agencies, receiver, antenna, antenna_pos, antenna_delta) = metadata_vars
 
             if verbose:
                 logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
 
             # # Apply the modifications to the RinexFile object
-            rinexfileobj.set_marker(fourchar_id)
+            rinexfileobj.set_marker(fourchar_id,domes_id)
             rinexfileobj.set_receiver(**receiver)
             rinexfileobj.set_interval(rinexfileobj.sample_rate_numeric)
             rinexfileobj.set_antenna(**antenna)
