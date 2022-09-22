@@ -26,6 +26,7 @@ def search_idx_value(data, field):
         if field in e:
             out_idx = idx
             break
+    print(field,out_idx)
     return out_idx
 
 
@@ -669,7 +670,7 @@ class RinexFile:
             self.rinex_data[marker_name_header_idx] = new_line
         else:
             pgm_header_idx = search_idx_value(self.rinex_data, 'PGM / RUN BY / DATE')
-            self.rinex_data[pgm_header_idx+1] = new_line
+            self.rinex_data.insert(pgm_header_idx,new_line)
 
 
         if number:
@@ -683,7 +684,7 @@ class RinexFile:
                 self.rinex_data[marker_number_header_idx] = new_line
             else: # The line does not exsits
                 # Set line
-                self.rinex_data[marker_name_header_idx + 1] = new_line            
+                self.rinex_data.insert(marker_name_header_idx+1,new_line)
                 
         return
 
