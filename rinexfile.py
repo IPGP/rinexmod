@@ -26,7 +26,6 @@ def search_idx_value(data, field):
         if field in e:
             out_idx = idx
             break
-    print(field,out_idx)
     return out_idx
 
 
