@@ -26,7 +26,6 @@ def search_idx_value(data, field):
         if field in e:
             out_idx = idx
             break
-    print(field,out_idx)
     return out_idx
 
 
@@ -101,12 +100,17 @@ class RinexFile:
         # Daily or hourly, hatanaka or not, gz or Z compressed file
         pattern_shortname = re.compile('....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
         pattern_longname  = re.compile('.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
+        # GFZ's DataCenter internal naming convention (here it is equivalent to a longname)
+        pattern_longname_gfz = re.compile('.{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?')  
 
         if pattern_shortname.match(os.path.basename(self.path)):
             name_conv = 'SHORT'
             status = 0
         elif pattern_longname.match(os.path.basename(self.path)):
             name_conv = 'LONG'
+            status = 0
+        elif pattern_longname_gfz.match(os.path.basename(self.path)):
+            name_conv = 'LONGGFZ'
             status = 0
         else:
             print('rinex filename does not match a regular name: ' + os.path.basename(self.path))
@@ -428,6 +432,8 @@ class RinexFile:
         elif self.name_conv == 'LONG':
             file_period = self.filename[24:27]
 
+        elif self.name_conv == 'LONGGFZ':
+            file_period = self.filename[46:49]
         else:
             # 00U-Unspecified
             file_period = '00U'
