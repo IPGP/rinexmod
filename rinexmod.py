@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This script takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the rinex files list to modifiy the file's header. It then write them back to Hanakata
+loop the RINEX files list to modifiy the file's header. It then write them back to Hanakata
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
@@ -44,9 +44,10 @@ The script will add two comment lines, one indicating the source of the modifiac
 
 USE :
 
-RINEXLIST : Rinex list file
-OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory
-argument, you can not modify files inplace.
+RINEXLIST : Input list file of the RINEX files to process
+generated with a find or ls command for instance.
+OUTPUTFOLDER : Folder where to write the modified RINEX files. 
+This is a compulsory argument, you can not modify files inplace.
 
 OPTIONS :
 
@@ -66,9 +67,9 @@ OPTIONS :
                             This will be used for longname file's renaming.
                             Not mandatory, but nessessary to get the country code to rename
                             files to long name standard. If not provided the country code will be XXX.
--l : --longname :           Rename file using long name rinex convention (force gzip compression).
+-l : --longname :           Rename file using long name RINEX convention (force gzip compression).
 -a : --alone :              Option to provide if you want to run this script on a alone
-                            rinex file and not on a list of files.
+                            RINEX file and not on a list of files.
 -c : --compression :        Set file's compression. Acceptables values : 'gz' (recommended
                             to fit IGS standards), 'Z' or 'none'. Default value will retrieve
                             the actual compression of the input file.
@@ -77,7 +78,7 @@ OPTIONS :
                             that will be replaced with output folder.
 -o : --output_logs :        Folder where to write output log. If not provided, logs
                             will be written to OUTPUTFOLDER.
--w : --write :              Write (rinex version, sample rate, file period, observatory)
+-w : --write :              Write (RINEX version, sample rate, file period, observatory)
                             dependant output lists to log folder.
 -v : --verbose:             Will prompt file's metadata before and after modifications.
 
@@ -153,7 +154,9 @@ def get_git_revision_short_hash():
     except:
         return "xxxxxxx" 
 
-def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, relative, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write):
+def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
+             relative, ignore, ninecharfile, modification_kw, verbose, 
+             compression, output_logs, write):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -583,9 +586,9 @@ if __name__ == '__main__':
 
     # Parsing Args
     parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
-    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process (see also -a/--alone for a single input file)')
-    parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
-    parser.add_argument('-s', '--sitelog', help='Get the rinex header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
+    parser.add_argument('rinexlist', type=str, help='Input list file of the RINEX paths to process (see also -a/--alone for a single input file)')
+    parser.add_argument('outputfolder', type=str, help='Output folder for modified RINEX files')
+    parser.add_argument('-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
     parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            station, receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
@@ -594,12 +597,12 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
     parser.add_argument('-r', '--relative', help='Reconstruct files relative subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)
-    parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention (force gzip compression).', action='store_true', default=0)
+    parser.add_argument('-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
-    parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
+    parser.add_argument('-a', '--alone', help='INPUT is a alone RINEX file and not a file containing list of RINEX files paths', action='store_true')
     parser.add_argument('-o', '--output_logs', help='Folder where to write output logs', type=str)
-    parser.add_argument('-w', '--write', help='Write (rinex version, sample rate, file period) dependant output lists', action='store_true')
+    parser.add_argument('-w', '--write', help='Write (RINEX version, sample rate, file period) dependant output lists', action='store_true')
     parser.add_argument('-v', '--verbose', help='Prompt file\'s metadata before and after modifications.', action='store_true', default=0)
 
     args = parser.parse_args()
