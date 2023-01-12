@@ -434,9 +434,9 @@ class SiteLog:
                            'Y' : self.info['2.']['Y coordinate (m)'],
                            'Z' : self.info['2.']['Z coordinate (m)']}
 
-        antenna_delta   = {'X' : instrumentation['antenna']['Marker->ARP Up Ecc. (m)'],
-                           'Y' : instrumentation['antenna']['Marker->ARP East Ecc(m)'],
-                           'Z' : instrumentation['antenna']['Marker->ARP North Ecc(m)']}
+        antenna_delta   = {'H' : instrumentation['antenna']['Marker->ARP Up Ecc. (m)'],
+                           'E' : instrumentation['antenna']['Marker->ARP East Ecc(m)'],
+                           'N' : instrumentation['antenna']['Marker->ARP North Ecc(m)']}
 
         metadata_vars = (fourchar_id,
                        domes_id,

@@ -834,36 +834,36 @@ class RinexFile:
         return
 
 
-    def set_antenna_delta(self, X=None, Y=None, Z=None):
+    def set_antenna_delta(self, H=None, E=None, N=None):
 
         if self.status != 0:
             return
 
-        if not any([X, Y, Z]):
+        if not any([H, E, N]):
             return
 
         # Identify line that contains ANTENNA: DELTA H/E/N
         antenna_delta_header_idx = search_idx_value(self.rinex_data, 'ANTENNA: DELTA H/E/N')
         antenna_delta_meta = self.rinex_data[antenna_delta_header_idx]
         # Parse line
-        X_meta = antenna_delta_meta[0:14]
-        Y_meta = antenna_delta_meta[14:28]
-        Z_meta = antenna_delta_meta[28:42]
+        H_meta = antenna_delta_meta[0:14]
+        E_meta = antenna_delta_meta[14:28]
+        N_meta = antenna_delta_meta[28:42]
         label = antenna_delta_meta[60:]
         # Edit line
-        if X: # Format as 14.4 float. Set to zero if too large but should not happen
-            X_meta = '{:14.4f}'.format(float(X))
-            if len(X_meta) > 14:
-                X_meta = '{:14.4f}'.format(float('0'))
-        if Y:
-            Y_meta = '{:14.4f}'.format(float(Y))
-            if len(Y_meta) > 14:
-                Y_meta = '{:14.4f}'.format(float('0'))
-        if Z:
-            Z_meta = '{:14.4f}'.format(float(Z))
-            if len(Z_meta) > 14:
-                Z_meta = '{:14.4f}'.format(float('0'))
-        new_line = X_meta + Y_meta + Z_meta + ' ' * 18 + label
+        if H: # Format as 14.4 float. Set to zero if too large but should not happen
+            H_meta = '{:14.4f}'.format(float(H))
+            if len(H_meta) > 14:
+                H_meta = '{:14.4f}'.format(float('0'))
+        if E:
+            E_meta = '{:14.4f}'.format(float(E))
+            if len(E_meta) > 14:
+                E_meta = '{:14.4f}'.format(float('0'))
+        if N:
+            N_meta = '{:14.4f}'.format(float(N))
+            if len(N_meta) > 14:
+                N_meta = '{:14.4f}'.format(float('0'))
+        new_line = H_meta + E_meta + N_meta + ' ' * 18 + label
         # Set line
         self.rinex_data[antenna_delta_header_idx] = new_line
 

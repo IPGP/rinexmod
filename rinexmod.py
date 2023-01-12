@@ -288,6 +288,8 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
     if modification_kw:
 
         acceptable_keywords = ['station',
+                               'marker_name',
+                               'marker_number',
                                'receiver_serial',
                                'receiver_type',
                                'receiver_fw',
@@ -490,6 +492,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
 
             rinexfileobj.set_marker(modification_kw.get('station'))
 
+            rinexfileobj.set_marker(modification_kw.get('marker_name'),
+                                    modification_kw.get('marker_number'))
+
             rinexfileobj.set_receiver(modification_kw.get('receiver_serial'),
                                     modification_kw.get('receiver_type'),
                                     modification_kw.get('receiver_fw'))
@@ -501,9 +506,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
                                          modification_kw.get('antenna_Y_pos'),
                                          modification_kw.get('antenna_Z_pos'))
 
-            rinexfileobj.set_antenna_delta(modification_kw.get('antenna_X_delta'),
-                                           modification_kw.get('antenna_Y_delta'),
-                                           modification_kw.get('antenna_Z_delta'))
+            rinexfileobj.set_antenna_delta(modification_kw.get('antenna_H_delta'),
+                                           modification_kw.get('antenna_E_delta'),
+                                           modification_kw.get('antenna_N_delta'))
 
             rinexfileobj.set_agencies(modification_kw.get('operator'),
                                       modification_kw.get('agency'))
@@ -590,7 +595,7 @@ if __name__ == '__main__':
     parser.add_argument('outputfolder', type=str, help='Output folder for modified RINEX files')
     parser.add_argument('-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
     parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
-                                                           station, receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
+                                                           marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
                                                            operator, agency, observables''', nargs='*', action=ParseKwargs, default=0)
     parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker (does not apply to the header\'s MARKER NAME)', type=str, default=0)
