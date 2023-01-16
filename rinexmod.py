@@ -566,16 +566,18 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             rinexfileobj.add_comment(
                 'file assigned from {}'.format(modification_source))
 
-        # we regenerate the filenames
-        rinexfileobj.get_shortname(inplace=True, compression='')
-        rinexfileobj.get_longname(inplace=True, compression='')
+        #### we regenerate the filenames
+        if rinexfileobj.name_conv == "SHORT" and not longname:
+            rinexfileobj.get_shortname(inplace=True, compression='')
+        else:
+            rinexfileobj.get_longname(inplace=True, compression='')
 
         # NB: here the compression type must be forced to ''
         #     it will be added later
-        # (The block "We convert the file back to Hatanaka Compressed Rinex")
+        # (in the block "We convert the file back to Hatanaka Compressed Rinex")
         # inplace = True => rinexfileobj's filename is updated
 
-        ##### We convert the file back to Hatanaka Compressed Rinex #####
+        #### We convert the file back to Hatanaka Compressed Rinex 
         if longname and not compression:
             # If not specified, we set compression to gz when file changed to longname
             output_compression = 'gz'
@@ -649,20 +651,20 @@ if __name__ == '__main__':
     parser.add_argument('outputfolder', type=str,
                         help='Output folder for modified RINEX files')
     parser.add_argument(
-        '-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a single sitelog path or a folder contaning sitelogs.', type=str, default=0)
+        '-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a single sitelog path or a folder contaning sitelogs.', type=str, default="")
     parser.add_argument('-k', '--modification_kw', help='''Modification keywords for RINEX's header and/or filename. Will override the information from the sitelog. 
                                                            Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
-                                                           operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)''', nargs='*', action=ParseKwargs, default=0)
-    parser.add_argument('-m', '--marker', help="Change 4 first letters of file\'s name to set it to another station (does not apply to the header\'s MARKER NAME, use -k marker_name='XXXX' for this)", type=str, default=0)
+                                                           operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)''', nargs='*', action=ParseKwargs, default=None)
+    parser.add_argument('-m', '--marker', help="Change 4 first letters of file\'s name to set it to another station (does not apply to the header\'s MARKER NAME, use -k marker_name='XXXX' for this)", type=str, default='')
     parser.add_argument('-n', '--ninecharfile',
-                        help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
+                        help='Path of a file that contains 9-char. site names from the M3G database', type=str, default="")
     parser.add_argument('-r', '--relative', help='Reconstruct files relative subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str,
-                        help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)
+                        help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default='')
     parser.add_argument(
-        '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=0)
+        '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     parser.add_argument(
         '-f', '--force', help="Force sitelog-based header values when RINEX's header and sitelog station name do not correspond", action='store_true')
     parser.add_argument(
@@ -674,8 +676,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '-w', '--write', help='Write (RINEX version, sample rate, file period) dependant output lists', action='store_true')
     parser.add_argument(
-        '-v', '--verbose', help='Print file\'s metadata before and after modifications.', action='store_true', default=0)
-    parser.add_argument('-t', '--sort', help='Sort the input RINEX list.', action='store_true', default=0)
+        '-v', '--verbose', help='Print file\'s metadata before and after modifications.', action='store_true', default=False)
+    parser.add_argument('-t', '--sort', help='Sort the input RINEX list.', action='store_true', default=False)
     
     args = parser.parse_args()
 
