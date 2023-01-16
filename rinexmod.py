@@ -174,8 +174,8 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
     header modification.
     """
     # If sitelog option, no modification arguments must be provided
-    if sitelog and modification_kw:
-        print('# ERROR : If you get metadata from sitelog, don\'t provide arguments for modification (-k, --modification_kw option) !')
+    if (sitelog and modification_kw) and (not force):
+        print('# ERROR : If you get metadata from sitelog, don\'t provide arguments for modification (-k, --modification_kw option) !. Use --force option to override this error.')
         return
 
     # If no longname, modification_kw and sitelog, return
@@ -565,14 +565,14 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             rinexfileobj.add_comment(
                 'file assigned from {}'.format(modification_source))
 
-            # we regenerate the filenames
-            rinexfileobj.get_shortname(inplace=True, compression='')
-            rinexfileobj.get_longname(inplace=True, compression='')
+        # we regenerate the filenames
+        rinexfileobj.get_shortname(inplace=True, compression='')
+        rinexfileobj.get_longname(inplace=True, compression='')
 
-            # NB: here the compression type must be forced to ''
-            #     it will be added later
-            # (The block "We convert the file back to Hatanaka Compressed Rinex")
-            # inplace = True => rinexfileobj's filename is updated
+        # NB: here the compression type must be forced to ''
+        #     it will be added later
+        # (The block "We convert the file back to Hatanaka Compressed Rinex")
+        # inplace = True => rinexfileobj's filename is updated
 
         ##### We convert the file back to Hatanaka Compressed Rinex #####
         if longname and not compression:
@@ -662,7 +662,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=0)
     parser.add_argument(
-        '-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
+        '-f', '--force', help='Force application of sitelog-based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument(
         '-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument(
