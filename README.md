@@ -8,7 +8,7 @@ Tool to batch modify headers of RINEX Hatakana compressed files from command lin
 
 This project is composed of 4 scripts.
 
-* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz), 
+* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
 loop the rinex files list to modifiy the file's header. It then write them back to Hanakata
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another station code. It can write
