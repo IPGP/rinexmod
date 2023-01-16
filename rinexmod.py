@@ -54,9 +54,10 @@ This is a compulsory argument, you can not modify files inplace.
 
 OPTIONS :
 
--k : --modification_kw :    Header fields that you want to modify.
 -s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
                             instrumentation informations, or folder containing sitelogs.
+-k : --modification_kw :    Header fields that you want to modify.
+                            Will override the information from the sitelog.
                             The sitelogs must be valid as the script does not check it.
 -f : --force :              Force sitelog-based header values when RINEX's header
                             and sitelog station name do not correspond.
@@ -85,6 +86,7 @@ OPTIONS :
 -w : --write :              Write (RINEX version, sample rate, file period, observatory)
                             dependant output lists to log folder.
 -v : --verbose:             Will print file's metadata before and after modifications.
+-t : --sort:                Sort the input RINEX list.
 
 EXAMPLES:
 
@@ -167,7 +169,7 @@ def get_git_revision_short_hash():
 
 def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
              relative, ignore, ninecharfile, modification_kw, verbose,
-             compression, output_logs, write):
+             compression, output_logs, write,  sort):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -360,8 +362,11 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
         print('# ERROR : The marker provided is not 4-char valid : ' + marker)
         return
 
-    ### Looping in file list ###
+    # sort the RINEX list
+    if sort:
+        rinexlist.sort()
 
+    ### Looping in file list ###
     return_lists = {}
 
     for file in rinexlist:
@@ -644,8 +649,9 @@ if __name__ == '__main__':
     parser.add_argument('outputfolder', type=str,
                         help='Output folder for modified RINEX files')
     parser.add_argument(
-        '-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
-    parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header and/or filename. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
+        '-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a single sitelog path or a folder contaning sitelogs.', type=str, default=0)
+    parser.add_argument('-k', '--modification_kw', help='''Modification keywords for RINEX's header and/or filename. Will override the information from the sitelog. 
+                                                           Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
                                                            operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)''', nargs='*', action=ParseKwargs, default=0)
@@ -669,7 +675,8 @@ if __name__ == '__main__':
         '-w', '--write', help='Write (RINEX version, sample rate, file period) dependant output lists', action='store_true')
     parser.add_argument(
         '-v', '--verbose', help='Print file\'s metadata before and after modifications.', action='store_true', default=0)
-
+    parser.add_argument('-t', '--sort', help='Sort the input RINEX list.', action='store_true', default=0)
+    
     args = parser.parse_args()
 
     rinexlist = args.rinexlist
@@ -687,6 +694,7 @@ if __name__ == '__main__':
     output_logs = args.output_logs
     write = args.write
     verbose = args.verbose
+    sort = args.sort
 
     rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, relative,
-             ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write)
+             ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write, sort)
