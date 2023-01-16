@@ -435,13 +435,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             else:
                 monum_country = nine_char_dict[rinexfileobj.get_site_from_filename(
                     'lower', True)].upper()[4:]
+                 
 
-            rinexfileobj.get_longname(
-                monum_country, inplace=True, compression='')
-            # NB: here the compression type must be forced to ''
-            #     it will be added later
-            # (The block "We convert the file back to Hatanaka Compressed Rinex")
-            # inplace = True => rinexfileobj's filename is updated
+            # NB: the longfilename will be generated later 
+            # (The block "we regenerate the filenames")
 
         if sitelog:
             # Station name from the rinex's header line
@@ -570,10 +567,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
         if rinexfileobj.name_conv == "SHORT" and not longname:
             rinexfileobj.get_shortname(inplace=True, compression='')
         else:
-            rinexfileobj.get_longname(inplace=True, compression='')
+            rinexfileobj.get_longname(monum_country,inplace=True, compression='')
 
         # NB: here the compression type must be forced to ''
-        #     it will be added later
+        #     it will be added in the next step 
         # (in the block "We convert the file back to Hatanaka Compressed Rinex")
         # inplace = True => rinexfileobj's filename is updated
 
@@ -595,8 +592,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
                 '{:110s} - {}'.format('06 - File could not be written - hatanaka exception', file))
             continue
 
-        if verbose:
-            logger.info('Output file : ' + outputfile)
+        logger.info('Output file : ' + outputfile)
 
         ### Construct return dict by adding key if doesn't exists and appending file to corresponding list ###
         major_rinex_version = rinexfileobj.version[0]
