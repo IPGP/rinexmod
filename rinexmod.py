@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 This script takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the rinex files list to modifiy the file's header. It then write them back to Hanakata
+loop the RINEX files list to modifiy the file's header. It then write them back to Hanakata
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
@@ -10,10 +10,13 @@ those files with the long name naming convention with the --longname option.
 Two ways of passing parameters to modifiy headers are possible:
 
 --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
-                      Acceptable_keywords are : station, receiver_serial, receiver_type, receiver_fw,
-                      antenna_serial, antenna_type, antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
-                      antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
-                      operator, agency, observables.
+                      Acceptable_keywords are : marker_name, marker_number, 
+                      station (legacy alias for marker_name), receiver_serial,
+                      receiver_type, receiver_fw, antenna_serial, antenna_type,
+                      antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
+                      antenna_H_delta, antenna_E_delta, antenna_N_delta,
+                      operator, agency, observables, interval, 
+                      filename_file_period, filename_data_freq
 
 --sitelog  : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
                containing sitelogs. You then have to pass a list of files and the script will
@@ -44,9 +47,10 @@ The script will add two comment lines, one indicating the source of the modifiac
 
 USE :
 
-RINEXLIST : Rinex list file
-OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory
-argument, you can not modify files inplace.
+RINEXLIST : Input list file of the RINEX files to process
+generated with a find or ls command for instance.
+OUTPUTFOLDER : Folder where to write the modified RINEX files. 
+This is a compulsory argument, you can not modify files inplace.
 
 OPTIONS :
 
@@ -60,15 +64,16 @@ OPTIONS :
                             when getting headers args info from sitelogs.
 -m : --marker :             A four characater station code that will be used to rename
                             input files.
-                            (does not apply to the header\'s MARKER NAME)
+                            (does not apply to the header\'s MARKER NAME, 
+                             use -k marker_name='<MARKER>' for this)
 -n : --ninecharfile :       path a of a list file containing 9-char. site names from
                             the M3G database generated with get_m3g_stations.
                             This will be used for longname file's renaming.
                             Not mandatory, but nessessary to get the country code to rename
                             files to long name standard. If not provided the country code will be XXX.
--l : --longname :           Rename file using long name rinex convention (force gzip compression).
+-l : --longname :           Rename file using long name RINEX convention (force gzip compression).
 -a : --alone :              Option to provide if you want to run this script on a alone
-                            rinex file and not on a list of files.
+                            RINEX file and not on a list of files.
 -c : --compression :        Set file's compression. Acceptables values : 'gz' (recommended
                             to fit IGS standards), 'Z' or 'none'. Default value will retrieve
                             the actual compression of the input file.
@@ -77,9 +82,9 @@ OPTIONS :
                             that will be replaced with output folder.
 -o : --output_logs :        Folder where to write output log. If not provided, logs
                             will be written to OUTPUTFOLDER.
--w : --write :              Write (rinex version, sample rate, file period, observatory)
+-w : --write :              Write (RINEX version, sample rate, file period, observatory)
                             dependant output lists to log folder.
--v : --verbose:             Will prompt file's metadata before and after modifications.
+-v : --verbose:             Will print file's metadata before and after modifications.
 
 EXAMPLES:
 
@@ -153,7 +158,9 @@ def get_git_revision_short_hash():
     except:
         return "xxxxxxx" 
 
-def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, relative, ignore, ninecharfile, modification_kw, verbose, compression, output_logs, write):
+def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
+             relative, ignore, ninecharfile, modification_kw, verbose, 
+             compression, output_logs, write):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -285,6 +292,8 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
     if modification_kw:
 
         acceptable_keywords = ['station',
+                               'marker_name',
+                               'marker_number',
                                'receiver_serial',
                                'receiver_type',
                                'receiver_fw',
@@ -293,12 +302,15 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                                'antenna_X_pos',
                                'antenna_Y_pos',
                                'antenna_Z_pos',
-                               'antenna_X_delta',
-                               'antenna_Y_delta',
-                               'antenna_Z_delta',
+                               'antenna_H_delta',
+                               'antenna_E_delta',
+                               'antenna_N_delta',
                                'operator',
                                'agency',
-                               'observables']
+                               'observables',
+                               'interval',
+                               'filename_data_freq',
+                               'filename_file_period']
 
         for kw in modification_kw:
             if kw not in acceptable_keywords:
@@ -384,13 +396,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             continue
 
         if marker:
-            # We store the old marker name to add a comment in rinex file's header
+            # We store the old station name to add a comment in rinex file's header
             modification_source = rinexfileobj.filename[:4]
-            # We set the station in the filename to the new marker
-            if rinexfileobj.name_conv == 'SHORT': ### short name case
-                rinexfileobj.filename = marker.lower() + rinexfileobj.filename[4:]
-            else: ### long name case
-                rinexfileobj.filename = marker.upper() + rinexfileobj.filename[4:]
+            rinexfileobj.set_filename_station(marker)
 
         if longname:
             # We rename the file to the rinex long name convention
@@ -400,34 +408,17 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                 monum_country = "00XXX"
             else:
                 monum_country = nine_char_dict[rinexfileobj.get_site_from_filename('lower',True)].upper()[4:]
-
-
+                
             rinexfileobj.get_longname(monum_country,inplace=True,compression='')
             # NB: here the compression type must be forced to ''
-            #     it will be added later (around line 510)
+			#     it will be added later 
+			# (The block "We convert the file back to Hatanaka Compressed Rinex")
+			# inplace = True => rinexfileobj's filename is updated
 
-            # if rinexfileobj.file_period == '01D':
-            #     if rinexfileobj.session:
-            #         timeformat = '%Y%j%H%M'
-            #     else:
-            #         timeformat = '%Y%j0000' # Start of the day
-            # else:
-            #     timeformat = '%Y%j%H00' # Start of the hour
-            # # timeformat = '%Y%j%H%M' # Compliant to the longname convention
 
-            # data_source = "R" # we just consider receiver as data source for  the moment
-
-            # rinexfileobj.filename = '_'.join((site.upper(),
-            #                                   data_source,
-            #                                   rinexfileobj.start_date.strftime(timeformat),
-            #                                   rinexfileobj.file_period,
-            #                                   rinexfileobj.sample_rate,
-            #                                   rinexfileobj.observable_type + 'O.rnx')) # O for observation
 
         if sitelog:
-
             # Station name from the rinex's header line
-            # station_meta = rinexfileobj.get_station().lower()[:4]
             station_meta = rinexfileobj.get_site_from_filename('lower',True)
 
             if verbose:
@@ -485,6 +476,10 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
 
             modification_source = 'command line'
 
+            rinexfileobj.set_marker(modification_kw.get('marker_name'),
+                                    modification_kw.get('marker_number'))
+            
+            # legacy keyword
             rinexfileobj.set_marker(modification_kw.get('station'))
 
             rinexfileobj.set_receiver(modification_kw.get('receiver_serial'),
@@ -498,14 +493,20 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
                                          modification_kw.get('antenna_Y_pos'),
                                          modification_kw.get('antenna_Z_pos'))
 
-            rinexfileobj.set_antenna_delta(modification_kw.get('antenna_X_delta'),
-                                           modification_kw.get('antenna_Y_delta'),
-                                           modification_kw.get('antenna_Z_delta'))
+            rinexfileobj.set_antenna_delta(modification_kw.get('antenna_H_delta'),
+                                           modification_kw.get('antenna_E_delta'),
+                                           modification_kw.get('antenna_N_delta'))
 
             rinexfileobj.set_agencies(modification_kw.get('operator'),
                                       modification_kw.get('agency'))
 
             rinexfileobj.set_sat_system(modification_kw.get('observables'))
+
+            rinexfileobj.set_interval(modification_kw.get('interval'))
+
+			## for the filename
+            rinexfileobj.set_filename_period(modification_kw.get('filename_period'))
+            rinexfileobj.set_filename_data_freq(modification_kw.get('filename_data_freq'))
 
         if verbose:
             logger.info('File Metadata :\n' + rinexfileobj.get_metadata()[0])
@@ -519,6 +520,16 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force, r
             rinexfileobj.add_comment('rinexmoded from {}'.format(modification_source))
         if marker:
             rinexfileobj.add_comment('file assigned from {}'.format(modification_source))
+            
+
+		# we regenerate the filenames  
+		rinexfileobj.get_shortname(inplace=True,compression='')            
+		rinexfileobj.get_longname(inplace=True,compression='')
+
+		# NB: here the compression type must be forced to ''
+		#     it will be added later 
+		# (The block "We convert the file back to Hatanaka Compressed Rinex")
+		# inplace = True => rinexfileobj's filename is updated
 
         ##### We convert the file back to Hatanaka Compressed Rinex #####
         if longname and not compression:
@@ -583,24 +594,24 @@ if __name__ == '__main__':
 
     # Parsing Args
     parser = argparse.ArgumentParser(description='Read a Sitelog file and create a CSV file output')
-    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process (see also -a/--alone for a single input file)')
-    parser.add_argument('outputfolder', type=str, help='Output folder for modified Rinex files')
-    parser.add_argument('-s', '--sitelog', help='Get the rinex header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
-    parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
-                                                           station, receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
-                                                           antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
-                                                           operator, agency, observables''', nargs='*', action=ParseKwargs, default=0)
-    parser.add_argument('-m', '--marker', help='Change 4 first letters of file\'s name to set it to another marker (does not apply to the header\'s MARKER NAME)', type=str, default=0)
+    parser.add_argument('rinexlist', type=str, help='Input list file of the RINEX paths to process (see also -a/--alone for a single input file)')
+    parser.add_argument('outputfolder', type=str, help='Output folder for modified RINEX files')
+    parser.add_argument('-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a sitelog or a folder contaning sitelogs.', type=str, default=0)
+    parser.add_argument('-k', '--modification_kw', help='''Modification keywords for header and/or filename. Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
+                                                           marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
+                                                           antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
+                                                           operator, agency, observables, interval, filename_file_period, filename_data_freq''', nargs='*', action=ParseKwargs, default=0)
+    parser.add_argument('-m', '--marker', help="Change 4 first letters of file\'s name to set it to another station (does not apply to the header\'s MARKER NAME, use -k marker_name='XXXX' for this)", type=str, default=0)
     parser.add_argument('-n', '--ninecharfile', help='Path of a file that contains 9-char. site names from the M3G database', type=str, default=0)
     parser.add_argument('-r', '--relative', help='Reconstruct files relative subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str, help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default=0)
-    parser.add_argument('-l', '--longname', help='Rename file using long name rinex convention (force gzip compression).', action='store_true', default=0)
+    parser.add_argument('-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=0)
     parser.add_argument('-f', '--force', help='Force appliance of sitelog based header values when station name within file does not correspond to sitelog', action='store_true')
     parser.add_argument('-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
-    parser.add_argument('-a', '--alone', help='INPUT is a alone Rinex file and not a file containing list of Rinex files paths', action='store_true')
+    parser.add_argument('-a', '--alone', help='INPUT is a alone RINEX file and not a file containing list of RINEX files paths', action='store_true')
     parser.add_argument('-o', '--output_logs', help='Folder where to write output logs', type=str)
-    parser.add_argument('-w', '--write', help='Write (rinex version, sample rate, file period) dependant output lists', action='store_true')
-    parser.add_argument('-v', '--verbose', help='Prompt file\'s metadata before and after modifications.', action='store_true', default=0)
+    parser.add_argument('-w', '--write', help='Write (RINEX version, sample rate, file period) dependant output lists', action='store_true')
+    parser.add_argument('-v', '--verbose', help='Print file\'s metadata before and after modifications.', action='store_true', default=0)
 
     args = parser.parse_args()
 

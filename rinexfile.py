@@ -51,7 +51,7 @@ class RinexFile:
         self.filename = self._filename()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
-        self.sample_rate, self.sample_rate_numeric  = self._get_sample_rate(plot)
+        self.sample_rate_string, self.sample_rate_numeric  = self._get_sample_rate(plot)
         self.file_period, self.session = self._get_file_period()
         self.sat_system = self._get_sat_system()
 
@@ -350,10 +350,10 @@ class RinexFile:
             return 'XXU',0.
 
         # Most frequent
-        sample_rate = max(set(Samples_rate_diff), key = Samples_rate_diff.count)
+        sample_rate_num = max(set(Samples_rate_diff), key = Samples_rate_diff.count)
 
         # Counting the intervals that are not equal to the most frequent
-        num_bad_sp = len([diff for diff in Samples_rate_diff if diff != sample_rate])
+        num_bad_sp = len([diff for diff in Samples_rate_diff if diff != sample_rate_num])
 
         non_nominal_interval_percent = num_bad_sp / len(Samples_rate_diff)
 
@@ -369,38 +369,38 @@ class RinexFile:
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
         # We round samples rates to avoid leap-seconds related problems
-        if sample_rate <= 0.0001:
+        if sample_rate_num <= 0.0001:
             # XXU – Unspecified
             sample_rate_str = 'XXU'
-        elif sample_rate <= 0.01:
+        elif sample_rate_num <= 0.01:
             # XXC – 100 Hertz
-            sample_rate = round(sample_rate, 4)
-            sample_rate_str = (str(int(1 / (100 * sample_rate))) + 'C').rjust(3, '0')
-        elif sample_rate < 1:
+            sample_rate_num = round(sample_rate_num, 4)
+            sample_rate_str = (str(int(1 / (100 * sample_rate_num))) + 'C').rjust(3, '0')
+        elif sample_rate_num < 1:
             # XXZ – Hertz
-            sample_rate = round(sample_rate, 2)
-            sample_rate_str = (str(int(1 / sample_rate)) + 'Z').rjust(3, '0')
-        elif sample_rate < 60:
+            sample_rate_num = round(sample_rate_num, 2)
+            sample_rate_str = (str(int(1 / sample_rate_num)) + 'Z').rjust(3, '0')
+        elif sample_rate_num < 60:
             # XXS – Seconds
-            sample_rate = round(sample_rate, 0)
-            sample_rate_str = (str(int(sample_rate)) + 'S').rjust(3, '0')
-        elif sample_rate < 3600:
+            sample_rate_num = round(sample_rate_num, 0)
+            sample_rate_str = (str(int(sample_rate_num)) + 'S').rjust(3, '0')
+        elif sample_rate_num < 3600:
             # XXM – Minutes
-            sample_rate = round(sample_rate, 0)
-            sample_rate_str = (str(int(sample_rate / 60)) + 'M').rjust(3, '0')
-        elif sample_rate < 86400:
+            sample_rate_num = round(sample_rate_num, 0)
+            sample_rate_str = (str(int(sample_rate_num / 60)) + 'M').rjust(3, '0')
+        elif sample_rate_num < 86400:
             # XXH – Hours
-            sample_rate = round(sample_rate, 0)
-            sample_rate_str = (str(int(sample_rate / 3600)) + 'H').rjust(3, '0')
-        elif sample_rate <= 8553600:
+            sample_rate_num = round(sample_rate_num, 0)
+            sample_rate_str = (str(int(sample_rate_num / 3600)) + 'H').rjust(3, '0')
+        elif sample_rate_num <= 8553600:
             # XXD – Days
-            sample_rate = round(sample_rate, 0)
-            sample_rate_str = (str(int(sample_rate / 86400)) + 'D').rjust(3, '0')
+            sample_rate_num = round(sample_rate_num, 0)
+            sample_rate_str = (str(int(sample_rate_num / 86400)) + 'D').rjust(3, '0')
         else:
             # XXU – Unspecified
             sample_rate_str = 'XXU'
 
-        return sample_rate_str, sample_rate
+        return sample_rate_str, sample_rate_num
 
 
     def _get_file_period(self):
@@ -492,7 +492,7 @@ class RinexFile:
                            'File' : self.path,
                            'File size (bytes)' : self.size,
                            'Rinex version' : metadata['RINEX VERSION / TYPE'][0:9].strip(),
-                           'Sample rate' : self.sample_rate,
+                           'Sample rate' : self.sample_rate_string,
                            'File period' : self.file_period,
                            'Observable type' : metadata['RINEX VERSION / TYPE'][40:60].strip(),
                            'Marker name' : metadata['MARKER NAME'][0:60].strip(),
@@ -607,7 +607,7 @@ class RinexFile:
                              data_source,
                              self.start_date.strftime(timeformat),
                              self.file_period,
-                             self.sample_rate,
+                             self.sample_rate_string,
                              self.sat_system + obs_type + ext + compression))
 
         if inplace:
@@ -752,12 +752,12 @@ class RinexFile:
         return
 
 
-    def set_interval(self, sample_rate=None):
+    def set_interval(self, sample_rate_input=None):
 
         if self.status != 0:
             return
 
-        if not any([sample_rate]):
+        if not any([sample_rate_input]):
             return
 
         # Identify line that contains INTERVAL
@@ -785,7 +785,7 @@ class RinexFile:
             label = "INTERVAL"
 
         # Parse line
-        sample_rate_meta = "{:10.3f}".format(float(sample_rate))
+        sample_rate_meta = "{:10.3f}".format(float(sample_rate_input))
 
         new_line = sample_rate_meta + ' ' * 50 + label
 
@@ -834,36 +834,36 @@ class RinexFile:
         return
 
 
-    def set_antenna_delta(self, X=None, Y=None, Z=None):
+    def set_antenna_delta(self, H=None, E=None, N=None):
 
         if self.status != 0:
             return
 
-        if not any([X, Y, Z]):
+        if not any([H, E, N]):
             return
 
         # Identify line that contains ANTENNA: DELTA H/E/N
         antenna_delta_header_idx = search_idx_value(self.rinex_data, 'ANTENNA: DELTA H/E/N')
         antenna_delta_meta = self.rinex_data[antenna_delta_header_idx]
         # Parse line
-        X_meta = antenna_delta_meta[0:14]
-        Y_meta = antenna_delta_meta[14:28]
-        Z_meta = antenna_delta_meta[28:42]
+        H_meta = antenna_delta_meta[0:14]
+        E_meta = antenna_delta_meta[14:28]
+        N_meta = antenna_delta_meta[28:42]
         label = antenna_delta_meta[60:]
         # Edit line
-        if X: # Format as 14.4 float. Set to zero if too large but should not happen
-            X_meta = '{:14.4f}'.format(float(X))
-            if len(X_meta) > 14:
-                X_meta = '{:14.4f}'.format(float('0'))
-        if Y:
-            Y_meta = '{:14.4f}'.format(float(Y))
-            if len(Y_meta) > 14:
-                Y_meta = '{:14.4f}'.format(float('0'))
-        if Z:
-            Z_meta = '{:14.4f}'.format(float(Z))
-            if len(Z_meta) > 14:
-                Z_meta = '{:14.4f}'.format(float('0'))
-        new_line = X_meta + Y_meta + Z_meta + ' ' * 18 + label
+        if H: # Format as 14.4 float. Set to zero if too large but should not happen
+            H_meta = '{:14.4f}'.format(float(H))
+            if len(H_meta) > 14:
+                H_meta = '{:14.4f}'.format(float('0'))
+        if E:
+            E_meta = '{:14.4f}'.format(float(E))
+            if len(E_meta) > 14:
+                E_meta = '{:14.4f}'.format(float('0'))
+        if N:
+            N_meta = '{:14.4f}'.format(float(N))
+            if len(N_meta) > 14:
+                N_meta = '{:14.4f}'.format(float('0'))
+        new_line = H_meta + E_meta + N_meta + ' ' * 18 + label
         # Set line
         self.rinex_data[antenna_delta_header_idx] = new_line
 
@@ -895,7 +895,6 @@ class RinexFile:
         self.rinex_data[agencies_header_idx] = new_line
 
         return
-
 
     def set_sat_system(self, sat_system):
 
@@ -971,6 +970,23 @@ class RinexFile:
         self.rinex_data.insert(new_comment_idx, new_line)
 
         return
+
+
+    def set_filename_station(self,site_inp):		
+		# We set the station in the filename to the new marker
+		if self.name_conv == 'SHORT': ### short name case
+			self.filename = site_inp.lower() + self.filename[4:]
+		else: ### long name case
+			self.filename = site_inp.upper() + self.filename[4:]
+		return
+        
+    def set_filename_data_freq(self,data_freq_inp):
+		self.sample_rate_str = data_freq_inp
+		return
+		
+    def set_filename_file_period(self,file_period_inp):
+		self.file_period = file_period_inp
+		return		
 
 
     def write_to_path(self, path, compression = 'gz'):
