@@ -650,8 +650,6 @@ class RinexFile:
         if compression != "":
             compression = '.' + compression
 
-        print(self.file_period)
-
         if self.file_period == '01D':
             timeformat = '%j0.%y' + file_type + compression
         else:
