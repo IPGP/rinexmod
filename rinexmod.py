@@ -58,8 +58,8 @@ OPTIONS :
 -s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
                             instrumentation informations, or folder containing sitelogs.
                             The sitelogs must be valid as the script does not check it.
--f : --force :              Force appliance of sitelog based header arguments when
-                            station name within file does not correspond to sitelog.
+-f : --force :              Force sitelog-based header values when RINEX's header
+                            and sitelog station name do not correspond.
 -i : --ignore :             Ignore firmware changes between instrumentation periods
                             when getting headers args info from sitelogs.
 -m : --marker :             A four characater station code that will be used to rename
@@ -173,10 +173,6 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
     file name modification, command line based header modification, or sitelog-based
     header modification.
     """
-    # If sitelog option, no modification arguments must be provided
-    if (sitelog and modification_kw) and (not force):
-        print('# ERROR : If you get metadata from sitelog, don\'t provide arguments for modification (-k, --modification_kw option) !. Use --force option to override this error.')
-        return
 
     # If no longname, modification_kw and sitelog, return
     if not sitelog and not modification_kw and not marker and not longname:
@@ -185,7 +181,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
 
     # If force option provided, check if sitelog option too, if not, not relevant.
     if force and not sitelog:
-        print('# ERROR : --force option is meaningful only when using also --sitelog option with one sitelog provided')
+        print('# ERROR : --force option is meaningful only when --sitelog option with a **single** sitelog is also provided')
         return
 
     # If ignore option provided, check if sitelog option too, if not, not relevant.
@@ -250,7 +246,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
         elif os.path.isdir(sitelog):
 
             if force:
-                print('# ERROR : --force option is meaningful only when providing a sole sitelog and not a folder contaning various ones')
+                print('# ERROR : --force option is meaningful only when providing a single sitelog (and not a folder contaning several sitelogs)')
                 return
 
             sitelog_extension = '.log'
@@ -543,8 +539,8 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             rinexfileobj.set_interval(modification_kw.get('interval'))
 
             # for the filename
-            rinexfileobj.set_filename_period(
-                modification_kw.get('filename_period'))
+            rinexfileobj.set_filename_file_period(
+                modification_kw.get('filename_file_period'))
             rinexfileobj.set_filename_data_freq(
                 modification_kw.get('filename_data_freq'))
 
@@ -600,12 +596,12 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
         # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
         if major_rinex_version not in return_lists:
             return_lists[major_rinex_version] = {}
-        if rinexfileobj.sample_rate not in return_lists[major_rinex_version]:
-            return_lists[major_rinex_version][rinexfileobj.sample_rate] = {}
-        if rinexfileobj.file_period not in return_lists[major_rinex_version][rinexfileobj.sample_rate]:
-            return_lists[major_rinex_version][rinexfileobj.sample_rate][rinexfileobj.file_period] = []
+        if rinexfileobj.sample_rate_string not in return_lists[major_rinex_version]:
+            return_lists[major_rinex_version][rinexfileobj.sample_rate_string] = {}
+        if rinexfileobj.file_period not in return_lists[major_rinex_version][rinexfileobj.sample_rate_string]:
+            return_lists[major_rinex_version][rinexfileobj.sample_rate_string][rinexfileobj.file_period] = []
 
-        return_lists[major_rinex_version][rinexfileobj.sample_rate][rinexfileobj.file_period].append(
+        return_lists[major_rinex_version][rinexfileobj.sample_rate_string][rinexfileobj.file_period].append(
             outputfile)
 
     logger.handlers.clear()
@@ -662,7 +658,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=0)
     parser.add_argument(
-        '-f', '--force', help='Force application of sitelog-based header values when station name within file does not correspond to sitelog', action='store_true')
+        '-f', '--force', help="Force sitelog-based header values when RINEX's header and sitelog station name do not correspond", action='store_true')
     parser.add_argument(
         '-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument(
