@@ -78,9 +78,9 @@ OPTIONS :
 -c : --compression :        Set file's compression. Acceptables values : 'gz' (recommended
                             to fit IGS standards), 'Z' or 'none'. Default value will retrieve
                             the actual compression of the input file.
--r : --relative :           Reconstruct files relative subdirectory. You have to indicate the
-                            part of the path that is common to all files in the list and
-                            that will be replaced with output folder.
+-r : --relative :           Reconstruct files relative subfolders.
+                            You have to indicate the common parent folder,
+                            that will be replaced with the output folder
 -o : --output_logs :        Folder where to write output log. If not provided, logs
                             will be written to OUTPUTFOLDER.
 -w : --write :              Write (RINEX version, sample rate, file period, observatory)
@@ -660,7 +660,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--marker', help="Change 4 first letters of file\'s name to set it to another station (does not apply to the header\'s MARKER NAME, use -k marker_name='XXXX' for this)", type=str, default='')
     parser.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names from the M3G database', type=str, default="")
-    parser.add_argument('-r', '--relative', help='Reconstruct files relative subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
+    parser.add_argument('-r', '--relative', help='Reconstruct files relative subfolders. You have to indicate the common parent folder, that will be replaced with the output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str,
                         help='Set file\'s compression (acceptables values : \'gz\' (recommended to fit IGS standards), \'Z\', \'none\')', default='')
     parser.add_argument(

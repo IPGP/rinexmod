@@ -80,7 +80,7 @@ class RinexFile:
 
         return '\n'.join(str_RinexFile)
 
-    def _load_rinex_data(self):
+    def _load_rinex_data(self,force=False):
         """
         Load the uncompressed rinex data into a list var using hatanaka library.
         Will return a table of lines of the uncompressed file, a 'name_conv' var
@@ -118,9 +118,13 @@ class RinexFile:
         elif pattern_longname_gfz.match(os.path.basename(self.path)):
             name_conv = 'LONGGFZ'
             status = 0
+        elif force == True:  
+            name_conv = 'UNKNOWN'
+            status = 0
         else:
             print('rinex filename does not match a regular name: ' +
                   os.path.basename(self.path))
+            print("try to force the loading with force = True")
             return None, None, 2
 
         try:
