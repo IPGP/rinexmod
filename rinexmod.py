@@ -442,14 +442,14 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
 
         if sitelog:
             # Site name from the rinex's header line
-            site_meta = rinexfileobj.get_site_from_filename('lower', True)
-
+            site_meta = rinexfileobj.get_site_from_filename('lower',
+                                                            only_4char=True)
             if verbose:
                 logger.info(
                     'Searching corresponding sitelog for site : ' + site_meta)
 
             # Finding the right sitelog. If is list, can not use force. If no sitelog found, do not process.
-            if site_meta not in [sitelog.station for sitelog in sitelogs]:
+            if site_meta not in [sitelog.site4char for sitelog in sitelogs]:
                 if len(sitelogs) == 1:
                     if not force:
                         logger.error('{:110s} - {}'.format(
@@ -464,13 +464,12 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
                     continue
             else:
                 sitelogobj = [
-                    sitelog for sitelog in sitelogs if sitelog.station == site_meta][0]
+                    sitelog for sitelog in sitelogs if sitelog.site4char == site_meta][0]
 
             modification_source = sitelogobj.filename
 
             # Site name from the sitelog
-            sitelog_sta_code = sitelogobj.info['1.']['Four Character ID'].lower(
-            )
+            sitelog_site_code = sitelogobj.info['1.']['Four Character ID'].lower()
 
             # Get rinex header values from sitelog infos and start and end time of the file
             # ignore option is to ignore firmware changes between instrumentation periods.
@@ -514,7 +513,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             rinexfileobj.set_marker(modification_kw.get('marker_name'),
                                     modification_kw.get('marker_number'))
 
-            # legacy keyword
+            # legacy keyword, 'marker_name' should be used instead
             rinexfileobj.set_marker(modification_kw.get('station'))
 
             rinexfileobj.set_receiver(modification_kw.get('receiver_serial'),
