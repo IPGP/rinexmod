@@ -48,7 +48,7 @@ class RinexFile:
         self.rinex_data, self.name_conv, self.status = self._load_rinex_data()
         self.size = self._get_size()
         self.compression, self.hatanka_input = self._get_compression()
-        self.filename = self._filename()
+        self.filename = self._get_filename()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
         self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(
@@ -190,7 +190,7 @@ class RinexFile:
 
         return compress, hatanaka
 
-    def _filename(self):
+    def _get_filename(self):
         """ Get filename WITHOUT its compression extension """
 
         if self.status != 0:
@@ -574,7 +574,8 @@ class RinexFile:
         elif case == 'upper':
             return self.filename[:cut].upper()
 
-    def get_longname(self, monum_country="00XXX", data_source="R", obs_type='O', ext='auto', compression='auto', inplace=False):
+    def get_longname(self, monum_country="00XXX", data_source="R", obs_type='O',
+                     ext='auto', compression='auto', inplace=False):
         """
         generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
@@ -628,7 +629,8 @@ class RinexFile:
 
         return longname
 
-    def get_shortname(self, file_type='auto', compression='auto', inplace=False):
+    def get_shortname(self, file_type='auto', compression='auto',
+                      inplace=False):
         """
         generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True

@@ -158,6 +158,14 @@ def listfiles(directory, extension):
 
 
 def get_git_revision_short_hash():
+    """
+    Gives the Git hash to have a tracking of the used version
+
+    Returns
+    -------
+    7 characters Git hash
+
+    """
     script_path = os.path.dirname(os.path.realpath(__file__))
     cmd = ['git', '--git-dir', script_path +
            '/.git', 'rev-parse', '--short', 'HEAD']
