@@ -36,7 +36,7 @@ class SiteLog:
 
         self.path = sitelogfile
         self.filename = os.path.basename(self.path)
-        self.station = self.filename[:4].lower()
+        self.site4char = self.filename[:4].lower()
         self.info, self.status = self._sitelog2dict()
         if self.info:
             self.instrumentations = self._instrumentations()
@@ -77,7 +77,7 @@ class SiteLog:
         pattern = re.compile(r'\n +')
         sitelog = re.sub(pattern, r'\n', sitelog)
 
-        # We rearrange multiline content to be complient with .ini format.
+        # We rearrange multiline content to be complient with .ini format.
         pattern = re.compile(r'(\n *): *')
         sitelog = re.sub(pattern, ' ', sitelog)
 
@@ -90,7 +90,7 @@ class SiteLog:
         if antennagraphic:
             sitelog = sitelog[:antennagraphic.start(0)]
 
-        # List of formated blocs
+        # List of formated blocs
         formatedblocs = []
         # Final dict to store values
         sitelogdict = {}
@@ -525,7 +525,7 @@ class SiteLog:
     #         # Session_Stop = Session_Stop.replace(' 00', '  0')
     #
     #         Ant_Ht = installation['antenna']['Marker->ARP Up Ecc. (m)']
-    #         HtCod = None #installation['antenna'][''] # XXX
+    #         HtCod = None #installation['antenna'][''] # XXX
     #         Ant_N = installation['antenna']['Marker->ARP North Ecc(m)']
     #         Ant_E = installation['antenna']['Marker->ARP East Ecc(m)']
     #         Receiver_Type = installation['receiver']['Receiver Type']
