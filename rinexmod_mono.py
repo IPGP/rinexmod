@@ -163,6 +163,10 @@ def loggersVerbose(logfile=None):
     return logger
 
 
+
+
+
+
 def listfiles(directory, extension):
     # returns list of paths
     liste = []
@@ -212,7 +216,8 @@ def _sitelog_files2objs_convert(sitelog_inp,
         # If sitelog is not parsable
         if sitelogobj.status != 0:
             print('# ERROR : The sitelog is not parsable : ' + sitelog_inp)
-            return None
+            raise SitelogError
+            
         if return_list_even_if_single_input:
             sitelogs_obj_list = [sitelogobj]
         else:
@@ -223,7 +228,7 @@ def _sitelog_files2objs_convert(sitelog_inp,
     
         if force:
             print('# ERROR : --force option is meaningful only when providing a single sitelog (and not a folder contaning several sitelogs)')
-            return
+            raise SitelogError
     
         sitelog_extension = '.log'
         all_sitelogs = listfiles(sitelog_inp, sitelog_extension)
@@ -263,7 +268,7 @@ def _sitelog_files2objs_convert(sitelog_inp,
             if sitelogobj.status != 0:
                 print('# ERROR : The sitelog is not parsable : ' +
                       sitelogobj.path)
-                return
+                raise SitelogError
     
             # Appending to list
             sitelogs_obj_list.append(sitelogobj)
@@ -287,14 +292,14 @@ def _sitelog_find(rnxobj,sitelogs_obj_list,logger=None):
             if not force:
                 logger.error('{:110s} - {}'.format(
                     '33 - Filename\'s site does not correspond to provided sitelog - use -f option to force', rnxobj.filename))
-                return None
+                raise RinexModInputArgsError
             else:
                 logger.warning('{:110s} - {}'.format(
                     '34 - Filename\'s site does not correspond to provided sitelog, processing anyway', rnxobj.filename))
         else:
             logger.error(
                 '{:110s} - {}'.format('33 - No provided sitelog for this file\'s site', rnxobj.filename))
-            return None
+            raise RinexModInputArgsError
     else:
         sitelogobj = [sl for sl in sitelogs_obj_list if sl.site4char == rnx_4char][0] 
         ## we assume the latest sitelog has been found in _sitelog_files2objs_convert
@@ -322,7 +327,7 @@ def _sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,logger=None,verbose=True,ignor
     if not metadata_vars:
         logger.error('{:110s} - {}'.format(
             '35 - No instrumentation corresponding to the data period on the sitelog', rnxobj.filename))
-        return
+        raise SitelogError
 
     if ignored:
         logger.warning('{:110s} - {}'.format(
@@ -375,7 +380,7 @@ def _modif_kw_check(modif_kw):
         if kw not in acceptable_keywords:
             print(
                 '# ERROR : \'{}\' is not an acceptable keyword for header modification.'.format(kw))
-            return
+            return RinexModInputArgsError
         
         
 def _modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
@@ -436,7 +441,6 @@ def _return_lists_write(return_lists,logfolder,now_dt=None):
                         line) for line in return_lists[rinex_version][sample_rate][file_period])
                     print('# Output rinex list written to ' + this_outputfile)
     return this_outputfile
-                    
                         
                         
 def rinexmod(file, outputfolder, marker=None, longname=None, sitelog=None,
@@ -455,7 +459,7 @@ def rinexmod(file, outputfolder, marker=None, longname=None, sitelog=None,
         if not relative in file:
             logger.error(
                 '{:110s} - {}'.format('31 - The relative subfolder can not be reconstructed for file', file))
-            return
+            raise RinexModInputArgsError
 
         # We construct the output path with relative path between file name and parameter
         relpath = os.path.relpath(os.path.dirname(file), relative)
@@ -468,7 +472,7 @@ def rinexmod(file, outputfolder, marker=None, longname=None, sitelog=None,
     if os.path.abspath(os.path.dirname(file)) == myoutputfolder:
         logger.error(
             '{:110s} - {}'.format('30 - Input and output folders are the same !', file))
-        raise RinexFileException
+        raise RinexFileError
 
     # Declare the rinex file as an object
     rnxobj = RinexFile(file,force_loading=force_rnx_load)
@@ -476,32 +480,32 @@ def rinexmod(file, outputfolder, marker=None, longname=None, sitelog=None,
     if rnxobj.status == 1:
         logger.error(
             '{:110s} - {}'.format('01 - The specified file does not exists', file))
-        return
+        raise RinexFileError
 
     if rnxobj.status == 2:
         logger.error(
             '{:110s} - {}'.format('02 - Not an observation Rinex file', file))
-        return
+        raise RinexFileError
 
     if rnxobj.status == 3:
         logger.error(
             '{:110s} - {}'.format('03 - Invalid or empty Zip file', file))
-        return
+        raise RinexFileError
 
     if rnxobj.status == 4:
         logger.error(
             '{:110s} - {}'.format('04 - Invalid Compressed Rinex file', file))
-        return
+        raise RinexFileError
 
     if rnxobj.status == 5:
         logger.error(
             '{:110s} - {}'.format('05 - Less than two epochs in the file', file))
-        return
+        raise RinexFileError
     
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
         print('# ERROR : The site name provided is not 4 or 9-char valid : ' + marker)
-        return
+        raise RinexModInputArgsError
     
     # Get the 4 char > 9 char dictionnary from the input list
     nine_char_dict = dict()  # in any case, nine_char_dict is initialized
@@ -509,7 +513,8 @@ def rinexmod(file, outputfolder, marker=None, longname=None, sitelog=None,
         if not os.path.isfile(ninecharfile):
             print(
                 '# ERROR : The specified 9-chars. list file does not exists : ' + ninecharfile)
-            return
+            raise RinexModInputArgsError
+
         with open(ninecharfile, "r") as F:
             nine_char_list = F.readlines()
 
@@ -552,7 +557,9 @@ def rinexmod(file, outputfolder, marker=None, longname=None, sitelog=None,
                                                         logger,
                                                         force_sitelog)
         
-        sitelogobj = _sitelog_find(rnxobj,sitelogs_obj_list,logger=logger)
+        sitelogobj = _sitelog_find(rnxobj,
+                                   sitelogs_obj_list,
+                                   logger=logger)
         rnxobj = _sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         modif_source = sitelogobj.filename
 
@@ -640,34 +647,35 @@ def rinexmod_cli(rinexlist, outputfolder, marker, longname, alone, sitelog,
     # If no longname, modif_kw and sitelog, return
     if not sitelog and not modif_kw and not marker and not longname:
         print('# ERROR : No action asked, provide at least one of the following args : --sitelog, --modif_kw, --marker, --longname.')
-        return
+        raise RinexModInputArgsError
 
     # If force option provided, check if sitelog option too, if not, not relevant.
     if force and not sitelog:
         print('# ERROR : --force option is meaningful only when --sitelog option with a **single** sitelog is also provided')
-        return
+        raise RinexModInputArgsError
 
     # If ignore option provided, check if sitelog option too, if not, not relevant.
     if ignore and not sitelog:
         print(
             '# ERROR : --ignore option is meaningful only when using also --sitelog option')
-        return
+        raise RinexModInputArgsError
 
     if ninecharfile and not longname:
         print('# ERROR : --ninecharfile option is meaningful only when using also --longname option')
-        return
+        raise RinexModInputArgsError
 
     # If inputfile doesn't exists, return
     if isinstance(rinexlist, list):
         pass
     elif not os.path.isfile(rinexlist):
         print('# ERROR : The input file doesn\'t exist : ' + rinexlist)
-        return
+        raise RinexModInputArgsError
+
 
     if output_logs and not os.path.isdir(output_logs):
         print(
             '# ERROR : The specified output folder for logs doesn\'t exist : ' + output_logs)
-        return
+        raise RinexModInputArgsError
 
     outputfolder = os.path.abspath(outputfolder)
 
@@ -699,7 +707,7 @@ def rinexmod_cli(rinexlist, outputfolder, marker, longname, alone, sitelog,
             rinexlist = [line.strip() for line in open(rinexlist).readlines()]
         except:
             print('# ERROR : The input file is not a list : ' + rinexlist)
-            return
+            return RinexModInputArgsError
 
     # sort the RINEX list
     if sort:
