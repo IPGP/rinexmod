@@ -42,18 +42,20 @@ class RinexFile:
     The get_metadata method permits to have a printable string of all file's metadata.
     """
 
-    def __init__(self, rinexfile, plot=False):
+    def __init__(self, rinexfile, plot=False, 
+                 force_loading=False):
 
         self.path = rinexfile
-        self.rinex_data, self.name_conv, self.status = self._load_rinex_data()
+        self.rinex_data, self.name_conv, self.status = self._load_rinex_data(force_loading)
         self.size = self._get_size()
         self.compression, self.hatanka_input = self._get_compression()
         self.filename = self._get_filename()
+        self.filename_origin = self._get_filename()
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
         self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(
             plot)
-        self.file_period, self.session = self._get_file_period()
+        self.file_period, self.session = self._get_file_period_from_filename()
         self.sat_system = self._get_sat_system()
 
     def __str__(self):
@@ -421,7 +423,7 @@ class RinexFile:
 
         return sample_rate_str, sample_rate_num
 
-    def _get_file_period(self):
+    def _get_file_period_from_filename(self):
         """
         Get the file period from the file's name.
         In long name convention, gets it striaght from the file name.
