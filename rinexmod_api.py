@@ -622,7 +622,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
       
     rnxobj.set_site_filename(rnx_4char+monum+country)
     
-    if not marker and not "marker_name" not in modif_kw.keys(): # General case
+    if not marker and not ("marker_name" in modif_kw.keys()): # General case
         rnxobj.set_marker(rnxobj.get_site_from_filename('upper', False))
     elif marker: # specific actions if marker is given
         # We store the old site name to add a comment in rinex file's header
