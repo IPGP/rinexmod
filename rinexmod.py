@@ -137,7 +137,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     parser.add_argument(
-        '-f', '--force', help="Force sitelog-based header values when RINEX's header and sitelog site name do not correspond", action='store_true')
+        '-fs', '--force_sitelog', help="Force sitelog-based header values when RINEX's header and sitelog site name do not correspond", action='store_true', default=False)
+    parser.add_argument(
+        '-fr', '--force_rnx_load', help="Force the loading of the input RINEX. Useful if its name is not standard", action='store_true', default=False)
     parser.add_argument(
         '-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument(
@@ -161,7 +163,8 @@ if __name__ == '__main__':
     relative = args.relative
     compression = args.compression
     longname = args.longname
-    force = args.force
+    force_sitelog = args.force_sitelog
+    force_rnx_load = args.force_rnx_load
     ignore = args.ignore
     alone = args.alone
     output_logs = args.output_logs
@@ -175,7 +178,8 @@ if __name__ == '__main__':
                      modif_kw=modif_kw,
                      marker=marker,
                      longname=longname,
-                     force=force, 
+                     force_sitelog=force_sitelog,
+                     force_rnx_load=force_rnx_load,
                      ignore=ignore, 
                      ninecharfile=ninecharfile, 
                      compression=compression,

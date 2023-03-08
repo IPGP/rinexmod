@@ -699,7 +699,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 # Upper level rinexmod for a Console run
 
 def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
-     longname=False, force=False, ignore=False, ninecharfile=None, compression=None,
+     longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, ninecharfile=None, compression=None,
      relative='', verbose=True, alone=False, output_logs=None, write=False, sort=False):
     
     """
@@ -726,7 +726,7 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         raise RinexModInputArgsError
 
     # If force option provided, check if sitelog option too, if not, not relevant.
-    if force and not sitelog:
+    if force_sitelog and not sitelog:
         logger.critical('--force option is meaningful only when --sitelog option with a **single** sitelog is also provided')
         raise RinexModInputArgsError
 
@@ -786,27 +786,32 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     # sort the RINEX list
     if sort:
         rinexlist.sort()
+        
+    # load the sitelogs as a list of SiteLog objects
+    if sitelog:
+        sitelog_use = _sitelog_input_manage(sitelog, force_sitelog)
 
     ### Looping in file list ###
     return_lists = {}
-
-
     ####### Iterate over each RINEX
-    for rnx in rinexlist:        
-        return_lists = rinexmod(rinexfile=rnx,
-                                outputfolder=outputfolder,
-                                sitelog=sitelog,
-                                modif_kw=modif_kw,
-                                marker=marker,
-                                longname=longname,
-                                force_rnx_load=force,
-                                force_sitelog=force,
-                                ignore=ignore,
-                                ninecharfile=ninecharfile,
-                                compression=compression,
-                                relative=relative, 
-                                verbose=verbose,
-                                return_lists=return_lists)
+    for rnx in rinexlist:     
+        try:
+            return_lists = rinexmod(rinexfile=rnx,
+                                    outputfolder=outputfolder,
+                                    sitelog=sitelog_use,
+                                    modif_kw=modif_kw,
+                                    marker=marker,
+                                    longname=longname,
+                                    force_rnx_load=force_rnx_load,
+                                    force_sitelog=force_sitelog,
+                                    ignore=ignore,
+                                    ninecharfile=ninecharfile,
+                                    compression=compression,
+                                    relative=relative, 
+                                    verbose=verbose,
+                                    return_lists=return_lists)
+        except Exception as e:
+            logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
         
     #########################################
     logger.handlers.clear()
