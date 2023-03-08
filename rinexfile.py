@@ -77,11 +77,10 @@ class RinexFile:
     The get_metadata method permits to have a printable string of all file's metadata.
     """
 
-    def __init__(self, rinexfile, plot=False, 
-                 force_loading=False):
+    def __init__(self, rinexfile, force_rnx_load=False, plot=False):
 
         self.path = rinexfile
-        self.rinex_data, self.name_conv, self.status = self._load_rinex_data(force_loading)
+        self.rinex_data, self.name_conv, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
         self.size = self._get_size()
         self.compression, self.hatanka_input = self._get_compression()
         self.filename = self._get_filename()
@@ -123,7 +122,7 @@ class RinexFile:
 
         return '\n'.join(str_RinexFile)
 
-    def _load_rinex_data(self,force=False):
+    def _load_rinex_data(self,force_rnx_load=False):
         """
         Load the uncompressed rinex data into a list var using hatanaka library.
         Will return a table of lines of the uncompressed file, a 'name_conv' var
@@ -161,13 +160,13 @@ class RinexFile:
         elif pattern_longname_gfz.match(os.path.basename(self.path)):
             name_conv = 'LONGGFZ'
             status = 0
-        elif force == True:  
+        elif force_rnx_load:  
             name_conv = 'UNKNOWN'
             status = 0
         else:
-            print('rinex filename does not match a regular name: ' +
+            logger.warning('rinex filename does not match a regular name: ' +
                   os.path.basename(self.path))
-            print("try to force the loading with force = True")
+            logger.warning("try to force the loading with force_rnx_load = True")
             return None, None, 2
 
         try:

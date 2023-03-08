@@ -520,7 +520,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         raise RinexFileError
 
     # Declare the rinex file as an object
-    rnxobj = RinexFile(rinexfile,force_loading=force_rnx_load)
+    rnxobj = RinexFile(rinexfile,force_rnx_load=force_rnx_load)
 
     if rnxobj.status == 1:
         logger.error(
