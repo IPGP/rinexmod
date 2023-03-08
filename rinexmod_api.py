@@ -110,7 +110,7 @@ def git_get_revision_short_hash():
 # *****************************************************************************
 # Sitelog import
 
-def _sitelog_input_manage(sitelog_inp,force):
+def _sitelog_input_manage(sitelog_inp,force=False):
     """
     Manage the multiple types possible for a Sitelog inputs
     Return a list of SiteLog to be handeled by _sitelog_find_site
