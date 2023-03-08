@@ -4,14 +4,14 @@
 This script takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
 loop the RINEX files list to modifiy the file's header. It then write them back to Hanakata
 compressed format in an output folder. It permits also to rename the files changing
-the four first characters of the file name with another station code. It can write
+the four first characters of the file name with another site code. It can write
 those files with the long name naming convention with the --longname option.
 
 Two ways of passing parameters to modifiy headers are possible:
 
 --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
                       Acceptable_keywords are : marker_name, marker_number, 
-                      station (legacy alias for marker_name), receiver_serial,
+                      site (legacy alias for marker_name), receiver_serial,
                       receiver_type, receiver_fw, antenna_serial, antenna_type,
                       antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
                       antenna_H_delta, antenna_E_delta, antenna_N_delta,
@@ -22,7 +22,7 @@ Two ways of passing parameters to modifiy headers are possible:
                containing sitelogs. You then have to pass a list of files and the script will
                assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
-               and use them to extract from the sitelog the station instrumentation
+               and use them to extract from the sitelog the site instrumentation
                of the corresponding period and fill file's header with following infos :
                        Four Character ID
                        X coordinate (m)
@@ -60,10 +60,10 @@ OPTIONS :
                             Will override the information from the sitelog.
                             The sitelogs must be valid as the script does not check it.
 -f : --force :              Force sitelog-based header values when RINEX's header
-                            and sitelog station name do not correspond.
+                            and sitelog's site name do not correspond.
 -i : --ignore :             Ignore firmware changes between instrumentation periods
                             when getting headers args info from sitelogs.
--m : --marker :             A four characater station code that will be used to rename
+-m : --marker :             A four or nine character site code that will be used to rename
                             input files.
                             (does not apply to the header\'s MARKER NAME, 
                              use -k marker_name='<MARKER>' for this)
@@ -265,12 +265,12 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
 
             # Get last version of sitelogs if multiple available
             sitelogs = []
-            # We list the available stations to group sitelogs
+            # We list the available sites to group sitelogs
             sitelogsta = [os.path.basename(sitelog)[0:4]
                           for sitelog in all_sitelogs]
 
             for sta in sitelogsta:
-                # Grouping by station
+                # Grouping by site
                 sta_sitelogs = [sitelog for sitelog in all_sitelogs if os.path.basename(sitelog)[
                     0:4] == sta]
                 # Getting dates from basename
@@ -357,9 +357,9 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
         for site_key in nine_char_list:
             nine_char_dict[site_key[:4].lower()] = site_key.strip()
 
-    # Check that the provided marker is a 4-char station name
-    if marker and len(marker) != 4:
-        print('# ERROR : The marker provided is not 4-char valid : ' + marker)
+    # Check that the provided marker is a 4-char site name
+    if marker and (len(marker) != 4 and len(marker) != 9):
+        print('# ERROR : The site name provided is not 4 or 9-char valid : ' + marker)
         return
 
     # sort the RINEX list
@@ -421,16 +421,16 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             continue
 
         if marker:
-            # We store the old station name to add a comment in rinex file's header
+            # We store the old site name to add a comment in rinex file's header
             modification_source = rinexfileobj.filename[:4]
-            rinexfileobj.set_filename_station(marker)
+            rinexfileobj.set_filename_site(marker)
 
         if longname:
             # We rename the file to the rinex long name convention
             # Get the site 9-char name
             if not ninecharfile or not rinexfileobj.get_site_from_filename('lower', True) in nine_char_dict:
                 logger.warning('{:110s} - {}'.format(
-                    '32 - Station\'s country not retrevied, will not be properly renamed', file))
+                    '32 - Site\'s country not retrevied, will not be properly renamed', file))
                 monum_country = "00XXX"
             else:
                 monum_country = nine_char_dict[rinexfileobj.get_site_from_filename(
@@ -441,36 +441,35 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             # (The block "we regenerate the filenames")
 
         if sitelog:
-            # Station name from the rinex's header line
-            station_meta = rinexfileobj.get_site_from_filename('lower', True)
-
+            # Site name from the rinex's header line
+            site_meta = rinexfileobj.get_site_from_filename('lower',
+                                                            only_4char=True)
             if verbose:
                 logger.info(
-                    'Searching corresponding sitelog for station : ' + station_meta)
+                    'Searching corresponding sitelog for site : ' + site_meta)
 
             # Finding the right sitelog. If is list, can not use force. If no sitelog found, do not process.
-            if station_meta not in [sitelog.station for sitelog in sitelogs]:
+            if site_meta not in [sitelog.site4char for sitelog in sitelogs]:
                 if len(sitelogs) == 1:
                     if not force:
                         logger.error('{:110s} - {}'.format(
-                            '33 - File\'s station does not correspond to provided sitelog - use -f option to force', file))
+                            '33 - Filename\'s site does not correspond to provided sitelog - use -f option to force', file))
                         continue
                     else:
                         logger.warning('{:110s} - {}'.format(
-                            '34 - File\'s station does not correspond to provided sitelog, processing anyway', file))
+                            '34 - Filename\'s site does not correspond to provided sitelog, processing anyway', file))
                 else:
                     logger.error(
-                        '{:110s} - {}'.format('33 - No provided sitelog for this file\'s station', file))
+                        '{:110s} - {}'.format('33 - No provided sitelog for this file\'s site', file))
                     continue
             else:
                 sitelogobj = [
-                    sitelog for sitelog in sitelogs if sitelog.station == station_meta][0]
+                    sitelog for sitelog in sitelogs if sitelog.site4char == site_meta][0]
 
             modification_source = sitelogobj.filename
 
-            # Station name from the sitelog
-            sitelog_sta_code = sitelogobj.info['1.']['Four Character ID'].lower(
-            )
+            # Site name from the sitelog
+            sitelog_site_code = sitelogobj.info['1.']['Four Character ID'].lower()
 
             # Get rinex header values from sitelog infos and start and end time of the file
             # ignore option is to ignore firmware changes between instrumentation periods.
@@ -514,7 +513,7 @@ def rinexmod(rinexlist, outputfolder, marker, longname, alone, sitelog, force,
             rinexfileobj.set_marker(modification_kw.get('marker_name'),
                                     modification_kw.get('marker_number'))
 
-            # legacy keyword
+            # legacy keyword, 'marker_name' should be used instead
             rinexfileobj.set_marker(modification_kw.get('station'))
 
             rinexfileobj.set_receiver(modification_kw.get('receiver_serial'),
@@ -647,13 +646,13 @@ if __name__ == '__main__':
     parser.add_argument('outputfolder', type=str,
                         help='Output folder for modified RINEX files')
     parser.add_argument(
-        '-s', '--sitelog', help='Get the RINEX header values from file\'s station\'s sitelog. Provide a single sitelog path or a folder contaning sitelogs.', type=str, default="")
+        '-s', '--sitelog', help='Get the RINEX header values from file\'s site\'s sitelog. Provide a single sitelog path or a folder contaning sitelogs.', type=str, default="")
     parser.add_argument('-k', '--modification_kw', help='''Modification keywords for RINEX's header and/or filename. Will override the information from the sitelog. 
                                                            Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
                                                            operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)''', nargs='*', action=ParseKwargs, default=None)
-    parser.add_argument('-m', '--marker', help="Change 4 first letters of file\'s name to set it to another station (does not apply to the header\'s MARKER NAME, use -k marker_name='XXXX' for this)", type=str, default='')
+    parser.add_argument('-m', '--marker', help="Change 4 or 9 first letters of file\'s name to set it to another site (does not apply to the header\'s MARKER NAME, use -k marker_name='XXXX' for this)", type=str, default='')
     parser.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names from the M3G database', type=str, default="")
     parser.add_argument('-r', '--relative', help='Reconstruct files relative subdirectories. You have to indicate the part of the path that is common to all files and that will be replaced with output folder', type=str, default=0)
@@ -662,7 +661,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     parser.add_argument(
-        '-f', '--force', help="Force sitelog-based header values when RINEX's header and sitelog station name do not correspond", action='store_true')
+        '-f', '--force', help="Force sitelog-based header values when RINEX's header and sitelog site name do not correspond", action='store_true')
     parser.add_argument(
         '-i', '--ignore', help='Ignore firmware changes between instrumentation periods when getting header values info from sitelogs', action='store_true')
     parser.add_argument(

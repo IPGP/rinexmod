@@ -543,19 +543,19 @@ class RinexFile:
         if self.status != 0:
             return ''
 
-        station_meta = 'MARKER NAME'
+        site_meta = 'MARKER NAME'
 
         for line in self.rinex_data:
-            if re.search(station_meta, line):
-                station_meta = line
+            if re.search(site_meta, line):
+                site_meta = line
                 break
 
-        if station_meta == 'MARKER NAME':
+        if site_meta == 'MARKER NAME':
             return None
 
-        station_meta = station_meta.split(' ')[0].upper()
+        site_meta = site_meta.split(' ')[0].upper()
 
-        return station_meta
+        return site_meta
 
     def get_site_from_filename(self, case='lower', only_4char=False):
         """ Getting site name from the filename """
@@ -665,19 +665,19 @@ class RinexFile:
 
         return shortname
 
-    def set_marker(self, station, number=None):
+    def set_marker(self, marker_inp, number=None):
 
         if self.status != 0:
             return
 
-        if not station:
+        if not marker_inp:
             return
 
         # Identify line that contains MARKER NAME
         marker_name_header_idx = search_idx_value(
             self.rinex_data, 'MARKER NAME')
         # Edit line
-        new_line = '{}'.format(station.ljust(60)) + 'MARKER NAME'
+        new_line = '{}'.format(marker_inp.ljust(60)) + 'MARKER NAME'
         if marker_name_header_idx:
             #marker_name_meta = self.rinex_data[marker_name_header_idx]
             # Set line
@@ -983,12 +983,14 @@ class RinexFile:
 
         return
 
-    def set_filename_station(self, site_inp):
-        # We set the station in the filename to the new marker
+    def set_filename_site(self, site_inp):
         if self.name_conv == 'SHORT':  # short name case
             self.filename = site_inp.lower() + self.filename[4:]
         else:  # long name case
-            self.filename = site_inp.upper() + self.filename[4:]
+            if len(site_inp) == 9:
+                self.filename = site_inp.upper() + self.filename[9:]
+            else:
+                self.filename = site_inp.upper() + self.filename[4:]            
         return
 
     def set_filename_data_freq(self, data_freq_inp):
