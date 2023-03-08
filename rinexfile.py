@@ -14,6 +14,11 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
 
+# Create a logger object.
+import logging
+logger = logging.getLogger(__name__)
+
+# **********************************************************************
 # low level functions
 def search_idx_value(data, field):
     """
@@ -29,6 +34,36 @@ def search_idx_value(data, field):
     return out_idx
 
 
+def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
+    """
+    Round a datetime object to a multiple of a timedelta
+    dt : datetime.datetime object, default now.
+    dateDelta : timedelta object, we round to a multiple of this, default 1 minute.
+    to : up / down / average
+    from:  http://stackoverflow.com/questions/3463930/how-to-round-the-minute-of-a-datetime-object-python
+    """
+    round_to = date_delta.total_seconds()
+    if dt is None:
+        dt = datetime.now()
+    seconds = (dt - dt.min).seconds
+
+    if seconds % round_to == 0 and dt.microsecond == 0:
+        rounding = (seconds + round_to / 2) // round_to * round_to
+    else:
+        if to == 'up':
+            # // is a floor division, not a comment on following line (like in javascript):
+            rounding = (seconds + dt.microsecond/1000000 + round_to) // round_to * round_to
+        elif to == 'down':
+            rounding = seconds // round_to * round_to
+        else:
+            rounding = (seconds + round_to / 2) // round_to * round_to
+
+    return dt + timedelta(0, rounding - seconds, - dt.microsecond)
+
+
+
+# **********************************************************************
+# class definition
 class RinexFile:
     """
     Will store a compressed rinex file content in a file-like list of strings
@@ -51,11 +86,17 @@ class RinexFile:
         self.compression, self.hatanka_input = self._get_compression()
         self.filename = self._get_filename()
         self.filename_origin = self._get_filename()
+        # self.site4char = 
+        # self.monument =
+        # self.country =
+        
+        
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
         self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(
             plot)
-        self.file_period, self.session = self._get_file_period_from_filename()
+        #self.file_period, self.session = self._get_file_period_from_filename()
+        self.file_period, self.session = self._get_file_period_from_data()
         self.sat_system = self._get_sat_system()
 
     def __str__(self):
@@ -257,8 +298,7 @@ class RinexFile:
                 m = re.search(date_pattern, line)
                 if m:
                     break
-
-            year = m.group(1)
+            
 
         elif self.version[0] == '2':
             # Pattern of an observation line containing a date
@@ -270,15 +310,23 @@ class RinexFile:
                 if m:
                     break
 
-            year = '20' + m.group(1)
+        if not m: ### No end Date Found
+            return start_meta, None
 
-        # Building a date string
-        end_meta = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
-            m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
-
-        end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
-
-        return start_meta, end_meta
+        else:
+            # Getting end date
+            if self.version[0] == '3':
+                year = m.group(1)
+            elif self.version[0] == '2':
+                year = '20' + m.group(1)
+                
+            # Building a date string
+            end_meta = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
+                m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
+    
+            end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
+    
+            return start_meta, end_meta
 
     def _get_sample_rate(self, plot=False):
         """
@@ -332,8 +380,7 @@ class RinexFile:
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
             self.status = 5
-            print(
-                "# ERROR: _get_sample_rate: less than 2 samples found, , can't get a sample rate", Samples_stack)
+            logger.error("_get_sample_rate: less than 2 samples found, can't get a sample rate %s", Samples_stack)
             return None, None
 
         # Building a date string
@@ -354,8 +401,7 @@ class RinexFile:
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = 5
-            print(
-                "# ERROR: _get_sample_rate: less than one interval after removing 0 values", Samples_rate_diff)
+            logger.error(" _get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
             return None, None
 
         # If less than 2 intervals, can't compare intervals
@@ -459,6 +505,39 @@ class RinexFile:
             file_period = '00U'
 
         return file_period, session
+    
+    
+    def _get_file_period_from_data(self):
+        """
+        Get the file period from the data themselves.
+        """
+        
+        rndtup = lambda x: round_time(x,timedelta(minutes=60),"up")
+        rndtdown = lambda x: round_time(x,timedelta(minutes=60),"down")
+        delta = rndtup(self.end_date) - rndtdown(self.start_date)
+        
+        if delta <= timedelta(seconds=3600):
+            file_period = '01H'
+            session = True
+        elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400):
+            file_period = '01D'
+            session = False
+        else:
+            file_period = '00U'
+            session = False
+            
+        return file_period, session
+
+
+
+            
+            
+            
+            
+            
+
+            
+
 
     def _get_sat_system(self):
         """ Parse RINEX VERSION / TYPE line to get observable type """
@@ -569,15 +648,21 @@ class RinexFile:
         if only_4char:
             cut = 4
         else:
-            cut = None
+            cut = 9
 
         if case == 'lower':
             return self.filename[:cut].lower()
         elif case == 'upper':
             return self.filename[:cut].upper()
 
-    def get_longname(self, monum_country="00XXX", data_source="R", obs_type='O',
-                     ext='auto', compression='auto', inplace=False):
+    def get_longname(self, 
+                     monum="00",
+                     country="XXX",
+                     data_source="R",
+                     obs_type='O',
+                     ext='auto',
+                     compression='auto',
+                     inplace_set=False):
         """
         generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
@@ -591,7 +676,7 @@ class RinexFile:
             is given without dot as 1st character
         """
 
-        site_9char = self.get_site_from_filename('upper', True) + monum_country
+        site_9char = self.get_site_from_filename('upper', True) + monum + country
 
         if ext == "auto" and self.hatanka_input:
             ext = 'crx'
@@ -626,13 +711,15 @@ class RinexFile:
                              self.sample_rate_string,
                              self.sat_system + obs_type + ext + compression))
 
-        if inplace:
+        if inplace_set:
             self.filename = longname
 
         return longname
 
-    def get_shortname(self, file_type='auto', compression='auto',
-                      inplace=False):
+    def get_shortname(self,
+                      file_type='auto',
+                      compression='auto',
+                      inplace_set=False):
         """
         generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
@@ -668,12 +755,12 @@ class RinexFile:
 
         shortname = site_4char + self.start_date.strftime(timeformat)
 
-        if inplace:
+        if inplace_set:
             self.filename = shortname
 
         return shortname
 
-    def set_marker(self, marker_inp, number=None):
+    def set_marker(self, marker_inp, number_inp=None):
 
         if self.status != 0:
             return
@@ -695,13 +782,13 @@ class RinexFile:
                 self.rinex_data, 'PGM / RUN BY / DATE')
             self.rinex_data.insert(pgm_header_idx, new_line)
 
-        if number:
+        if number_inp:
             # Identify line that contains MARKER NUMBER
             ## marker_number_header_idx = next((i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e), None)
             marker_number_header_idx = search_idx_value(
                 self.rinex_data, 'MARKER NUMBER')
             # Edit line
-            new_line = '{}'.format(number.ljust(60)) + 'MARKER NUMBER'
+            new_line = '{}'.format(number_inp.ljust(60)) + 'MARKER NUMBER'
             if marker_number_header_idx:  # The line exsits
                 # Set line
                 self.rinex_data[marker_number_header_idx] = new_line
@@ -991,7 +1078,7 @@ class RinexFile:
 
         return
 
-    def set_filename_site(self, site_inp):
+    def set_site_filename(self, site_inp):
         if self.name_conv == 'SHORT':  # short name case
             self.filename = site_inp.lower() + self.filename[4:]
         else:  # long name case

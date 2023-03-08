@@ -344,6 +344,24 @@ class SiteLog:
                         ignored = True
 
         return thisinstall, ignored
+    
+    def get_country(self,iso_code=True):
+        """
+        Return the ISO country code based on the Sitelog's Country filed.
+        Requires pycountry module
+        """
+        import pycountry
+        full_country = self.info['2.']['Country']
+        try:
+            iso_country = pycountry.countries.get(name=full_country).alpha_3
+        except:
+            iso_country = "XXX"
+        
+        if iso_code:
+            return iso_country
+        else:
+            return full_country
+        
 
 
     def teqcargs(self, starttime, endtime, ignore = False):
