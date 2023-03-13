@@ -42,6 +42,9 @@ class SiteLog:
             self.instrumentations = self._instrumentations()
         else:
             self.instrumentations = None
+            
+    def __repr__(self):
+        return self.filename
 
 
     def _sitelog2dict(self):

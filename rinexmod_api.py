@@ -110,10 +110,10 @@ def git_get_revision_short_hash():
 # *****************************************************************************
 # Sitelog import
 
-def _sitelog_input_manage(sitelog_inp,force=False):
+def sitelog_input_manage(sitelog_inp,force=False):
     """
     Manage the multiple types possible for a Sitelog inputs
-    Return a list of SiteLog to be handeled by _sitelog_find_site
+    Return a list of SiteLog to be handeled by sitelog_find_site
     
     Possible inputs are 
     * list of string (sitelog file paths),
@@ -139,12 +139,12 @@ def _sitelog_input_manage(sitelog_inp,force=False):
     elif type(sitelog_inp) is list and isinstance(sitelog_inp[0],SiteLog):
         return sitelog_inp
     else:
-        return _sitelog_files2objs_convert(sitelog_inp,
+        return sitelog_files2objs_convert(sitelog_inp,
                                            force=force,
                                            return_list_even_if_single_input=True)
         
 
-def _sitelog_files2objs_convert(sitelog_filepath,
+def sitelog_files2objs_convert(sitelog_filepath,
                                 force = False,
                                 return_list_even_if_single_input=True):
     
@@ -231,33 +231,39 @@ def _sitelog_find_latest_files(all_sitelogs_filepaths):
     return latest_sitelogs_filepaths
     
 
-def _sitelog_find_site(rnxobj,sitelogs_obj_list,force):
+def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
     # Finding the right sitelog. If is list, can not use force. If no sitelog found, do not process.
-    rnx_4char = rnxobj.get_site_from_filename('lower', only_4char=True)
+    if type(rnxobj_or_site4char) is str:
+        rnx_4char = rnxobj_or_site4char[:4]
+        err_label = rnxobj_or_site4char
+    else:
+        rnx_4char = rnxobj_or_site4char.get_site(True,True)
+        err_label = rnxobj_or_site4char.filename
+        
     logger.debug('Searching corresponding sitelog for site : ' + rnx_4char)
 
     if rnx_4char not in [sl.site4char for sl in sitelogs_obj_list]:
         if len(sitelogs_obj_list) == 1:
             if not force:
                 logger.error('{:110s} - {}'.format(
-                    '33 - RINEX name\'s site does not correspond to provided sitelog - use -f option to force', rnxobj.filename))
+                    '33 - RINEX name\'s site does not correspond to provided sitelog - use -f option to force', err_label))
                 raise RinexModInputArgsError
             else:
                 logger.warning('{:110s} - {}'.format(
-                    '34 - RINEX name\'s site does not correspond to provided sitelog, forced processing anyway', rnxobj.filename))
+                    '34 - RINEX name\'s site does not correspond to provided sitelog, forced processing anyway', err_label))
         else:
             logger.error(
-                '{:110s} - {}'.format('33 - No sitelog found for this RINEX', rnxobj.filename))
+                '{:110s} - {}'.format('33 - No sitelog found for this RINEX', err_label))
             raise RinexModInputArgsError
     else:
         sitelogobj = [sl for sl in sitelogs_obj_list if sl.site4char == rnx_4char][0] 
-        ## we assume the latest sitelog has been found in _sitelog_files2objs_convert
+        ## we assume the latest sitelog has been found in sitelog_files2objs_convert
         
     return sitelogobj
         
 
 def _sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
-    rnx_4char = rnxobj.get_site_from_filename('lower', only_4char=True)
+    rnx_4char = rnxobj.get_site(True,True)
     # Site name from the sitelog
     sitelog_4char = sitelogobj.info['1.']['Four Character ID'].lower()
     
@@ -282,14 +288,14 @@ def _sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
      antenna, antenna_pos, antenna_delta) = metadata_vars
 
     # # Apply the modifications to the RinexFile object
-    rnxobj.set_marker(fourchar_id, domes_id)
-    rnxobj.set_receiver(**receiver)
-    rnxobj.set_interval(rnxobj.sample_rate_numeric)
-    rnxobj.set_antenna(**antenna)
-    rnxobj.set_antenna_pos(**antenna_pos)
-    rnxobj.set_antenna_delta(**antenna_delta)
-    rnxobj.set_agencies(**agencies)
-    rnxobj.set_sat_system(observable_type)
+    rnxobj.mod_marker(fourchar_id, domes_id)
+    rnxobj.mod_receiver(**receiver)
+    rnxobj.mod_interval(rnxobj.sample_rate_numeric)
+    rnxobj.mod_antenna(**antenna)
+    rnxobj.mod_antenna_pos(**antenna_pos)
+    rnxobj.mod_antenna_delta(**antenna_delta)
+    rnxobj.mod_agencies(**agencies)
+    rnxobj.mod_sat_system(observable_type)
     
     return rnxobj
 
@@ -328,40 +334,40 @@ def _modif_kw_check(modif_kw):
         
    
 def _modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
-    rinexfileobj.set_marker(modif_kw.get('marker_name'),
+    rinexfileobj.mod_marker(modif_kw.get('marker_name'),
                             modif_kw.get('marker_number'))
 
     # legacy keyword, 'marker_name' should be used instead
-    rinexfileobj.set_marker(modif_kw.get('station'))
+    rinexfileobj.mod_marker(modif_kw.get('station'))
 
-    rinexfileobj.set_receiver(modif_kw.get('receiver_serial'),
+    rinexfileobj.mod_receiver(modif_kw.get('receiver_serial'),
                               modif_kw.get('receiver_type'),
                               modif_kw.get('receiver_fw'))
 
-    rinexfileobj.set_antenna(modif_kw.get('antenna_serial'),
+    rinexfileobj.mod_antenna(modif_kw.get('antenna_serial'),
                              modif_kw.get('antenna_type'))
 
-    rinexfileobj.set_antenna_pos(modif_kw.get('antenna_X_pos'),
+    rinexfileobj.mod_antenna_pos(modif_kw.get('antenna_X_pos'),
                                  modif_kw.get('antenna_Y_pos'),
                                  modif_kw.get('antenna_Z_pos'))
 
-    rinexfileobj.set_antenna_delta(modif_kw.get('antenna_H_delta'),
+    rinexfileobj.mod_antenna_delta(modif_kw.get('antenna_H_delta'),
                                    modif_kw.get(
                                        'antenna_E_delta'),
                                    modif_kw.get('antenna_N_delta'))
 
-    rinexfileobj.set_agencies(modif_kw.get('operator'),
+    rinexfileobj.mod_agencies(modif_kw.get('operator'),
                               modif_kw.get('agency'))
 
-    rinexfileobj.set_sat_system(modif_kw.get('observables'))
+    rinexfileobj.mod_sat_system(modif_kw.get('observables'))
 
-    rinexfileobj.set_interval(modif_kw.get('interval'))
+    rinexfileobj.mod_interval(modif_kw.get('interval'))
 
     # for the filename
-    rinexfileobj.set_filename_file_period(
+    rinexfileobj.mod_filename_file_period(
         modif_kw.get('filename_file_period'))
-    rinexfileobj.set_filename_data_freq(
-        modif_kw.get('filename_data_freq'))
+    rinexfileobj.mod_filename_data_freq(
+        modif_kw.get('filename_data_freq')) 
     
     return rinexfileobj
 
@@ -566,32 +572,25 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
         for site_key in nine_char_list:
             nine_char_dict[site_key[:4].lower()] = site_key.strip()
+            
+    # set the marker as Rinex site, if any
+    # This preliminary set_site is for th research of the right sitelog
+    # a second set_site will take place a just after
+    if marker:
+        # We store the old site name to add a comment in rinex file's header
+        ## modif_marker = rnxobj.get_site(True,False) ### Useless...
+        rnxobj.set_site(marker)
 
-    ###########################################################################
-    ########## Apply the sitelog objects on the RinexFile object
+    # load the sitelog if any
     if sitelog:            
-        sitelogs_obj_list = _sitelog_input_manage(sitelog,
-                                                  force=force_sitelog)
-        sitelogobj = _sitelog_find_site(rnxobj,
-                                        sitelogs_obj_list,
-                                        force=force_sitelog)
+        sitelogs_obj_list = sitelog_input_manage(sitelog,
+                                                 force=force_sitelog)
+        sitelogobj = sitelog_find_site(rnxobj,
+                                       sitelogs_obj_list,
+                                       force=force_sitelog)
         
-        rnxobj = _sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
-        logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
-        modif_source = sitelogobj.filename
-
     ###########################################################################
-    ########## Apply the modif_kw dictionnary on the RinexFile object
-    if modif_kw:
-        # Checking input keyword modification arguments
-        _modif_kw_check(modif_kw)
-
-        modif_source = 'manual keywords'
-        rnxobj = _modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
-        logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
-
-    ###########################################################################
-    ########## Handle the similar options + longname + marker option + country
+    ########## Handle the similar options to set the site code
     ### Priority for the Country source
     # 1) the marker option if 9 char are given
     # 2) the nine_char_dict from the ninecharfile option
@@ -599,7 +598,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     #    but a fallback mechanism has to be here if the sitelog is wrong)
     # set default value for the monument & country codes
     
-    rnx_4char = rnxobj.get_site_from_filename('lower', True)
+    rnx_4char = rnxobj.get_site(True,True)
 
     if marker and len(marker) == 9:
         monum = marker[4:6]
@@ -619,17 +618,33 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         
     if country == "XXX":
         logger.warning('32 - Site\'s country not retrevied, will not be properly renamed: %s', rinexfile)
-      
-    rnxobj.set_site_filename(rnx_4char+monum+country)
-    
-    if not marker and not ("marker_name" in modif_kw.keys()): # General case
-        rnxobj.set_marker(rnxobj.get_site_from_filename('upper', False))
-    elif marker: # specific actions if marker is given
-        # We store the old site name to add a comment in rinex file's header
-        modif_marker = rnxobj.get_site_from_filename('lower', False)
-        rnxobj.set_site_filename(marker)
-        if "marker_name" not in modif_kw.keys(): ### apply only is modif_kw does not overrides it
-            rnxobj.set_marker(marker)
+
+    rnxobj.set_site(rnx_4char,monum,country)
+
+
+    ###########################################################################
+    ########## Apply the sitelog objects on the RinexFile object
+    if sitelog:        
+        rnxobj = _sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
+        logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
+        modif_source = sitelogobj.filename
+            
+    ###########################################################################
+    ########## Apply the modif_kw dictionnary on the RinexFile object
+    if modif_kw:
+        # Checking input keyword modification arguments
+        _modif_kw_check(modif_kw)
+
+        modif_source = 'manual keywords'
+        rnxobj = _modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
+        logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
+        
+    ###########################################################################
+    ########## Apply the site as the MARKER NAME within the RINEX
+    # Must be after _sitelogobj_apply_on_rnxobj and _modif_kw_apply_on_rnxobj
+    # apply only is modif_kw does not overrides it (it is the overwhelming case)
+    if "marker_name" not in modif_kw.keys(): 
+        rnxobj.mod_marker(rnxobj.get_site(False,False,True))
 
     ###########################################################################
     ########## Adding comment in the header
@@ -641,15 +656,15 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         datetime.strftime(now, '%Y-%m-%d %H:%M')))
     if sitelog or modif_kw:
         rnxobj.add_comment('rinexmoded with {}'.format(modif_source))
-    if marker:
-        rnxobj.add_comment('filename assigned from {}'.format(modif_marker))
+    #if marker: ##### Useless...
+    #    rnxobj.add_comment('filename assigned from {}'.format(modif_marker))
 
     ###########################################################################
     ########## we regenerate the filenames
     if rnxobj.name_conv == "SHORT" and not longname:
         rnxobj.get_shortname(inplace_set=True, compression='')
     else:
-        rnxobj.get_longname(monum, country, inplace_set=True, compression='')
+        rnxobj.get_longname(inplace_set=True, compression='')
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step 
@@ -789,7 +804,7 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         
     # load the sitelogs as a list of SiteLog objects
     if sitelog:
-        sitelog_use = _sitelog_input_manage(sitelog, force_sitelog)
+        sitelog_use = sitelog_input_manage(sitelog, force_sitelog)
 
     ### Looping in file list ###
     return_lists = {}

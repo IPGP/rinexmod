@@ -84,16 +84,15 @@ class RinexFile:
         self.size = self._get_size()
         self.compression, self.hatanka_input = self._get_compression()
         self.filename = self._get_filename()
-        self.filename_origin = self._get_filename()
-        # self.site4char = 
-        # self.monument =
-        # self.country =
         
+        #### site is an internal attribute, always 9char 
+        # (filled with 00XXX in nothing else is provided)
+        # it is accessible wit get_site()
+        self._site = self._get_site_from_filename(False,False)
         
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
-        self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(
-            plot)
+        self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(plot)
         #self.file_period, self.session = self._get_file_period_from_filename()
         self.file_period, self.session = self._get_file_period_from_data()
         self.sat_system = self._get_sat_system()
@@ -297,7 +296,6 @@ class RinexFile:
                 m = re.search(date_pattern, line)
                 if m:
                     break
-            
 
         elif self.version[0] == '2':
             # Pattern of an observation line containing a date
@@ -527,17 +525,6 @@ class RinexFile:
             
         return file_period, session
 
-
-
-            
-            
-            
-            
-            
-
-            
-
-
     def _get_sat_system(self):
         """ Parse RINEX VERSION / TYPE line to get observable type """
 
@@ -621,7 +608,74 @@ class RinexFile:
 
         return metadata_string, metadata_parsed
 
-    def get_site_from_header(self):
+    
+    def get_site(self,
+                 lower_case=True, 
+                 only_4char=False,
+                 no_country_then_4char=False):
+        """
+        get the site of the Rinex Object
+        """
+        
+        site_out = self._site
+        
+        if lower_case:
+            site_out = site_out.lower()
+        else:
+            site_out = site_out.upper()
+            
+        if only_4char or (no_country_then_4char and site_out[-3:] == "XXX"):
+            site_out = site_out[0:4]
+            
+        return site_out
+        
+        
+    def set_site(self, site_4or9char, monum=None, country=None):
+        """
+        set site for a Rinex Object
+        monum and country overrides the ones given if site_4or9char
+        is 9 char. long
+        """
+        
+        if len(site_4or9char) not in (4,9):
+            logger.error("given site is not 4 nor 9 char. long!")
+            return None
+                    
+        if len(site_4or9char) == 4:
+            if not monum:
+                monum = "00"
+            if not country:
+                country = "XXX"
+            self._site = site_4or9char + monum + country
+        else:
+            if not monum:
+                monum = site_4or9char[4:6]
+            if not country:
+                country = site_4or9char[6:]
+            self._site = site_4or9char + monum + country
+            
+        return None
+
+        
+
+    def _get_site_from_filename(self, lower_case=True, only_4char=False):
+        """ Getting site name from the filename """
+            
+        if self.name_conv in ("LONG","LONGGFZ"):
+            site_out = self.filename[:9]
+        else:
+            site_out = self.filename[:4] + '00' + 'XXX'
+            
+        if only_4char:
+            site_out = site_out[:9]  
+
+        if lower_case:
+            return site_out.lower()
+        else:
+            return site_out.upper()
+        
+        
+    def _get_site_from_header(self):
         """ Getting site name from the MARKER NAME line in rinex file's header """
 
         if self.status != 0:
@@ -640,23 +694,9 @@ class RinexFile:
         site_meta = site_meta.split(' ')[0].upper()
 
         return site_meta
-
-    def get_site_from_filename(self, case='lower', only_4char=False):
-        """ Getting site name from the filename """
-
-        if only_4char:
-            cut = 4
-        else:
-            cut = 9
-
-        if case == 'lower':
-            return self.filename[:cut].lower()
-        elif case == 'upper':
-            return self.filename[:cut].upper()
+         
 
     def get_longname(self, 
-                     monum="00",
-                     country="XXX",
                      data_source="R",
                      obs_type='O',
                      ext='auto',
@@ -674,8 +714,6 @@ class RinexFile:
             'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
             is given without dot as 1st character
         """
-
-        site_9char = self.get_site_from_filename('upper', True) + monum + country
 
         if ext == "auto" and self.hatanka_input:
             ext = 'crx'
@@ -703,7 +741,8 @@ class RinexFile:
         else:
             timeformat = '%Y%j%H00'  # Start of the hour
 
-        longname = '_'.join((site_9char.upper(),
+        
+        longname = '_'.join((self.get_site(False,False),
                              data_source,
                              self.start_date.strftime(timeformat),
                              self.file_period,
@@ -712,6 +751,7 @@ class RinexFile:
 
         if inplace_set:
             self.filename = longname
+            self.name_conv = "LONG"
 
         return longname
 
@@ -739,8 +779,6 @@ class RinexFile:
         if compression == 'auto':
             compression = self.compression
 
-        site_4char = self.get_site_from_filename('lower', True)
-
         if compression != "":
             compression = '.' + compression
 
@@ -752,14 +790,15 @@ class RinexFile:
                 Alphabet[self.start_date.hour] + \
                 '.%y' + file_type + compression
 
-        shortname = site_4char + self.start_date.strftime(timeformat)
+        shortname = self.get_site(True,True) + self.start_date.strftime(timeformat)
 
         if inplace_set:
             self.filename = shortname
+            self.name_conv = "SHORT"
 
         return shortname
 
-    def set_marker(self, marker_inp, number_inp=None):
+    def mod_marker(self, marker_inp, number_inp=None):
 
         if self.status != 0:
             return
@@ -797,7 +836,7 @@ class RinexFile:
 
         return
 
-    def set_receiver(self, serial=None, type=None, firmware=None):
+    def mod_receiver(self, serial=None, type=None, firmware=None):
 
         if self.status != 0:
             return
@@ -827,7 +866,7 @@ class RinexFile:
 
         return
 
-    def set_antenna(self, serial=None, type=None):
+    def mod_antenna(self, serial=None, type=None):
 
         if self.status != 0:
             return
@@ -853,7 +892,7 @@ class RinexFile:
 
         return
 
-    def set_interval(self, sample_rate_input=None):
+    def mod_interval(self, sample_rate_input=None):
 
         if self.status != 0:
             return
@@ -898,7 +937,7 @@ class RinexFile:
 
         return
 
-    def set_antenna_pos(self, X=None, Y=None, Z=None):
+    def mod_antenna_pos(self, X=None, Y=None, Z=None):
 
         if self.status != 0:
             return
@@ -934,7 +973,7 @@ class RinexFile:
 
         return
 
-    def set_antenna_delta(self, H=None, E=None, N=None):
+    def mod_antenna_delta(self, H=None, E=None, N=None):
 
         if self.status != 0:
             return
@@ -970,7 +1009,7 @@ class RinexFile:
 
         return
 
-    def set_agencies(self, operator=None, agency=None):
+    def mod_agencies(self, operator=None, agency=None):
 
         if self.status != 0:
             return
@@ -997,7 +1036,7 @@ class RinexFile:
 
         return
 
-    def set_sat_system(self, sat_system):
+    def mod_sat_system(self, sat_system):
 
         if self.status != 0:
             return
@@ -1077,21 +1116,11 @@ class RinexFile:
 
         return
 
-    def set_site_filename(self, site_inp):
-        if self.name_conv == 'SHORT':  # short name case
-            self.filename = site_inp.lower() + self.filename[4:]
-        else:  # long name case
-            if len(site_inp) == 9:
-                self.filename = site_inp.upper() + self.filename[9:]
-            else:
-                self.filename = site_inp.upper() + self.filename[4:]            
-        return
-
-    def set_filename_data_freq(self, data_freq_inp):
+    def mod_filename_data_freq(self, data_freq_inp):
         self.sample_rate_str = data_freq_inp
         return
 
-    def set_filename_file_period(self, file_period_inp):
+    def mod_filename_file_period(self, file_period_inp):
         self.file_period = file_period_inp
         return
 
