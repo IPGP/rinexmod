@@ -528,29 +528,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # Declare the rinex file as an object
     rnxobj = RinexFile(rinexfile,force_rnx_load=force_rnx_load)
 
-    if rnxobj.status == 1:
-        logger.error(
-            '{:110s} - {}'.format('01 - The specified file does not exists', rinexfile))
-        raise RinexFileError
-
-    if rnxobj.status == 2:
-        logger.error(
-            '{:110s} - {}'.format('02 - Not an observation RINEX file', rinexfile))
-        raise RinexFileError
-
-    if rnxobj.status == 3:
-        logger.error(
-            '{:110s} - {}'.format('03 - Invalid or empty Zip file', rinexfile))
-        raise RinexFileError
-
-    if rnxobj.status == 4:
-        logger.error(
-            '{:110s} - {}'.format('04 - Invalid Compressed RINEX file', rinexfile))
-        raise RinexFileError
-
-    if rnxobj.status == 5:
-        logger.error(
-            '{:110s} - {}'.format('05 - Less than two epochs in the file', rinexfile))
+    if rnxobj.status:
+        logger.error('{:110s} - {}'.format(rnxobj.status,rinexfile))
         raise RinexFileError
         
     logger.debug('RINEX Origin Metadata :\n' + rnxobj.get_metadata()[0])

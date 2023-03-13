@@ -80,7 +80,8 @@ class RinexFile:
     def __init__(self, rinexfile, force_rnx_load=False, plot=False):
 
         self.path = rinexfile
-        self.rinex_data, self.name_conv, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
+        self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
+        self.name_conv = self.get_naming_convention()
         self.size = self._get_size()
         self.compression, self.hatanka_input = self._get_compression()
         self.filename = self._get_filename()
@@ -121,7 +122,7 @@ class RinexFile:
 
         return '\n'.join(str_RinexFile)
 
-    def _load_rinex_data(self,force_rnx_load=False):
+    def _load_rinex_data_OLD(self,force_rnx_load=False):
         """
         Load the uncompressed rinex data into a list var using hatanaka library.
         Will return a table of lines of the uncompressed file, a 'name_conv' var
@@ -159,12 +160,12 @@ class RinexFile:
         elif pattern_longname_gfz.match(os.path.basename(self.path)):
             name_conv = 'LONGGFZ'
             status = 0
-        elif force_rnx_load:  
+        elif force_rnx_load:
             name_conv = 'UNKNOWN'
             status = 0
         else:
-            logger.warning('rinex filename does not match a regular name: ' +
-                  os.path.basename(self.path))
+            logger.warning('rinex filename does not match a regular name: ' + 
+                           os.path.basename(self.path))
             logger.warning("try to force the loading with force_rnx_load = True")
             return None, None, 2
 
@@ -180,10 +181,77 @@ class RinexFile:
 
         return rinex_data, name_conv, status
 
+
+    def _load_rinex_data(self,force_rnx_load=False):
+        """
+        Load the uncompressed rinex data into a list var using hatanaka library.
+        Will return a table of lines of the uncompressed file, a 'name_conv' var
+        that indicates if the file is named with the SHORT NAME convention or the
+        LONG NAME convetion, and a status. Status 0 is OK. The other ones
+        corresponds to the errors codes raised by rinexarchive and by rinexmod.
+        01 - The specified file does not exists
+        02 - Not an observation Rinex file
+        03 - Invalid  or empty Zip file
+        04 - Invalid Compressed Rinex file
+        """
+
+        # Checking if existing file
+        if not os.path.isfile(self.path):
+            rinex_data = None
+            status = "01 - The specified file does not exists"
+        else:
+            try:
+                rinex_data = hatanaka.decompress(self.path).decode('utf-8')
+                rinex_data = rinex_data.split('\n')
+                status = None
+    
+            except ValueError:
+                rinex_data = None
+                status = '03 - Invalid or empty compressed file'
+    
+            except hatanaka.hatanaka.HatanakaException:
+                rinex_data = None
+                status = '04 - Invalid Compressed RINEX file'       
+            
+            bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
+            bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
+            
+            if not force_rnx_load and not (bool_l1_obs or bool_l1_crx) :
+                logger.warning("File's 1st line does not match an Observation RINEX: " +
+                      os.path.basename(self.path))
+                logger.warning("try to force the loading with force_rnx_load = True")
+                rinex_data = None
+                status = '02 - Not an observation RINEX file'
+        
+        return rinex_data, status
+    
+
+    def get_naming_convention(self):
+        # Daily or hourly, hatanaka or not, gz or Z compressed file
+        pattern_shortname = re.compile(
+            '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
+        pattern_longname = re.compile(
+            '.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
+        # GFZ's DataCenter internal naming convention (here it is equivalent to a longname)
+        pattern_longname_gfz = re.compile(
+            '.{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?')
+
+        if pattern_shortname.match(os.path.basename(self.path)):
+            name_conv = 'SHORT'
+        elif pattern_longname.match(os.path.basename(self.path)):
+            name_conv = 'LONG'
+        elif pattern_longname_gfz.match(os.path.basename(self.path)):
+            name_conv = 'LONGGFZ'
+        else:  
+            name_conv = 'UNKNOWN'
+            
+        return name_conv
+
+
     def _get_size(self):
         """ Get RINEX file size """
 
-        if self.status != 0:
+        if self.status:
             return 0
 
         size = os.path.getsize(self.path)
@@ -234,7 +302,7 @@ class RinexFile:
     def _get_filename(self):
         """ Get filename WITHOUT its compression extension """
 
-        if self.status != 0:
+        if self.status:
             return None
 
         if not self.compression:
@@ -248,7 +316,7 @@ class RinexFile:
     def _get_version(self):
         """ Get RINEX version """
 
-        if self.status != 0:
+        if self.status:
             return ''
 
         version_header_idx = search_idx_value(
@@ -267,7 +335,7 @@ class RinexFile:
         the data.
         """
 
-        if self.status != 0:
+        if self.status:
             return None, None
 
         # Getting start date
@@ -339,7 +407,7 @@ class RinexFile:
         If plot is set to True, will plot the samples intervals.
         """
 
-        if self.status != 0:
+        if self.status:
             return None, None
 
         # Removing this test on INTERVAL header line because not reliable (at least in IPGP data set)
@@ -376,7 +444,7 @@ class RinexFile:
 
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
-            self.status = 5
+            self.status = '05 - Less than two epochs in the file'
             logger.error("_get_sample_rate: less than 2 samples found, can't get a sample rate %s", Samples_stack)
             return None, None
 
@@ -397,7 +465,7 @@ class RinexFile:
 
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
-            self.status = 5
+            self.status = '05 - Less than two epochs in the file'
             logger.error(" _get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
             return None, None
 
@@ -473,7 +541,7 @@ class RinexFile:
         In short name convention, traduces digit to '01H' and '0' to 01D
         """
 
-        if self.status != 0:
+        if self.status:
             return None, None
 
         session = False
@@ -528,7 +596,7 @@ class RinexFile:
     def _get_sat_system(self):
         """ Parse RINEX VERSION / TYPE line to get observable type """
 
-        if self.status != 0:
+        if self.status:
             return None
 
         # Identify line that contains RINEX VERSION / TYPE
@@ -546,7 +614,10 @@ class RinexFile:
         the header, and a python dict of the same information.
         """
 
-        if self.status not in [0, 2]:
+        #if self.status not in [0, 2]:
+        #    return None
+
+        if self.status:
             return None
 
         metadata = {}
@@ -617,6 +688,8 @@ class RinexFile:
         get the site of the Rinex Object
         """
         
+        
+        
         site_out = self._site
         
         if lower_case:
@@ -660,6 +733,9 @@ class RinexFile:
 
     def _get_site_from_filename(self, lower_case=True, only_4char=False):
         """ Getting site name from the filename """
+        
+        if self.status:
+            return None
             
         if self.name_conv in ("LONG","LONGGFZ"):
             site_out = self.filename[:9]
@@ -678,7 +754,7 @@ class RinexFile:
     def _get_site_from_header(self):
         """ Getting site name from the MARKER NAME line in rinex file's header """
 
-        if self.status != 0:
+        if self.status:
             return ''
 
         site_meta = 'MARKER NAME'
@@ -800,7 +876,7 @@ class RinexFile:
 
     def mod_marker(self, marker_inp, number_inp=None):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not marker_inp:
@@ -838,7 +914,7 @@ class RinexFile:
 
     def mod_receiver(self, serial=None, type=None, firmware=None):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not any([serial, type, firmware]):
@@ -868,7 +944,7 @@ class RinexFile:
 
     def mod_antenna(self, serial=None, type=None):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not any([serial, type]):
@@ -894,7 +970,7 @@ class RinexFile:
 
     def mod_interval(self, sample_rate_input=None):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not any([sample_rate_input]):
@@ -939,7 +1015,7 @@ class RinexFile:
 
     def mod_antenna_pos(self, X=None, Y=None, Z=None):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not any([X, Y, Z]):
@@ -975,7 +1051,7 @@ class RinexFile:
 
     def mod_antenna_delta(self, H=None, E=None, N=None):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not any([H, E, N]):
@@ -1011,7 +1087,7 @@ class RinexFile:
 
     def mod_agencies(self, operator=None, agency=None):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not any([operator, agency]):
@@ -1038,7 +1114,7 @@ class RinexFile:
 
     def mod_sat_system(self, sat_system):
 
-        if self.status != 0:
+        if self.status:
             return
 
         if not sat_system:
@@ -1091,7 +1167,7 @@ class RinexFile:
         add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line 
         Then comment is a 2-tuple (program,run_by)
         '''
-        if self.status != 0:
+        if self.status:
             return
 
         end_of_header_idx = search_idx_value(
@@ -1134,7 +1210,7 @@ class RinexFile:
         None (NoneType, compliant with the rinex object initialisation)
         """
 
-        if self.status != 0:
+        if self.status:
             return
 
         output_data = '\n'.join(self.rinex_data).encode('utf-8')
