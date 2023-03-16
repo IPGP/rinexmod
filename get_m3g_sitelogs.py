@@ -101,9 +101,9 @@ def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None,
 
     Sitelog_local_paths = []
     
-    for obs in observatories.keys():
+    for ctry in observatories.keys():
 
-        obs_url = country_url + obs
+        obs_url = country_url + ctry
 
         obs_infos = requests.get(obs_url)
         obs_infos = obs_infos.content.decode('utf-8')
@@ -111,7 +111,7 @@ def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None,
         obs_infos = obs_infos[1:] # remove header
         
         if not root_folder:
-            obs_path = os.path.join(sitelogsfolder, observatories[obs])
+            obs_path = os.path.join(sitelogsfolder, observatories[ctry])
         else:
             obs_path = sitelogsfolder
             
@@ -121,7 +121,7 @@ def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None,
             for f in old_sitelogs:
                 os.remove(f)
 
-        print("### Downloading {} ({}) sitelogs from M3G to {}".format(observatories[obs],obs,obs_path))
+        print("### Downloading {} ({}) sitelogs from M3G to {}".format(observatories[ctry],ctry,obs_path))
 
         for line in obs_infos:
             line = line.split()
@@ -133,8 +133,8 @@ def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None,
                 print('### ' + line[0] + ' : not available ###')
                 continue
 
-            sitelog_url = line[6]
-            sitelog_name = line[3]
+            sitelog_url = line[5]
+            sitelog_name = line[2]
             sitelog_local_path = os.path.join(obs_path, sitelog_name)
             Sitelog_local_paths.append(sitelog_local_path)
 
