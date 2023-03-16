@@ -117,7 +117,7 @@ def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None,
             
         # If delete, empty folders
         if delete:
-            old_sitelogs = glob.glob(obs_path + '/*log')
+            old_sitelogs = glob.glob(obs_path + '/*' + ctry + '*.log')
             for f in old_sitelogs:
                 os.remove(f)
 
