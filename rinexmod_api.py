@@ -693,8 +693,9 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 # Upper level rinexmod for a Console run
 
 def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
-     longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, ninecharfile=None, compression=None,
-     relative='', verbose=True, alone=False, output_logs=None, write=False, sort=False):
+     longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
+     ninecharfile=None, compression=None, relative='', verbose=True,
+     alone=False, output_logs=None, write=False, sort=False):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -705,7 +706,7 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     stand-alone API mode.
     
     For a detailled description, check the help of the lower level 
-    rinexmod function or the help of the frontend CLI function in a Terminal
+    `rinexmod` function or the help of the frontend CLI function in a Terminal
     
     Parameters
     ----------

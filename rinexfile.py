@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Class
-2022-02-01 Félix Léger - felixleger@gmail.com
+2022-02-01 Félix Léger - felixleger@gmail.com & sakic@ipgp.fr
 """
 
 import os
@@ -18,51 +18,7 @@ import matplotlib.pyplot as plt
 import logging
 logger = logging.getLogger(__name__)
 
-# **********************************************************************
-# low level functions
-def search_idx_value(data, field):
-    """
-    find the index (line number) of a researched field in the RINEX data
-    """
-    idx = -1
-    out_idx = None
-    for e in data:
-        idx += 1
-        if field in e:
-            out_idx = idx
-            break
-    return out_idx
-
-
-def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
-    """
-    Round a datetime object to a multiple of a timedelta
-    dt : datetime.datetime object, default now.
-    dateDelta : timedelta object, we round to a multiple of this, default 1 minute.
-    to : up / down / average
-    from:  http://stackoverflow.com/questions/3463930/how-to-round-the-minute-of-a-datetime-object-python
-    """
-    round_to = date_delta.total_seconds()
-    if dt is None:
-        dt = datetime.now()
-    seconds = (dt - dt.min).seconds
-
-    if seconds % round_to == 0 and dt.microsecond == 0:
-        rounding = (seconds + round_to / 2) // round_to * round_to
-    else:
-        if to == 'up':
-            # // is a floor division, not a comment on following line (like in javascript):
-            rounding = (seconds + dt.microsecond/1000000 + round_to) // round_to * round_to
-        elif to == 'down':
-            rounding = seconds // round_to * round_to
-        else:
-            rounding = (seconds + round_to / 2) // round_to * round_to
-
-    return dt + timedelta(0, rounding - seconds, - dt.microsecond)
-
-
-
-# **********************************************************************
+# *****************************************************************************
 # class definition
 class RinexFile:
     """
@@ -81,7 +37,7 @@ class RinexFile:
 
         self.path = rinexfile
         self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
-        self.name_conv = self.get_naming_convention()
+        self.name_conv = self._get_naming_convention()
         self.size = self._get_size()
         self.compression, self.hatanka_input = self._get_compression()
         self.filename = self._get_filename()
@@ -121,6 +77,240 @@ class RinexFile:
         str_RinexFile.append(cutted_lines_rep)
 
         return '\n'.join(str_RinexFile)
+    
+# *****************************************************************************
+#### Main methods
+
+    def get_metadata(self):
+        """
+        Returns a printable, with carriage-return, string of metadata lines from
+        the header, and a python dict of the same information.
+        """
+
+        #if self.status not in [0, 2]:
+        #    return None
+
+        if self.status:
+            return None
+
+        metadata = {}
+
+        metadata_lines = [
+            'RINEX VERSION / TYPE',
+            'MARKER NAME',
+            'MARKER NUMBER',
+            'OBSERVER / AGENCY',
+            'REC # / TYPE / VERS',
+            'ANT # / TYPE',
+            'APPROX POSITION XYZ',
+            'ANTENNA: DELTA H/E/N',
+            'TIME OF FIRST OBS'
+        ]
+
+        for kw in metadata_lines:
+            for line in self.rinex_data:
+                if kw in line:
+                    metadata[kw] = line
+                    break
+
+        if not'MARKER NUMBER' in metadata:
+            metadata['MARKER NUMBER'] = ''
+
+        metadata_parsed = {
+            'File': self.path,
+            'File size (bytes)': self.size,
+            'Rinex version': metadata['RINEX VERSION / TYPE'][0:9].strip(),
+            'Sample rate': self.sample_rate_string,
+            'File period': self.file_period,
+            'Observable type': metadata['RINEX VERSION / TYPE'][40:60].strip(),
+            'Marker name': metadata['MARKER NAME'][0:60].strip(),
+            'Marker number': metadata['MARKER NUMBER'][0:60].strip(),
+            'Operator': metadata['OBSERVER / AGENCY'][0:20].strip(),
+            'Agency': metadata['OBSERVER / AGENCY'][20:40].strip(),
+            'Receiver serial': metadata['REC # / TYPE / VERS'][0:20].strip(),
+            'Receiver type': metadata['REC # / TYPE / VERS'][20:40].strip(),
+            'Receiver firmware version': metadata['REC # / TYPE / VERS'][40:60].strip(),
+            'Antenna serial': metadata['ANT # / TYPE'][0:20].strip(),
+            'Antenna type': metadata['ANT # / TYPE'][20:40].strip(),
+            'Antenna position (XYZ)': '{:14} {:14} {:14}'.format(metadata['APPROX POSITION XYZ'][0:14].strip(),
+                                                                 metadata['APPROX POSITION XYZ'][14:28].strip(
+            ),
+                metadata['APPROX POSITION XYZ'][28:42].strip()),
+            'Antenna delta (H/E/N)':  '{:14} {:14} {:14}'.format(metadata['ANTENNA: DELTA H/E/N'][0:14].strip(),
+                                                                 metadata['ANTENNA: DELTA H/E/N'][14:28].strip(
+            ),
+                metadata['ANTENNA: DELTA H/E/N'][28:42].strip())
+        }
+
+        metadata_parsed['Start date and time'] = self.start_date
+        metadata_parsed['Final date and time'] = self.end_date
+
+        metadata_string = '\n'.join(['{:29} : {}'.format(
+            key, value) for key, value in metadata_parsed.items()])
+
+        metadata_string = '\n' + metadata_string + '\n'
+
+        return metadata_string, metadata_parsed
+
+    
+    def get_site(self,
+                 lower_case=True, 
+                 only_4char=False,
+                 no_country_then_4char=False):
+        """
+        get the site of the Rinex Object
+        if no_country_then_4char = True, the return site code
+        falls back to a 4-char code, if no monum/country is provided 
+        (i.e. the 9char code ends with 00XXX)
+        if no_country_then_4char = False, 00XXX will remain
+        """
+        
+        site_out = self._site
+        
+        if lower_case:
+            site_out = site_out.lower()
+        else:
+            site_out = site_out.upper()
+            
+        if only_4char or (no_country_then_4char and site_out[-3:] == "XXX"):
+            site_out = site_out[0:4]
+            
+        return site_out
+        
+        
+    def set_site(self, site_4or9char, monum=None, country=None):
+        """
+        set site for a Rinex Object
+        monum and country overrides the ones given if site_4or9char
+        is 9 char. long
+        """
+        
+        if len(site_4or9char) not in (4,9):
+            logger.error("given site is not 4 nor 9 char. long!")
+            return None
+                    
+        if len(site_4or9char) == 4:
+            if not monum:
+                monum = "00"
+            if not country:
+                country = "XXX"
+            self._site = site_4or9char + monum + country
+        else:
+            if not monum:
+                monum = site_4or9char[4:6]
+            if not country:
+                country = site_4or9char[6:]
+            self._site = site_4or9char + monum + country
+            
+        return None
+
+        
+    
+    def get_longname(self, 
+                     data_source="R",
+                     obs_type='O',
+                     ext='auto',
+                     compression='auto',
+                     inplace_set=False):
+        """
+        generate the long RINEX filename
+        can be stored directly as filename attribute with inplace = True
+
+        ext :
+            'auto' (based on the RinexFile attribute) or manual : 'rnx' or 'crx'
+            is given without dot as 1st character
+
+        compression :
+            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
+            is given without dot as 1st character
+        """
+
+        if ext == "auto" and self.hatanka_input:
+            ext = 'crx'
+        elif ext == "auto" and not self.hatanka_input:
+            ext = 'rnx'
+        else:
+            ext = 'rnx'
+
+        ext = '.' + ext
+
+        if compression == 'auto' and self.compression:
+            compression = '.' + self.compression
+        elif compression == 'auto' and not self.compression:
+            compression = ''
+        elif compression != "":  # when a manual compression arg is given, and is not void
+            compression = '.' + compression
+        else:
+            compression = ''
+
+        if self.file_period == '01D':
+            if self.session:
+                timeformat = '%Y%j%H%M'
+            else:
+                timeformat = '%Y%j0000'  # Start of the day
+        else:
+            timeformat = '%Y%j%H00'  # Start of the hour
+
+        
+        longname = '_'.join((self.get_site(False,False),
+                             data_source,
+                             self.start_date.strftime(timeformat),
+                             self.file_period,
+                             self.sample_rate_string,
+                             self.sat_system + obs_type + ext + compression))
+
+        if inplace_set:
+            self.filename = longname
+            self.name_conv = "LONG"
+
+        return longname
+
+    def get_shortname(self,
+                      file_type='auto',
+                      compression='auto',
+                      inplace_set=False):
+        """
+        generate the short RINEX filename
+        can be stored directly as filename attribute with inplace = True
+
+        file_type :
+            'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
+
+        compression :
+            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
+            is given without dot as 1st character
+        """
+
+        if file_type == 'auto' and self.hatanka_input:
+            file_type = 'd'
+        elif file_type == 'auto' and not self.hatanka_input:
+            file_type = 'o'
+
+        if compression == 'auto':
+            compression = self.compression
+
+        if compression != "":
+            compression = '.' + compression
+
+        if self.file_period == '01D':
+            timeformat = '%j0.%y' + file_type + compression
+        else:
+            Alphabet = list(map(chr, range(97, 123)))
+            timeformat = '%j' + \
+                Alphabet[self.start_date.hour] + \
+                '.%y' + file_type + compression
+
+        shortname = self.get_site(True,True) + self.start_date.strftime(timeformat)
+
+        if inplace_set:
+            self.filename = shortname
+            self.name_conv = "SHORT"
+
+        return shortname
+    
+    
+# *****************************************************************************
+### internal methods
 
     def _load_rinex_data(self,force_rnx_load=False):
         """
@@ -166,7 +356,7 @@ class RinexFile:
         return rinex_data, status
     
 
-    def get_naming_convention(self):
+    def _get_naming_convention(self):
         # Daily or hourly, hatanaka or not, gz or Z compressed file
         pattern_shortname = re.compile(
             '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
@@ -186,7 +376,7 @@ class RinexFile:
             name_conv = 'UNKNOWN'
             
         return name_conv
-
+    
 
     def _get_size(self):
         """ Get RINEX file size """
@@ -548,129 +738,6 @@ class RinexFile:
 
         return sat_system
 
-    def get_metadata(self):
-        """
-        Returns a printable, with carriage-return, string of metadata lines from
-        the header, and a python dict of the same information.
-        """
-
-        #if self.status not in [0, 2]:
-        #    return None
-
-        if self.status:
-            return None
-
-        metadata = {}
-
-        metadata_lines = [
-            'RINEX VERSION / TYPE',
-            'MARKER NAME',
-            'MARKER NUMBER',
-            'OBSERVER / AGENCY',
-            'REC # / TYPE / VERS',
-            'ANT # / TYPE',
-            'APPROX POSITION XYZ',
-            'ANTENNA: DELTA H/E/N',
-            'TIME OF FIRST OBS'
-        ]
-
-        for kw in metadata_lines:
-            for line in self.rinex_data:
-                if kw in line:
-                    metadata[kw] = line
-                    break
-
-        if not'MARKER NUMBER' in metadata:
-            metadata['MARKER NUMBER'] = ''
-
-        metadata_parsed = {
-            'File': self.path,
-            'File size (bytes)': self.size,
-            'Rinex version': metadata['RINEX VERSION / TYPE'][0:9].strip(),
-            'Sample rate': self.sample_rate_string,
-            'File period': self.file_period,
-            'Observable type': metadata['RINEX VERSION / TYPE'][40:60].strip(),
-            'Marker name': metadata['MARKER NAME'][0:60].strip(),
-            'Marker number': metadata['MARKER NUMBER'][0:60].strip(),
-            'Operator': metadata['OBSERVER / AGENCY'][0:20].strip(),
-            'Agency': metadata['OBSERVER / AGENCY'][20:40].strip(),
-            'Receiver serial': metadata['REC # / TYPE / VERS'][0:20].strip(),
-            'Receiver type': metadata['REC # / TYPE / VERS'][20:40].strip(),
-            'Receiver firmware version': metadata['REC # / TYPE / VERS'][40:60].strip(),
-            'Antenna serial': metadata['ANT # / TYPE'][0:20].strip(),
-            'Antenna type': metadata['ANT # / TYPE'][20:40].strip(),
-            'Antenna position (XYZ)': '{:14} {:14} {:14}'.format(metadata['APPROX POSITION XYZ'][0:14].strip(),
-                                                                 metadata['APPROX POSITION XYZ'][14:28].strip(
-            ),
-                metadata['APPROX POSITION XYZ'][28:42].strip()),
-            'Antenna delta (H/E/N)':  '{:14} {:14} {:14}'.format(metadata['ANTENNA: DELTA H/E/N'][0:14].strip(),
-                                                                 metadata['ANTENNA: DELTA H/E/N'][14:28].strip(
-            ),
-                metadata['ANTENNA: DELTA H/E/N'][28:42].strip())
-        }
-
-        metadata_parsed['Start date and time'] = self.start_date
-        metadata_parsed['Final date and time'] = self.end_date
-
-        metadata_string = '\n'.join(['{:29} : {}'.format(
-            key, value) for key, value in metadata_parsed.items()])
-
-        metadata_string = '\n' + metadata_string + '\n'
-
-        return metadata_string, metadata_parsed
-
-    
-    def get_site(self,
-                 lower_case=True, 
-                 only_4char=False,
-                 no_country_then_4char=False):
-        """
-        get the site of the Rinex Object
-        """
-        
-        
-        
-        site_out = self._site
-        
-        if lower_case:
-            site_out = site_out.lower()
-        else:
-            site_out = site_out.upper()
-            
-        if only_4char or (no_country_then_4char and site_out[-3:] == "XXX"):
-            site_out = site_out[0:4]
-            
-        return site_out
-        
-        
-    def set_site(self, site_4or9char, monum=None, country=None):
-        """
-        set site for a Rinex Object
-        monum and country overrides the ones given if site_4or9char
-        is 9 char. long
-        """
-        
-        if len(site_4or9char) not in (4,9):
-            logger.error("given site is not 4 nor 9 char. long!")
-            return None
-                    
-        if len(site_4or9char) == 4:
-            if not monum:
-                monum = "00"
-            if not country:
-                country = "XXX"
-            self._site = site_4or9char + monum + country
-        else:
-            if not monum:
-                monum = site_4or9char[4:6]
-            if not country:
-                country = site_4or9char[6:]
-            self._site = site_4or9char + monum + country
-            
-        return None
-
-        
-
     def _get_site_from_filename(self, lower_case=True, only_4char=False):
         """ Getting site name from the filename """
         
@@ -712,107 +779,10 @@ class RinexFile:
         return site_meta
          
 
-    def get_longname(self, 
-                     data_source="R",
-                     obs_type='O',
-                     ext='auto',
-                     compression='auto',
-                     inplace_set=False):
-        """
-        generate the long RINEX filename
-        can be stored directly as filename attribute with inplace = True
 
-        ext :
-            'auto' (based on the RinexFile attribute) or manual : 'rnx' or 'crx'
-            is given without dot as 1st character
-
-        compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
-            is given without dot as 1st character
-        """
-
-        if ext == "auto" and self.hatanka_input:
-            ext = 'crx'
-        elif ext == "auto" and not self.hatanka_input:
-            ext = 'rnx'
-        else:
-            ext = 'rnx'
-
-        ext = '.' + ext
-
-        if compression == 'auto' and self.compression:
-            compression = '.' + self.compression
-        elif compression == 'auto' and not self.compression:
-            compression = ''
-        elif compression != "":  # when a manual compression arg is given, and is not void
-            compression = '.' + compression
-        else:
-            compression = ''
-
-        if self.file_period == '01D':
-            if self.session:
-                timeformat = '%Y%j%H%M'
-            else:
-                timeformat = '%Y%j0000'  # Start of the day
-        else:
-            timeformat = '%Y%j%H00'  # Start of the hour
-
-        
-        longname = '_'.join((self.get_site(False,False),
-                             data_source,
-                             self.start_date.strftime(timeformat),
-                             self.file_period,
-                             self.sample_rate_string,
-                             self.sat_system + obs_type + ext + compression))
-
-        if inplace_set:
-            self.filename = longname
-            self.name_conv = "LONG"
-
-        return longname
-
-    def get_shortname(self,
-                      file_type='auto',
-                      compression='auto',
-                      inplace_set=False):
-        """
-        generate the short RINEX filename
-        can be stored directly as filename attribute with inplace = True
-
-        file_type :
-            'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
-
-        compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
-            is given without dot as 1st character
-        """
-
-        if file_type == 'auto' and self.hatanka_input:
-            file_type = 'd'
-        elif file_type == 'auto' and not self.hatanka_input:
-            file_type = 'o'
-
-        if compression == 'auto':
-            compression = self.compression
-
-        if compression != "":
-            compression = '.' + compression
-
-        if self.file_period == '01D':
-            timeformat = '%j0.%y' + file_type + compression
-        else:
-            Alphabet = list(map(chr, range(97, 123)))
-            timeformat = '%j' + \
-                Alphabet[self.start_date.hour] + \
-                '.%y' + file_type + compression
-
-        shortname = self.get_site(True,True) + self.start_date.strftime(timeformat)
-
-        if inplace_set:
-            self.filename = shortname
-            self.name_conv = "SHORT"
-
-        return shortname
+    
+### ***************************************************************************
+### mod methods. change the content of the RINEX header
 
     def mod_marker(self, marker_inp, number_inp=None):
 
@@ -1099,39 +1069,6 @@ class RinexFile:
 
         return
 
-    def add_comment(self, comment, add_pgm_cmt=False):
-        '''
-        We add the argument comment line at the end of the header
-        Append as last per default
-
-        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line 
-        Then comment is a 2-tuple (program,run_by)
-        '''
-        if self.status:
-            return
-
-        end_of_header_idx = search_idx_value(
-            self.rinex_data, 'END OF HEADER') + 1
-        Idx = [i for i, e in enumerate(
-            self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e]
-
-        if not add_pgm_cmt:
-            last_comment_idx = max(Idx)
-            new_comment_idx = last_comment_idx + 1
-            new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
-
-        else:
-            first_comment_idx = min(Idx)
-            new_comment_idx = first_comment_idx
-            program, run_by = comment
-            date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
-            new_line = '{:20}{:20}{:20}{:}'.format(
-                program, run_by, date, 'COMMENT')
-
-        self.rinex_data.insert(new_comment_idx, new_line)
-
-        return
-
     def mod_filename_data_freq(self, data_freq_inp):
         self.sample_rate_str = data_freq_inp
         return
@@ -1139,6 +1076,9 @@ class RinexFile:
     def mod_filename_file_period(self, file_period_inp):
         self.file_period = file_period_inp
         return
+
+#############################################################################
+### misc methods. change the content of the RINEX header
 
     def write_to_path(self, path, compression='gz'):
         """
@@ -1183,3 +1123,83 @@ class RinexFile:
         Path(outputfile).write_bytes(output_data)
 
         return outputfile
+
+
+    def add_comment(self, comment, add_pgm_cmt=False):
+        '''
+        We add the argument comment line at the end of the header
+        Append as last per default
+
+        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line 
+        Then comment is a 2-tuple (program,run_by)
+        '''
+        if self.status:
+            return
+
+        end_of_header_idx = search_idx_value(
+            self.rinex_data, 'END OF HEADER') + 1
+        Idx = [i for i, e in enumerate(
+            self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e]
+
+        if not add_pgm_cmt:
+            last_comment_idx = max(Idx)
+            new_comment_idx = last_comment_idx + 1
+            new_line = ' {} '.format(comment).center(60, '-') + 'COMMENT'
+
+        else:
+            first_comment_idx = min(Idx)
+            new_comment_idx = first_comment_idx
+            program, run_by = comment
+            date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+            new_line = '{:20}{:20}{:20}{:}'.format(
+                program, run_by, date, 'COMMENT')
+
+        self.rinex_data.insert(new_comment_idx, new_line)
+
+        return
+    
+    
+# *****************************************************************************
+# low level functions
+def search_idx_value(data, field):
+    """
+    find the index (line number) of a researched field in the RINEX data
+    """
+    idx = -1
+    out_idx = None
+    for e in data:
+        idx += 1
+        if field in e:
+            out_idx = idx
+            break
+    return out_idx
+
+
+
+def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
+    """
+    Round a datetime object to a multiple of a timedelta
+    dt : datetime.datetime object, default now.
+    dateDelta : timedelta object, we round to a multiple of this, default 1 minute.
+    to : up / down / average
+    from:  http://stackoverflow.com/questions/3463930/how-to-round-the-minute-of-a-datetime-object-python
+    """
+    round_to = date_delta.total_seconds()
+    if dt is None:
+        dt = datetime.now()
+    seconds = (dt - dt.min).seconds
+
+    if seconds % round_to == 0 and dt.microsecond == 0:
+        rounding = (seconds + round_to / 2) // round_to * round_to
+    else:
+        if to == 'up':
+            # // is a floor division, not a comment on following line (like in javascript):
+            rounding = (seconds + dt.microsecond/1000000 + round_to) // round_to * round_to
+        elif to == 'down':
+            rounding = seconds // round_to * round_to
+        else:
+            rounding = (seconds + round_to / 2) // round_to * round_to
+
+    return dt + timedelta(0, rounding - seconds, - dt.microsecond)
+
+
