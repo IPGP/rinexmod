@@ -24,6 +24,8 @@ OPTION :
 
 * -d : delete : Delete old sitelogs in storage folder. This allows to have only
                 the last version, as version changing sitelogs changes of name.
+                
+* -m : move : Move old sitelogs into the given archive folder
 
 * -o : observatory : A four character observatory ID that will be used to filter
                      sitelogs to download. Valid values are : OVSM|OVSG|OVPF|REVOSIMA.
@@ -37,6 +39,7 @@ OPTION :
              a single observatory must be given with -o option.
              the root folder option is automatically activated (-r)
 
+* -f : force : Force download even if an identical sitelog already exists locally
 
 EXAMPLE:
 
@@ -221,13 +224,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get the last versions of the IPGP sitelogs sorted on the M3G Database')
     parser.add_argument('sitelogsfolder', type=str, help='Output folder where to store downloaded sitelogs')
     parser.add_argument('-d', '--delete', help='Delete old sitelogs in the output folder. This allows to have only the last version, as version changing sitelogs changes of name.', action='store_true')
-    parser.add_argument('-m', '--move', help='Move old sitelogs into a given archive folder.', type=str, default=None)
-
+    parser.add_argument('-m', '--move', help='Move old sitelogs into the given archive folder', type=str, default=None)
     parser.add_argument('-o', '--observatory', help='Download sitelogs for some specific observatories. Valid values are : OVSM|OVSG|OVPF|REVOSIMA',
                         type=str, choices=['OVSM', 'OVSG', 'OVPF', 'REVOSIMA'], default=None)
-    parser.add_argument('-r', '--root', help='store the sitelogs in OUTPUTFOLDER root. (per default, an observatory-specific folder is created to store the corresponding sitelogs.)',action='store_true',default=False)
-    parser.add_argument('-s', '--svn', help='a mode to maintain the legacy OVS SVN folder. Download the sitelog of a single obs and perform a svn commit. A single observatory must be given with -o option. The root folder option is automatically activated (-r)',action='store_true',default=False)
-    parser.add_argument('-f', '--force', help='force download even if an indentical file already exists',action='store_true',default=False)
+    parser.add_argument('-r', '--root', help='Store the sitelogs in OUTPUTFOLDER root. (per default, an observatory-specific folder is created to store the corresponding sitelogs.)',action='store_true',default=False)
+    parser.add_argument('-s', '--svn', help='A mode to maintain the legacy OVS SVN folder. Download the sitelog of a single obs and perform a svn commit. A single observatory must be given with -o option. The root folder option is automatically activated (-r)',action='store_true',default=False)
+    parser.add_argument('-f', '--force', help='Force download even if an identical sitelog already exists locally',action='store_true',default=False)
 
     args = parser.parse_args()
     sitelogsfolder = args.sitelogsfolder
