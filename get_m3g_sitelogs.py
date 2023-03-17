@@ -182,7 +182,7 @@ def get_m3g_sitelogs(sitelogsfolder,
                 if move_folder:
                     for f in old_sitelogs_mv:
                         print('### ' + os.path.basename(f) + ' moved to archive folder ###')
-                        os.shutils(f,move_folder)
+                        shutil.move(f,move_folder)
                         
             else:
                 print('### ' + sitelog_name + ' skip (already exists) ###')
