@@ -109,6 +109,7 @@ def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None,
         obs_infos = obs_infos.content.decode('utf-8')
         obs_infos = obs_infos.splitlines()
         obs_infos = obs_infos[1:] # remove header
+        obs_infos = list(reversed(obs_infos)) #list is reversed per def.
         
         if not root_folder:
             obs_path = os.path.join(sitelogsfolder, observatories[ctry])
