@@ -98,7 +98,7 @@ def get_m3g_sitelogs(sitelogsfolder,
         return
 
     if move_folder and not os.path.exists(move_folder):
-        print('# ERROR : The destination folder for old sitelogs doesn\'t exist')
+        print('# ERROR : The archive folder for old sitelogs doesn\'t exist')
         return
     
     # Check that obs' subfolder exists. If not, creates.
@@ -146,9 +146,6 @@ def get_m3g_sitelogs(sitelogsfolder,
                 print('### ' + line[0] + ' : not available ###')
                 continue
             
-            if move_folder:
-                old_sitelogs_mv = glob.glob(obs_path + '/*' + ctry + '*.log')
-
             sitelog_md5  = line[1]
             sitelog_url  = line[5]
             sitelog_name = line[2]
@@ -156,8 +153,6 @@ def get_m3g_sitelogs(sitelogsfolder,
             Sitelog_local_paths.append(sitelog_local_path)
 
             ### get existing old sitelogs for moving
-            if move_folder:
-                old_sitelogs_mv = glob.glob(obs_path + '/*' + sitelog_name[:9] + '*.log')
 
             
             ### get the checksum for the existing sitelog, if any
@@ -179,13 +174,17 @@ def get_m3g_sitelogs(sitelogsfolder,
                 #                  sitelog_url,'-q',
                 #                  '-O', sitelog_local_path])
                 
-                if move_folder:
-                    for f in old_sitelogs_mv:
-                        print('### ' + os.path.basename(f) + ' moved to archive folder ###')
-                        shutil.move(f,move_folder)
-                        
             else:
                 print('### ' + sitelog_name + ' skip (already exists) ###')
+                
+            if move_folder:
+                old_sitelogs_mv = glob.glob(obs_path + '/*' + sitelog_name[:9] + '*.log')
+                if sitelog_local_path in old_sitelogs_mv:
+                    old_sitelogs_mv.remove(sitelog_local_path)
+                for f in old_sitelogs_mv:
+                    print('### ' + os.path.basename(f) + ' moved to archive folder ###')
+                    shutil.move(f,move_folder)
+                        
                 
     if svn:
         print("### SVN add/commit of the downloaded sitelogs")
