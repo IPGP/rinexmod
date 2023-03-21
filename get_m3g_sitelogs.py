@@ -41,6 +41,9 @@ OPTION :
 
 * -f : force : Force download even if an identical sitelog already exists locally
 
+* -e : exclude : Site(s) you want to exclude from download. 
+                 Provide as input 4 or 9 character site codes separated with spaces
+
 EXAMPLE:
 
 ./get_m3g_sitelogs.py OUTPUTFOLDER (-d) (-o OVSM|OVSG|OVPF|REVOSIMA) (-r) (-s)
@@ -54,7 +57,8 @@ def get_m3g_sitelogs(sitelogsfolder,
                      root_folder=False,
                      svn_mode=False,
                      move_folder=None,
-                     force=False):
+                     force=False,
+                     exclude=[]):
     
     # the root folder option is automatically activated for the SVN mode
     if svn_mode:
@@ -151,9 +155,13 @@ def get_m3g_sitelogs(sitelogsfolder,
             sitelog_name = line[2]
             sitelog_local_path = os.path.join(obs_path, sitelog_name)
             Sitelog_local_paths.append(sitelog_local_path)
+            
 
-            ### get existing old sitelogs for moving
-
+            ### skip excluded stations
+            exclude = [e.lower() for e in exclude]
+            if sitelog_name[:4] in exclude or sitelog_name[:9] in exclude:
+                print('### ' + sitelog_name + ' skip (excluded) ###')
+                continue
             
             ### get the checksum for the existing sitelog, if any
             if os.path.exists(sitelog_local_path):
@@ -176,7 +184,8 @@ def get_m3g_sitelogs(sitelogsfolder,
                 
             else:
                 print('### ' + sitelog_name + ' skip (already exists) ###')
-                
+
+            ### get existing old sitelogs for moving                
             if move_folder:
                 old_sitelogs_mv = glob.glob(obs_path + '/*' + sitelog_name[:9] + '*.log')
                 if sitelog_local_path in old_sitelogs_mv:
@@ -229,6 +238,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--root', help='Store the sitelogs in OUTPUTFOLDER root. (per default, an observatory-specific folder is created to store the corresponding sitelogs.)',action='store_true',default=False)
     parser.add_argument('-s', '--svn', help='A mode to maintain the legacy OVS SVN folder. Download the sitelog of a single obs and perform a svn commit. A single observatory must be given with -o option. The root folder option is automatically activated (-r)',action='store_true',default=False)
     parser.add_argument('-f', '--force', help='Force download even if an identical sitelog already exists locally',action='store_true',default=False)
+    parser.add_argument('-e', '--exclude', help='Site(s) you want to exclude from download. Provide as input 4 or 9 character site codes separated with spaces',nargs='+',default=[])
 
     args = parser.parse_args()
     sitelogsfolder = args.sitelogsfolder
@@ -238,6 +248,7 @@ if __name__ == '__main__':
     root = args.root
     move_folder = args.move
     force = args.force
+    exclude = args.exclude
 
     get_m3g_sitelogs(sitelogsfolder, delete, observatory,root,svn,
-                     move_folder, force)
+                     move_folder, force, exclude)
