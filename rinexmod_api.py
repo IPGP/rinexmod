@@ -352,8 +352,7 @@ def _modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
                                  modif_kw.get('antenna_Z_pos'))
 
     rinexfileobj.mod_antenna_delta(modif_kw.get('antenna_H_delta'),
-                                   modif_kw.get(
-                                       'antenna_E_delta'),
+                                   modif_kw.get('antenna_E_delta'),
                                    modif_kw.get('antenna_N_delta'))
 
     rinexfileobj.mod_agencies(modif_kw.get('operator'),
@@ -401,7 +400,7 @@ def _return_lists_write(return_lists,logfolder,now_dt=None):
 def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
              ignore=False, ninecharfile=None, compression=None, relative='', 
-             verbose=True, return_lists=dict()):
+             verbose=True, full_history=False, return_lists=dict()):
     """
     Parameters
     ----------
@@ -480,8 +479,12 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         set the level of verbosity 
         (False for the INFO level, True for the DEBUG level).
         The default is True.
+    full_history : bool, optional
+        Add the full history of the station in 
+        the RINEX's header as comment.
     return_lists : dict, optional
         DESCRIPTION. The default is dict().
+
 
     Raises
     ------
@@ -574,8 +577,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # 1) the marker option if 9 char are given
     # 2) the nine_char_dict from the ninecharfile option
     # 3) the sitelog (most useful actually,
-    #    but a fallback mechanism has to be here if the sitelog is wrong)
-    # set default value for the monument & country codes
+    #    but we maintain a fallback mechanism here if the sitelog is wrong
+    # Finally, set default value for the monument & country codes
     
     rnx_4char = rnxobj.get_site(True,True)
 
@@ -600,14 +603,13 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     rnxobj.set_site(rnx_4char,monum,country)
 
-
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog:        
         rnxobj = _sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         modif_source = sitelogobj.filename
-            
+        
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
     if modif_kw:
@@ -623,7 +625,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # Must be after _sitelogobj_apply_on_rnxobj and _modif_kw_apply_on_rnxobj
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
     if "marker_name" not in modif_kw.keys(): 
-        rnxobj.mod_marker(rnxobj.get_site(False,False,True))
+        rnxobj.mod_marker(rnxobj.get_site(False,False,True))    
 
     ###########################################################################
     ########## Adding comment in the header
@@ -637,6 +639,11 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         rnxobj.add_comment('rinexmoded with {}'.format(modif_source))
     #if marker: ##### Useless...
     #    rnxobj.add_comment('filename assigned from {}'.format(modif_marker))
+    
+    ###########################################################################
+    ########## Apply the sitelog objects on the RinexFile object
+    if sitelog and full_history:
+        rnxobj.add_comments(sitelogobj.rinex_full_history_lines())    
 
     ###########################################################################
     ########## we regenerate the filenames
@@ -695,7 +702,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
      ninecharfile=None, compression=None, relative='', verbose=True,
-     alone=False, output_logs=None, write=False, sort=False):
+     alone=False, output_logs=None, write=False, sort=False, full_history=False):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -804,7 +811,8 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
                                     compression=compression,
                                     relative=relative, 
                                     verbose=verbose,
-                                    return_lists=return_lists)
+                                    return_lists=return_lists,
+                                    full_history=full_history)
         except Exception as e:
             logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
         

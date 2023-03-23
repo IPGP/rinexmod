@@ -33,7 +33,7 @@ class RinexFile:
     The get_metadata method permits to have a printable string of all file's metadata.
     """
 
-    def __init__(self, rinexfile, force_rnx_load=False, plot=False):
+    def __init__(self, rinexfile, force_rnx_load=False):
 
         self.path = rinexfile
         self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
@@ -49,7 +49,7 @@ class RinexFile:
         
         self.version = self._get_version()
         self.start_date, self.end_date = self._get_dates()
-        self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(plot)
+        self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(plot=False)
         #self.file_period, self.session = self._get_file_period_from_filename()
         self.file_period, self.session = self._get_file_period_from_data()
         self.sat_system = self._get_sat_system()
@@ -352,7 +352,10 @@ class RinexFile:
                 logger.warning("try to force the loading with force_rnx_load = True")
                 rinex_data = None
                 status = '02 - Not an observation RINEX file'
-        
+            
+        if status:
+            logger.warning(status)
+    
         return rinex_data, status
     
 
@@ -705,6 +708,9 @@ class RinexFile:
     def _get_file_period_from_data(self):
         """
         Get the file period from the data themselves.
+        
+        NB: this method respects the IGS convention and thus uses NOMINAL 
+        period
         """
         
         rndtup = lambda x: round_time(x,timedelta(minutes=60),"up")
@@ -1076,7 +1082,7 @@ class RinexFile:
     def mod_filename_file_period(self, file_period_inp):
         self.file_period = file_period_inp
         return
-
+    
 #############################################################################
 ### misc methods. change the content of the RINEX header
 
@@ -1158,6 +1164,18 @@ class RinexFile:
 
         return
     
+    
+    def add_comments(self,comment_list):
+        """
+        Add several comments at the same time.
+        The input is then a list of comments (strings)
+        Useful for the full history changes for instance 
+
+        """
+        for com in comment_list:
+            self.add_comment(com)
+        return 
+
     
 # *****************************************************************************
 # low level functions
