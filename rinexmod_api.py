@@ -633,6 +633,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     #rnxobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
     rnxobj.add_comment(("RinexMod "+vers_num, "METADATA UPDATE"),
                        add_pgm_cmt=True)
+    rnxobj.add_comment('RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)')
     rnxobj.add_comment('rinexmoded on {}'.format(
         datetime.strftime(now, '%Y-%m-%d %H:%M')))
     if sitelog or modif_kw:
