@@ -9,7 +9,7 @@ import os, re
 from   datetime import datetime, timedelta
 import configparser
 import json, copy
-
+#         import pycountry
 
 class SiteLog:
     """
@@ -357,7 +357,12 @@ class SiteLog:
         Return the ISO country code based on the Sitelog's Country filed.
         Requires pycountry module
         """
-        import pycountry
+        
+        try:
+            import pycountry
+        except ModuleNotFoundError:
+            print("Python's module 'pycountry' is recommended to recover the Country name automatically")
+
         full_country = self.info['2.']['Country']
         try:
             iso_country = pycountry.countries.get(name=full_country).alpha_3
