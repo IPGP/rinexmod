@@ -645,7 +645,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog and full_history:
-        rnxobj.add_comments(sitelogobj.rinex_full_history_lines())    
+        title = ["-","SITE FULL HISTORY"]
+        rnxobj.add_comments(title + sitelogobj.rinex_full_history_lines())    
 
     ###########################################################################
     ########## we regenerate the filenames
