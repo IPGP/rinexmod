@@ -570,6 +570,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         sitelogobj = sitelog_find_site(rnxobj,
                                        sitelogs_obj_list,
                                        force=force_sitelog)
+        logger.debug("sitelog used: %s",sitelogobj) 
         
     ###########################################################################
     ########## Handle the similar options to set the site code
