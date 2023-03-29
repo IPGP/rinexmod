@@ -527,6 +527,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         logger.error(
             '{:110s} - {}'.format('30 - Input and output folders are the same !', rinexfile))
         raise RinexFileError
+        
+    if not os.path.exists(outputfolder):
+        logger.warning("the output folder does not exists")        
+        os.makedirs(outputfolder)
 
     # Declare the rinex file as an object
     rnxobj = RinexFile(rinexfile,force_rnx_load=force_rnx_load)
@@ -645,7 +649,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog and full_history:
-        title = ["","SITE FULL HISTORY"]
+        title = ["- - - - - - - - - - - -","SITE FULL HISTORY"]
         rnxobj.add_comments(title + sitelogobj.rinex_full_history_lines())    
 
     ###########################################################################
