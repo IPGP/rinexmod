@@ -9,7 +9,7 @@ import os, re
 from   datetime import datetime, timedelta
 import configparser
 import json, copy
-
+#         import pycountry
 
 class SiteLog:
     """
@@ -42,9 +42,12 @@ class SiteLog:
             self.instrumentations = self._instrumentations()
         else:
             self.instrumentations = None
+            
+    def __repr__(self):
+        return self.filename
 
 
-    def _sitelog2dict(self):
+    def _sitelog2dict(self,keys_float=False):
         """
         Main function for reading a Sitelog file. From the sitelog file,
         returns a dict with all readed values.
@@ -166,11 +169,16 @@ class SiteLog:
                         blocdict.update({section_name: dict(cfgparser[section_name])})
 
                 # We append the bloc dict to the global dict
-                sitelogdict[index] = blocdict
+                if keys_float:
+                    keys_contact = [11. ,12.]                    
+                    sitelogdict[float(index)] = blocdict
+                else:
+                    keys_contact = ['11.' ,'12.']
+                    sitelogdict[index] = blocdict
 
         # Contact corrections - putting the field 'Additional Information' in the right level dict
         # and removing network information
-        for key in [key for key in sitelogdict.keys() if key in ['11.' ,'12.']]:
+        for key in [key for key in sitelogdict.keys() if key in keys_contact]:
             if 'network' in sitelogdict[key]['Agency'].lower():
                 index_network =  sitelogdict[key]['Agency'].lower().index('network')
                 sitelogdict[key]['Agency'] = sitelogdict[key]['Agency'][:index_network]
@@ -182,8 +190,7 @@ class SiteLog:
                 sitelogdict[key]['Additional Information'] = sitelogdict[key]['Secondary Contact']['Additional Information']
                 # Removing it from the incorrect dict level
                 sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
-
-
+                
         return sitelogdict, 0
 
 
@@ -350,7 +357,12 @@ class SiteLog:
         Return the ISO country code based on the Sitelog's Country filed.
         Requires pycountry module
         """
-        import pycountry
+        
+        try:
+            import pycountry
+        except ModuleNotFoundError:
+            print("Python's module 'pycountry' is recommended to recover the Country name automatically")
+
         full_country = self.info['2.']['Country']
         try:
             iso_country = pycountry.countries.get(name=full_country).alpha_3
@@ -466,6 +478,33 @@ class SiteLog:
                        antenna_delta)
 
         return metadata_vars, ignored
+    
+    def rinex_full_history_lines(self):
+        rec_stk = []
+        ant_stk = []
+
+        for instru in self.instrumentations:
+            rec_stk.append(instru["receiver"])
+            ant_stk.append(instru["antenna"])
+            
+        def _stack_lines(instru_stk,instru_name="Receiver"):
+            lines_instru_stk = []
+            lastl1, lastl2, lastl3 = None, None, None
+
+            for ins in instru_stk:
+                l1 = " ".join((ins[instru_name + ' Type'],ins["Serial Number"]))
+                l2 = "Installed on " + str(ins['Date Installed'])
+                l3 = "Removed on " + str(ins['Date Removed'])
+                
+                if l1 == lastl1 and l2 == lastl2 and l3 == lastl3:
+                    continue
+                else:
+                    lines_instru_stk.append(l1)
+                    lines_instru_stk.append(l2)
+                    lines_instru_stk.append(l3)
+            return lines_instru_stk
+
+        return _stack_lines(rec_stk,'Receiver') + _stack_lines(ant_stk,'Antenna')
 
 
     def write_json(self, output = None):

@@ -85,8 +85,10 @@ OPTIONS :
                             will be written to OUTPUTFOLDER.
 -w : --write :              Write (RINEX version, sample rate, file period, observatory)
                             dependant output lists to log folder.
--v : --verbose:             Will print file's metadata before and after modifications.
--t : --sort:                Sort the input RINEX list.
+-v : --verbose :            Will print file's metadata before and after modifications.
+-t : --sort :               Sort the input RINEX list.
+-u : --full_history :       Add the full history of the station in 
+                            the RINEX's header as comment.
 
 EXAMPLES:
 
@@ -100,6 +102,7 @@ You need Python Hatanaka library from Martin Valgur:
 pip install hatanaka
 
 2021-02-07 Félix Léger - leger@ipgp.fr
+2023-03-23 Pierre Sakic - sakic@ipgp.fr
 """
 
 import rinexmod_api as rma
@@ -151,6 +154,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '-v', '--verbose', help='Print file\'s metadata before and after modifications.', action='store_true', default=False)
     parser.add_argument('-t', '--sort', help='Sort the input RINEX list.', action='store_true', default=False)
+    parser.add_argument('-u', '--full_history', help="Add the full history of the station in the RINEX's 'header as comment.", action='store_true', default=False)
+    
     
     args = parser.parse_args()
 
@@ -171,6 +176,7 @@ if __name__ == '__main__':
     write = args.write
     verbose = args.verbose
     sort = args.sort
+    full_history = args.full_history
     
     rma.rinexmod_cli(rinexlist,
                      outputfolder,
@@ -188,4 +194,5 @@ if __name__ == '__main__':
                      alone=alone, 
                      output_logs=output_logs, 
                      write=write, 
-                     sort=sort)
+                     sort=sort,
+                     full_history=full_history)
