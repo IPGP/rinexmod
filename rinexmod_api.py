@@ -173,7 +173,7 @@ def _sitelog_files2objs_convert(sitelog_filepath,
         sitelog_extension = '.log'
         all_sitelogs = listfiles(sitelog_filepath, sitelog_extension)
     
-        sitelog_pattern = re.compile('\w{3,9}_\d{8}.log')
+        sitelog_pattern = re.compile('\w{4,9}_\d{8}.log')
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
     
