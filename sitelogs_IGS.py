@@ -491,17 +491,21 @@ class SiteLog:
             lines_instru_stk = []
             lastl1, lastl2, lastl3 = None, None, None
 
-            for ins in instru_stk:
+            for iins,ins in enumerate(instru_stk):
                 l1 = " ".join((ins[instru_name + ' Type'],ins["Serial Number"]))
                 l2 = "Installed on " + str(ins['Date Installed'])
                 l3 = "Removed on " + str(ins['Date Removed'])
-                
+                                
                 if l1 == lastl1 and l2 == lastl2 and l3 == lastl3:
                     continue
                 else:
                     lines_instru_stk.append(l1)
                     lines_instru_stk.append(l2)
                     lines_instru_stk.append(l3)
+                    lastl1 = l1
+                    lastl2 = l2
+                    lastl3 = l3
+                    
             return lines_instru_stk
 
         return _stack_lines(rec_stk,'Receiver') + _stack_lines(ant_stk,'Antenna')
