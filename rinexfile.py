@@ -309,19 +309,21 @@ class RinexFile:
         return shortname
     
     
-    def get_header(self,return_index_end=False):
+    def get_header_body(self,return_index_end=False):
         """
-        get the RINEX's header as a list of lines, and the index of the 
-        END OF HEADER line if asked
+        get the RINEX's header and body as a list of lines, 
+        and the index of the END OF HEADER line if asked
         """
         i_end = None
-        for il,l in enumerate(self.rinex_data):
-            if 'END OF HEADER' in l:
-                i_end = il
+        i_end = search_idx_value(self.rinex_data, 'END OF HEADER')
+
+        head = self.rinex_data[:i_end+1]
+        body = self.rinex_data[i_end+1:]
+        
         if return_index_end:
-            return self.rinex_data[:i_end+1],i_end
+            return head, body, i_end
         else:
-            return self.rinex_data[:i_end+1]
+            return head, body
 
     
 # *****************************************************************************
@@ -1202,6 +1204,9 @@ class RinexFile:
                 i_start = il
             if "Removed" in l:
                 i_end = il
+            if "END OF HEADER" in l:
+                break
+                        
         if i_start and i_end:
             self.rinex_data = self.rinex_data[0:i_start-1] + self.rinex_data[i_end+1:]
         return
@@ -1258,8 +1263,7 @@ class RinexFile:
         'PRN / # OF OBS',
         'END OF HEADER']
         
-        head, i_end_head = self.get_header(True)
-        body = self.rinex_data[i_end_head+1:]
+        head, body, i_end_head = self.get_header_body(True)
         try:
             head_sort = sorted(head,key=lambda x: header_order.index(x[60:].strip()))
             self.rinex_data = head_sort + body
