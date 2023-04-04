@@ -611,7 +611,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog or modif_kw:        
-        rnxobj.clean_rinexmod_history()
+        rnxobj.clean_rinexmod_comments()
         
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
