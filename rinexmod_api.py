@@ -467,7 +467,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ninecharfile : str, optional
         Path of a file that contains 9-char. site names from the M3G database.
         The default is None.
-    compression : TYPE, optional
+    compression : str, optional
         Set RINEX compression 
         acceptables values : gz (recommended to fit IGS standards), 'Z', None. 
         The default is None.

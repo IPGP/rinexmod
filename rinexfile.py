@@ -309,6 +309,21 @@ class RinexFile:
         return shortname
     
     
+    def get_header(self,return_index_end=False):
+        """
+        get the RINEX's header as a list of lines, and the index of the 
+        END OF HEADER line if asked
+        """
+        i_end = None
+        for il,l in enumerate(self.rinex_data):
+            if 'END OF HEADER' in l:
+                i_end = il
+        if return_index_end:
+            return self.rinex_data[:i_end+1],i_end
+        else:
+            return self.rinex_data[:i_end+1]
+
+    
 # *****************************************************************************
 ### internal methods
 
@@ -1164,7 +1179,6 @@ class RinexFile:
 
         return
     
-    
     def add_comments(self,comment_list):
         """
         Add several comments at the same time.
@@ -1175,10 +1189,88 @@ class RinexFile:
         for com in comment_list:
             self.add_comment(com)
         return 
+    
+    def clean_history(self):
+        """
+        Remove the Full History Comments 
+        """
+        
+        i_start,i_end = None,None
+        
+        for il,l in enumerate(self.rinex_data):
+            if "FULL HISTORY" in l:
+                i_start = il
+            if "Removed" in l:
+                i_end = il
+        if i_start and i_end:
+            self.rinex_data = self.rinex_data[0:i_start-1] + self.rinex_data[i_end+1:]
+        return
+            
+    def clean_rinexmod_comments(self,clean_history=True):
+        """
+        Remove all RinexMod Comments
+        """
+        if clean_history:
+            self.clean_history()
+            
+        rinex_data_new = []
+        for l in self.rinex_data:
+            if not "rinexmod" in l.lower():
+                rinex_data_new.append(l)
+        self.rinex_data = rinex_data_new
+        return 
+        
+    def sort_header(self):
+        header_order = ['RINEX VERSION / TYPE',
+        'PGM / RUN BY / DATE',
+        'COMMENT',
+        'MARKER NAME',
+        'MARKER NUMBER',
+        'MARKER TYPE',
+        'OBSERVER / AGENCY',
+        'REC # / TYPE / VERS',
+        'ANT # / TYPE',
+        'APPROX POSITION XYZ',
+        'ANTENNA: DELTA H/E/N',
+        'ANTENNA: DELTA X/Y/Z',
+        'ANTENNA: PHASECENTER',
+        'ANTENNA: B.SIGHT XYZ',
+        'ANTENNA: ZERODIR AZI',
+        'ANTENNA: ZERODIR XYZ',
+        'CENTER OF MASS: XYZ',
+        'DOI',
+        'LICENSE OF USE',
+        'STATION INFORMATION',
+        'SYS / # / OBS TYPES',
+        'SIGNAL STRENGTH UNIT',
+        'INTERVAL',
+        'TIME OF FIRST OBS',
+        'TIME OF LAST OBS',
+        'RCV CLOCK OFFS APPL',
+        'SYS / DCBS APPLIED',
+        'SYS / PCVS APPLIED',
+        'SYS / SCALE FACTOR',
+        'SYS / PHASE SHIFT',
+        'GLONASS SLOT / FRQ #',
+        'GLONASS COD/PHS/BIS',
+        'LEAP SECONDS',
+        '# OF SATELLITES',
+        'PRN / # OF OBS',
+        'END OF HEADER']
+        
+        head, i_end_head = self.get_header(True)
+        body = self.rinex_data[i_end_head+1:]
+        try:
+            head_sort = sorted(head,key=lambda x: header_order.index(x[60:].strip()))
+            self.rinex_data = head_sort + body
+        except:
+            logger.warning("unable to sort header's lines, skip the action")
+        return
+        
 
     
 # *****************************************************************************
-# low level functions
+# low level functions (outside RinexFile class)
 def search_idx_value(data, field):
     """
     find the index (line number) of a researched field in the RINEX data
