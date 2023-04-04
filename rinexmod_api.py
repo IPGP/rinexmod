@@ -610,6 +610,11 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
+    if sitelog or modif_kw:        
+        rnxobj.clean_rinexmod_comments()
+        
+    ###########################################################################
+    ########## Apply the sitelog objects on the RinexFile object
     if sitelog:        
         rnxobj = _sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
@@ -633,7 +638,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         rnxobj.mod_marker(rnxobj.get_site(False,False,True))    
 
     ###########################################################################
-    ########## Adding comment in the header
+    ########## Add comment in the header
     vers_num = git_get_revision_short_hash()
     #rnxobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
     rnxobj.add_comment(("RinexMod "+vers_num, "METADATA UPDATE"),
@@ -651,6 +656,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     if sitelog and full_history:
         title = ["- - - - - - - - - - - -","SITE FULL HISTORY"]
         rnxobj.add_comments(title + sitelogobj.rinex_full_history_lines())    
+
+    ###########################################################################
+    ########## Sort the header
+    rnxobj.sort_header()
 
     ###########################################################################
     ########## we regenerate the filenames
@@ -679,12 +688,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     try:
         outputfile = rnxobj.write_to_path(
             myoutputfolder, compression=output_compression)
-    except hatanaka.hatanaka.HatanakaException:
-        logger.error(
-            '{:110s} - {}'.format('06 - File could not be written - hatanaka exception', rinexfile))
-        pass
-
-    logger.info('Output file : ' + outputfile)
+        logger.info('Output file : ' + outputfile)
+    except hatanaka.hatanaka.HatanakaException as e:
+        logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', rinexfile))
+        raise e
 
     ###########################################################################
     ########## Construct return dict by adding key if doesn't exists
