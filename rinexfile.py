@@ -35,7 +35,7 @@ class RinexFile:
 
     def __init__(self, rinexfile, force_rnx_load=False):
 
-        self.path = rinexfile
+        self.path = rinexfile.strip()
         self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
         self.name_conv = self._get_naming_convention()
         self.size = self._get_size()
