@@ -401,7 +401,7 @@ def _return_lists_write(return_lists,logfolder,now_dt=None):
 def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
              ignore=False, ninecharfile=None, compression=None, relative='', 
-             verbose=True, full_history=False, return_lists=dict()):
+             verbose=True, full_history=False, return_lists=None):
     """
     Parameters
     ----------
@@ -484,8 +484,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Add the full history of the station in 
         the RINEX's header as comment.
     return_lists : dict, optional
-        DESCRIPTION. The default is dict().
-
+        Specific option for file distribution through a GLASS node.
+        Store the rinexmoded RINEXs in a dictionary
+        to activates it, give a dict as input (an empty one - dict() works)
+        DESCRIPTION. The default is None.
 
     Raises
     ------
@@ -496,9 +498,13 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     Returns
     -------
-    return_lists : dict
-        DESCRIPTION.
+    outputfile : str
+        the path of the rinexmoded RINEX    
 
+    OR
+
+    return_lists : dict
+        a dictionary of rinexmoded RINEXs for GLASS distribution.
     """
     
     now = datetime.now()
@@ -692,23 +698,31 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         logger.info('Output file : ' + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
         logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', rinexfile))
+        outputfile = None
         raise e
 
     ###########################################################################
     ########## Construct return dict by adding key if doesn't exists
-    # and appending file to corresponding list ###
-    major_rinex_version = rnxobj.version[0]
-    # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
-    if major_rinex_version not in return_lists:
-        return_lists[major_rinex_version] = {}
-    if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
-        return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
-    if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
-        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
-
-    return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(outputfile)
+    ########## and appending file to corresponding list
+    if type(return_lists) is dict:
+        major_rinex_version = rnxobj.version[0]
+        # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
+        if major_rinex_version not in return_lists:
+            return_lists[major_rinex_version] = {}
+        if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
+            return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
+        if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
+            return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
     
-    return return_lists
+        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(outputfile)
+        
+        final_return = return_lists
+    else:
+        ###########################################################################
+        ###### if no return dict  given, return simply the path of the outputfile
+        final_return = outputfile
+        
+    return final_return
 
 
 # *****************************************************************************
