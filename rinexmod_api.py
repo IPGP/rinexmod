@@ -40,6 +40,7 @@ def logger_define(level_prompt,logfile,level_logfile=None):
     '''
 
     logger = logging.getLogger()
+    logger.propagate = False
     logger.setLevel(level_prompt)
     
     # This handler is for prompt (console)
