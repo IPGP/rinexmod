@@ -39,7 +39,7 @@ def logger_define(level_prompt,logfile,level_logfile=None):
     the other to a logfile defined by 'logfile'.
     '''
 
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logger.propagate = False
     logger.setLevel(level_prompt)
     
@@ -852,6 +852,3 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         _return_lists_write(return_lists,logfolder,now)
 
     return return_lists
-
-
-
