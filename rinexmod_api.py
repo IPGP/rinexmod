@@ -372,7 +372,27 @@ def _modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
     return rinexfileobj
 
 # *****************************************************************************
-# dictionnary as output for rinexmod
+# dictionnary as output for gnss_delivery workflow
+
+def _return_lists_maker(rnxobj,return_lists=dict()):
+    """
+    Construct return dict
+    Specific usage for the IPGP's gnss_delivery workflow
+    """
+    
+    major_rinex_version = rnxobj.version[0]
+    # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
+    if major_rinex_version not in return_lists:
+        return_lists[major_rinex_version] = {}
+    if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
+        return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
+    if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
+        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
+
+    return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(rnxobj.path_output)
+    
+    return return_lists
+
 
 def _return_lists_write(return_lists,logfolder,now_dt=None):
     # Writing an output file for each RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD lists
@@ -618,7 +638,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog or modif_kw:        
-        rnxobj.clean_rinexmod_comments()
+        rnxobj.clean_rinexmod_comments(clean_history=True)
         
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
@@ -693,8 +713,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Writing output file
     try:
-        outputfile = rnxobj.write_to_path(
-            myoutputfolder, compression=output_compression)
+        outputfile = rnxobj.write_to_path(myoutputfolder,
+                                          compression=output_compression)
         logger.info('Output file : ' + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
         logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', rinexfile))
@@ -705,17 +725,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ########## Construct return dict by adding key if doesn't exists
     ########## and appending file to corresponding list
     if type(return_lists) is dict:
-        major_rinex_version = rnxobj.version[0]
-        # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
-        if major_rinex_version not in return_lists:
-            return_lists[major_rinex_version] = {}
-        if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
-            return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
-        if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
-            return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
-    
-        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(outputfile)
-        
+        return_lists = _return_lists_maker(rnxobj,return_lists)
         final_return = return_lists
     else:
         ###########################################################################
@@ -723,7 +733,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         final_return = outputfile
         
     return final_return
-
+    
 
 # *****************************************************************************
 # Upper level rinexmod for a Console run
@@ -852,3 +862,8 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         _return_lists_write(return_lists,logfolder,now)
 
     return return_lists
+
+
+# *****************************************************************************
+# Upper level return_lists maker
+# TO DO

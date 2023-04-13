@@ -36,6 +36,8 @@ class RinexFile:
     def __init__(self, rinexfile, force_rnx_load=False):
 
         self.path = rinexfile.strip()
+        self.path_output =  rinexfile.strip()
+        
         self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
         self.name_conv = self._get_naming_convention()
         self.size = self._get_size()
@@ -1144,7 +1146,9 @@ class RinexFile:
             outputfile = os.path.join(path, filename_out + '.' + compression)
 
         Path(outputfile).write_bytes(output_data)
-
+        
+        self.path_output = outputfile
+        
         return outputfile
 
 
