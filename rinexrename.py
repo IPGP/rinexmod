@@ -15,9 +15,7 @@ See rinexrename -h for option description
 from rinexfile import RinexFile
 import shutil, os
 
-
 def rinexrename(rinexlist, output=None, delete=False, alone=False, country="00XXX"):
-
     if alone:
         rinexlist = [rinexlist]
     elif isinstance(rinexlist, list):
