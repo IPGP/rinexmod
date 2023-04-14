@@ -66,7 +66,7 @@ def get_m3g_sitelogs(sitelogsfolder, delete, observatory=None,
                      'BLM' : 'OVSG',       ### St Barthelemy
                      'MAF' : 'OVSG',       ### St Martin (no station there for the moment)
                      'REU' : 'OVPF',
-                     'MTY' : 'REVOSIMA',
+                     'MYT' : 'REVOSIMA',
                      'ATF' : 'REVOSIMA'}   ### TAAF aka Terres Australes 
 
     # If an observatory ID is given, only download its sitelogs
