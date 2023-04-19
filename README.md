@@ -1,8 +1,13 @@
 #  rinexmod
 
-Tool to batch modify headers of RINEX Hatakana compressed files from command line arguments or from a sitelog and optionnaly batch rename them.
+rinexmod is a tool to batch modify the headers of GNSS data files in RINEX format, as well as to rename them correctly.  
+It supports Hatakana-compressed and non-compressed files, RINEX versions 2 and 3, as well as short and long naming conventions.  
+It is developed in python3, and can be run from the command line or directly in API mode by calling a python function.  
+The required input metadata can come from a sitelogs file, or be manually entered as arguments to the command line or the called function.  
+It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
-2021-02-07 Félix Léger - leger@ipgpr
+v1 - 2021-02-07 Félix Léger  - leger@ipgp.fr  
+v2 - 2022-04-XX Pierre Sakic - sakic@ipgp.fr
 
 # Project Overview
 
