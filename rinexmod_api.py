@@ -550,6 +550,9 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     else:
         myoutputfolder = outputfolder
 
+    if not modif_kw:
+        modif_kw = dict()
+
     if os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder:
         logger.error(
             '{:110s} - {}'.format('30 - Input and output folders are the same !', rinexfile))
@@ -614,6 +617,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     
     rnx_4char = rnxobj.get_site(True,True)
 
+
     if marker and len(marker) == 9:
         monum = marker[4:6]
         country = marker[6:]  
@@ -663,6 +667,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
     if "marker_name" not in modif_kw.keys(): 
         rnxobj.mod_marker(rnxobj.get_site(False,False,True))    
+
+
 
     ###########################################################################
     ########## Add comment in the header
