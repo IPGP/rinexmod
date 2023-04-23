@@ -31,7 +31,8 @@ Two ways of passing parameters to modifiy headers are possible:
                        Receiver Type
                        Serial Number
                        Firmware Version
-                       Satellite System (will translate this info to one-letter code, see RinexFile.set_sat_system())
+                       Satellite System (will translate this info to one-letter
+                                         code, see RinexFile.set_sat_system())
                        Antenna Type
                        Serial Number
                        Marker->ARP Up Ecc. (m)
