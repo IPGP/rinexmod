@@ -7,7 +7,7 @@ The required input metadata can come from a sitelogs file, or be manually entere
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
 v1 - 2021-02-07 Félix Léger  - leger@ipgp.fr  
-v2 - 2022-04-XX Pierre Sakic - sakic@ipgp.fr
+v2 - 2022-05-15 Pierre Sakic - sakic@ipgp.fr
 
 # Project Overview
 
