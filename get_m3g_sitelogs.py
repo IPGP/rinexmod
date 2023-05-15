@@ -49,6 +49,7 @@ EXAMPLE:
 ./get_m3g_sitelogs.py OUTPUTFOLDER (-d) (-o OVSM|OVSG|OVPF|REVOSIMA) (-r) (-s)
 
 2021-10-18 FL
+2023-03-21 PS
 """
 
 def get_m3g_sitelogs(sitelogsfolder,
