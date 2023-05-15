@@ -263,7 +263,7 @@ def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
     return sitelogobj
         
 
-def _sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
+def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
     rnx_4char = rnxobj.get_site(True,True)
     # Site name from the sitelog
     sitelog_4char = sitelogobj.info['1.']['Four Character ID'].lower()
@@ -334,7 +334,7 @@ def _modif_kw_check(modif_kw):
     return None
         
    
-def _modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
+def modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
     rinexfileobj.mod_marker(modif_kw.get('marker_name'),
                             modif_kw.get('marker_number'))
 
@@ -647,7 +647,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog:        
-        rnxobj = _sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
+        rnxobj = sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         modif_source = sitelogobj.filename
         
@@ -658,17 +658,20 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         _modif_kw_check(modif_kw)
 
         modif_source = 'manual keywords'
-        rnxobj = _modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
+        rnxobj = modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
         logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
-    # Must be after _sitelogobj_apply_on_rnxobj and _modif_kw_apply_on_rnxobj
+    # Must be after sitelogobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
     if "marker_name" not in modif_kw.keys(): 
         rnxobj.mod_marker(rnxobj.get_site(False,False,True))    
 
 
+    ###########################################################################
+    ########## Correct the first and last time obs
+    rnxobj.mod_time_obs(rnxobj.start_date,rnxobj.end_date)
 
     ###########################################################################
     ########## Add comment in the header
