@@ -1321,21 +1321,26 @@ class RinexFile:
 
         output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
 
-        # manage hatanaka compression extension
-        # RNX3
-        if "rnx" in self.filename:
-            filename_out = self.filename.replace("rnx", "crx")
-        # RNX2
-        elif self.filename[-1] in "o":
-            filename_out = self.filename[:-1] + "d"
+        ### The data source is an actual RINEX file
+        if self.source_from_file:
+            # manage hatanaka compression extension
+            # RNX3
+            if "rnx" in self.filename:
+                filename_out = self.filename.replace("rnx", "crx")
+            # RNX2
+            elif self.filename[-1] in "o":
+                filename_out = self.filename[:-1] + "d"
+            else:
+                filename_out = self.filename
+    
+            # manage low-level compression extension
+            if compression in ('none', None):
+                outputfile = os.path.join(path, filename_out)
+            else:
+                outputfile = os.path.join(path, filename_out + '.' + compression)
+        ### the data source is a StringIO
         else:
-            filename_out = self.filename
-
-        # manage low-level compression extension
-        if compression in ('none', None):
-            outputfile = os.path.join(path, filename_out)
-        else:
-            outputfile = os.path.join(path, filename_out + '.' + compression)
+            outputfile = path
 
         Path(outputfile).write_bytes(output_data)
         
