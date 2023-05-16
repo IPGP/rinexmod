@@ -1,24 +1,31 @@
 #  rinexmod
 
-Tool to batch modify headers of RINEX Hatakana compressed files from command line arguments or from a sitelog and optionnaly batch rename them.
+rinexmod is a tool to batch modify the headers of GNSS data files in RINEX format, as well as to rename them correctly.  
+It supports Hatakana-compressed and non-compressed files, RINEX versions 2 and 3, as well as short and long naming conventions.  
+It is developed in python3, and can be run from the command line or directly in API mode by calling a python function.  
+The required input metadata can come from a sitelogs file, or be manually entered as arguments to the command line or the called function.  
+It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
-2021-02-07 Félix Léger - leger@ipgp.f
+v1 - 2021-02-07 Félix Léger  - leger@ipgp.fr  
+v2 - 2022-05-15 Pierre Sakic - sakic@ipgp.fr
 
-# Project Overview
+## Project Overview
 
 This project is composed of 4 scripts.
 
-* rinexmod.py takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
+* `rinexmod.py` takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
 loop the rinex files list to modifiy the file's header. It then write them back to Hanakata
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
 
-* get_m3g_sitelogs.py will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder.
+* `get_m3g_sitelogs.py` will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder.
 
-* crzmeta.py will extract rinex file's header information and prompt the result. This permits to access quickly the header informations without uncompressing manually the file. It's a teqc-free equivalent of teqc +meta.
+* `crzmeta.py` will extract rinex file's header information and prompt the result. This permits to access quickly the header informations without uncompressing manually the file. It's a teqc-free equivalent of teqc +meta.
 
-# rinexmod.py
+## Frontend functions synopsis
+
+### rinexmod.py
 
 Two ways of passing parameters to modifiy headers are possible:
 
@@ -99,7 +106,7 @@ EXAMPLES:
  ./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 
 
-# get_m3g_sitelogs.py
+### get_m3g_sitelogs.py
 
 This script will get last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
@@ -119,7 +126,7 @@ EXAMPLE:
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 
 
-# crzmeta.py
+### crzmeta.py
 
 Extract metadata from crz file.
 
@@ -128,72 +135,75 @@ With -p option, will plot the file's samples intervals
 EXAMPLE:
 ./crzmeta.py  RINEXFILE (-p)
 
-# Requirements
+## Requirements
 
 The tool is in Python 3, you must have it installed on your machine.
 
-You need Python Hatanaka library from Martin Valgur:
+You need Python Hatanaka library from Martin Valgur (https://github.com/valgur/hatanaka):
 
- pip install hatanaka
+ `pip install hatanaka`
+ 
+You need pycountry to associate country names with their ISO abbreviations (but it is facultative):
 
-You need matplotlib for plotting samples intervals with crzmeta
+`pip install pycountry`
 
- pip install matplotlib
+You need matplotlib for plotting samples intervals with crzmeta:
 
-# rinexmod error messages
+`pip install matplotlib`
+
+## rinexmod error messages
 
 Rinexmod will prompt errors when arguments are wrong. Appart from this, it will prompt and save to file errors and waring
 occuring on specific files from the rinex list. Here are the error codes :
 
-
-01 - The specified file does not exists
+`01 - The specified file does not exists`
 
 That means that the input file containing list of rinex files is wrong and references a file that is not present. It can also mean that the file has been deleteted between the list generation and the script launch, but this case should be quite rare.
 
-02 - Not an observation Rinex file
+`02 - Not an observation Rinex file`
 
 The file name does not correspond to the classic pattern (it doesn't match the regular expression for new and old convention namming model ). Most of time, it's because it is not a d rinex file (for example, navigation file).
 
-03 - Invalid  or empty Zip file
+`03 - Invalid  or empty Zip file`
 
 The Zip file is corrupted or empty
 
-04 - Invalid Compressed Rinex file
+`04 - Invalid Compressed Rinex file`
 
 The CRX Hatanaka file is corrupted.
 
-05 - Less than two epochs in the file, reject
+`05 - Less than two epochs in the file, reject`
 
 Not enought data in the file to extract a sample rate, and data not relevant because insuficient. Reject the file.
 
-30 - Input and output folders are the same !
+`30 - Input and output folders are the same !`
 
 The file will not be proceeded as rinexmod does not modify files inplace. Check your outputfolder.
 
-31 - The subfolder can not be reconstructed for file
+`31 - The subfolder can not be reconstructed for file`
 
 The script tries to find the 'reconstruct' subfolder in the file's path to replace it with outputfolder, and does not find it.
 
-32 - Station's country not retrevied, will not be properly renamed
+`32 - Station's country not retrevied, will not be properly renamed`
 
 When using --name option, that will rename file with rinex long name convention, it needs to retrieve the file's country.
 It tries to do so using an externa file of list of 9 char ids. the concerned rinex file's station seems to be absent
 from this station list file.
 
-33 - File\'s station does not correspond to provided sitelog - use -f option to force
+`33 - File\'s station does not correspond to provided sitelog - use -f option to force`
 
 The station name retrieved from the provided sitelog does not correspond to the station's name retrieved from
 the file's headers. Do not process.
 
-34 - File's station does not correspond to provided sitelog, processing anyway
+`34 - File's station does not correspond to provided sitelog, processing anyway`
 
 The station name retrieved from the provided sitelog does not correspond to the station's name retrieved from
 the file's headers. As the --force option was provided, the file has been processed.
 
-35 - No instrumentation corresponding to the data period on the sitelog
+`35 - No instrumentation corresponding to the data period on the sitelog`
 
 There is no continuous instrumentation period in the sitelog taht corresponds to the rinex file's dates. We can thus not fill the header.
 
-36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway
+`36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway`
 
 We provided the --ignore option, so the consecutive periods of instrumentation for witch only the firmave version of the receiver has changed have been merged. We used this period to fill this file's header.
