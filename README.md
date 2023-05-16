@@ -156,7 +156,6 @@ You need matplotlib for plotting samples intervals with crzmeta:
 Rinexmod will prompt errors when arguments are wrong. Appart from this, it will prompt and save to file errors and waring
 occuring on specific files from the rinex list. Here are the error codes :
 
-
 `01 - The specified file does not exists`
 
 That means that the input file containing list of rinex files is wrong and references a file that is not present. It can also mean that the file has been deleteted between the list generation and the script launch, but this case should be quite rare.
@@ -201,10 +200,10 @@ the file's headers. Do not process.
 The station name retrieved from the provided sitelog does not correspond to the station's name retrieved from
 the file's headers. As the --force option was provided, the file has been processed.
 
-35 - No instrumentation corresponding to the data period on the sitelog
+`35 - No instrumentation corresponding to the data period on the sitelog`
 
 There is no continuous instrumentation period in the sitelog taht corresponds to the rinex file's dates. We can thus not fill the header.
 
-36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway
+`36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway`
 
 We provided the --ignore option, so the consecutive periods of instrumentation for witch only the firmave version of the receiver has changed have been merged. We used this period to fill this file's header.
