@@ -92,47 +92,81 @@ rinexmod will add two comment lines, one indicating the source of the modificati
 
 #### Synopsis
 ```
-usage: rinexmod.py [-h] [-s SITELOG] [-k [MODIF_KW ...]] [-m MARKER] [-n NINECHARFILE] [-r RELATIVE] [-c COMPRESSION] [-l] [-fs] [-fr] [-i] [-a] [-o OUTPUT_LOGS] [-w] [-v]
-                   [-t] [-u]
+usage: rinexmod.py [-h] [-s SITELOG] [-k [MODIF_KW ...]] [-m MARKER]
+                   [-n NINECHARFILE] [-r RELATIVE] [-c COMPRESSION]
+                   [-l] [-fs] [-fr] [-i] [-a] [-o OUTPUT_LOGS] [-w]
+                   [-v] [-t] [-u]
                    rinexinput outputfolder
 
-This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory
+This program takes RINEX files (v2 or v3, compressed or not), rename
+them and modifiy their headers, and write them back to a destination
+directory
 
 positional arguments:
-  rinexinput            Input list file of the RINEX paths to process (generated with a find or ls command for instance) OR a single RINEX file's path (see -a/--alone for
-                        a single input file)
+  rinexinput            Input list file of the RINEX paths to process
+                        (generated with a find or ls command for
+                        instance) OR a single RINEX file's path (see
+                        -a/--alone for a single input file)
   outputfolder          Output folder for modified RINEX files
 
 options:
   -h, --help            show this help message and exit
   -s SITELOG, --sitelog SITELOG
-                        Get the RINEX header values from file's site's sitelog. Provide a single sitelog path or a folder contaning sitelogs.
+                        Get the RINEX header values from file's site's
+                        sitelog. Provide a single sitelog path or a
+                        folder contaning sitelogs.
   -k [MODIF_KW ...], --modif_kw [MODIF_KW ...]
-                        Modification keywords for RINEX's header fields and/or filename. Will override the information from the sitelog. Format : keyword_1='value'
-                        keyword2='value'. Acceptable keywords: marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type,
-                        receiver_fw, antenna_serial, antenna_type, antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
-                        operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)
+                        Modification keywords for RINEX's header fields
+                        and/or filename. Will override the information
+                        from the sitelog. Format : keyword_1='value'
+                        keyword2='value'. Acceptable keywords:
+                        marker_name, marker_number, station (legacy
+                        alias for marker_name), receiver_serial,
+                        receiver_type, receiver_fw, antenna_serial,
+                        antenna_type, antenna_X_pos, antenna_Y_pos,
+                        antenna_Z_pos, antenna_H_delta,
+                        antenna_E_delta, antenna_N_delta, operator,
+                        agency, observables, interval,
+                        filename_file_period (01H, 01D...),
+                        filename_data_freq (30S, 01S...)
   -m MARKER, --marker MARKER
-                        A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k
+                        A four or nine character site code that will be
+                        used to rename input files. (apply also to the
+                        header's MARKER NAME, but a custom -k
                         marker_name='XXXX' overrides it)
   -n NINECHARFILE, --ninecharfile NINECHARFILE
-                        Path of a file that contains 9-char. site names (e.g. from the M3G database)
+                        Path of a file that contains 9-char. site names
+                        (e.g. from the M3G database)
   -r RELATIVE, --relative RELATIVE
-                        Reconstruct files relative subfolders. You have to indicate the common parent folder, that will be replaced with the output folder
+                        Reconstruct files relative subfolders. You have
+                        to indicate the common parent folder, that will
+                        be replaced with the output folder
   -c COMPRESSION, --compression COMPRESSION
-                        Set file's compression (acceptables values : 'gz' (recommended to fit IGS standards), 'Z', 'none')
-  -l, --longname        Rename file using long name RINEX convention (force gzip compression).
-  -fs, --force_sitelog  Force sitelog-based header values when RINEX's header and sitelog site name do not correspond
+                        Set file's compression (acceptables values :
+                        'gz' (recommended to fit IGS standards), 'Z',
+                        'none')
+  -l, --longname        Rename file using long name RINEX convention
+                        (force gzip compression).
+  -fs, --force_sitelog  Force sitelog-based header values when RINEX's
+                        header and sitelog site name do not correspond
   -fr, --force_rnx_load
-                        Force the loading of the input RINEX. Useful if its name is not standard
-  -i, --ignore          Ignore firmware changes between instrumentation periods when getting header values info from sitelogs
-  -a, --alone           INPUT is a single/alone RINEX file (and not a list file of RINEX paths)
+                        Force the loading of the input RINEX. Useful if
+                        its name is not standard
+  -i, --ignore          Ignore firmware changes between instrumentation
+                        periods when getting header values info from
+                        sitelogs
+  -a, --alone           INPUT is a single/alone RINEX file (and not a
+                        list file of RINEX paths)
   -o OUTPUT_LOGS, --output_logs OUTPUT_LOGS
-                        Folder where to write output logs. If not provided, logs will be written to OUTPUTFOLDER
-  -w, --write           Write (RINEX version, sample rate, file period) dependant output lists
-  -v, --verbose         Print file's metadata before and after modifications.
+                        Folder where to write output logs. If not
+                        provided, logs will be written to OUTPUTFOLDER
+  -w, --write           Write (RINEX version, sample rate, file period)
+                        dependant output lists
+  -v, --verbose         Print file's metadata before and after
+                        modifications.
   -t, --sort            Sort the input RINEX list.
-  -u, --full_history    Add the full history of the station in the RINEX's 'header as comment.
+  -u, --full_history    Add the full history of the station in the
+                        RINEX's 'header as comment.
 ```
 
 #### Exemples
