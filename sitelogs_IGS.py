@@ -364,7 +364,7 @@ class SiteLog:
             print("Python's module 'pycountry' is recommended to recover the Country name automatically")
 
         full_country = self.info['2.']['Country']
-        full_country2 = full_country.strip(" (the)")
+        full_country2 = full_country.split("(the)")[0].strip()
         try:
             iso_country = pycountry.countries.get(name=full_country2).alpha_3
         except:
