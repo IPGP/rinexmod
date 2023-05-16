@@ -9,7 +9,7 @@ It is available under the GNU license on the following GitHub repository: https:
 v1 - 2021-02-07 Félix Léger  - leger@ipgp.fr  
 v2 - 2022-05-15 Pierre Sakic - sakic@ipgp.fr
 
-# Project Overview
+## Project Overview
 
 This project is composed of 4 scripts.
 
@@ -23,9 +23,9 @@ those files with the long name naming convention with the --longname option.
 
 * `crzmeta.py` will extract rinex file's header information and prompt the result. This permits to access quickly the header informations without uncompressing manually the file. It's a teqc-free equivalent of teqc +meta.
 
-###
+## Frontend functions synopsis
 
-# rinexmod.py
+### rinexmod.py
 
 Two ways of passing parameters to modifiy headers are possible:
 
@@ -106,7 +106,7 @@ EXAMPLES:
  ./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 
 
-# get_m3g_sitelogs.py
+### get_m3g_sitelogs.py
 
 This script will get last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
@@ -126,7 +126,7 @@ EXAMPLE:
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 
 
-# crzmeta.py
+### crzmeta.py
 
 Extract metadata from crz file.
 
@@ -135,7 +135,7 @@ With -p option, will plot the file's samples intervals
 EXAMPLE:
 ./crzmeta.py  RINEXFILE (-p)
 
-# Requirements
+## Requirements
 
 The tool is in Python 3, you must have it installed on your machine.
 
@@ -151,7 +151,7 @@ You need matplotlib for plotting samples intervals with crzmeta:
 
 `pip install matplotlib`
 
-# rinexmod error messages
+## rinexmod error messages
 
 Rinexmod will prompt errors when arguments are wrong. Appart from this, it will prompt and save to file errors and waring
 occuring on specific files from the rinex list. Here are the error codes :
