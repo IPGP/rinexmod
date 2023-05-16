@@ -746,7 +746,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 # *****************************************************************************
 # Upper level rinexmod for a Console run
 
-def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
+def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
      ninecharfile=None, compression=None, relative='', verbose=True,
      alone=False, output_logs=None, write=False, sort=False, full_history=False):
@@ -764,7 +764,7 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     
     Parameters
     ----------
-    rinexlist : list or str
+    rinexinput : list or str
         a filepath of a textfile containing a RINEX paths list 
         or directly a Python list of RINEX paths
     """
@@ -789,10 +789,10 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         raise RinexModInputArgsError
 
     # If inputfile doesn't exists, return
-    if isinstance(rinexlist, list):
+    if isinstance(rinexinput, list):
         pass
-    elif not os.path.isfile(rinexlist):
-        logger.critical('The input file doesn\'t exist : ' + rinexlist)
+    elif not os.path.isfile(rinexinput):
+        logger.critical('The input file doesn\'t exist : ' + rinexinput)
         raise RinexModInputArgsError
 
     if output_logs and not os.path.isdir(output_logs):
@@ -822,19 +822,19 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
 
     # Opening and reading lines of the file containing list of rinex to proceed
     if alone:
-        rinexlist = [rinexlist]
-    elif isinstance(rinexlist, list):
+        rinexinput = [rinexinput]
+    elif isinstance(rinexinput, list):
         pass
     else:
         try:
-            rinexlist = [line.strip() for line in open(rinexlist).readlines()]
+            rinexinput = [line.strip() for line in open(rinexinput).readlines()]
         except:
-            logger.error('The input file is not a list : ' + rinexlist)
+            logger.error('The input file is not a list : ' + rinexinput)
             return RinexModInputArgsError
 
     # sort the RINEX list
     if sort:
-        rinexlist.sort()
+        rinexinput.sort()
         
     # load the sitelogs as a list of SiteLog objects
     if sitelog:
@@ -843,7 +843,7 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     ### Looping in file list ###
     return_lists = {}
     ####### Iterate over each RINEX
-    for rnx in rinexlist:     
+    for rnx in rinexinput:     
         try:
             return_lists = rinexmod(rinexfile=rnx,
                                     outputfolder=outputfolder,
