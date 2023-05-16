@@ -11,10 +11,10 @@ v2 - 2022-05-15 Pierre Sakic - sakic@ipgp.fr
 
 ## Project Overview
 
-This project is composed of 4 scripts.
+This project is composed of 3 scripts.
 
 * `rinexmod.py` takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the rinex files list to modifiy the file's header. It then write them back to Hanakata
+loop the rinex files list to modifiy the file's headers. It then write them back to Hanakata
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
@@ -23,19 +23,36 @@ those files with the long name naming convention with the --longname option.
 
 * `crzmeta.py` will extract rinex file's header information and prompt the result. This permits to access quickly the header informations without uncompressing manually the file. It's a teqc-free equivalent of teqc +meta.
 
-## Frontend functions synopsis
+## Requirements
+
+The tool is in Python 3, you must have it installed on your machine.
+
+You need Python Hatanaka library from Martin Valgur (https://github.com/valgur/hatanaka):
+
+ `pip install hatanaka`
+ 
+You need pycountry to associate country names with their ISO abbreviations (but it is facultative):
+
+`pip install pycountry`
+
+You need matplotlib for plotting samples intervals with crzmeta:
+
+`pip install matplotlib`
+
+## Frontend functions in command lines interfaces
 
 ### rinexmod.py
 
-Two ways of passing parameters to modifiy headers are possible:
+This is the main frontend function. It takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
+loop the RINEX files list to modifiy the file's header. It then write them back to Hanakata
+compressed format in an output folder. It permits also to rename the files changing
+the four first characters of the file name with another site code. It can write
+those files with the long name naming convention with the --longname option.
 
-* --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
-                      Acceptable_keywords are : station, receiver_serial, receiver_type, receiver_fw,
-                      antenna_serial, antenna_type, antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
-                      antenna_X_delta, antenna_Y_delta, antenna_Z_delta,
-                      operator, agency, observables.
+Two ways of passing parameters to modifiy headers are possible: `sitelog` and `modification_kw`.
 
-* --sitelog  : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
+
+* `--sitelog`  : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
                containing sitelogs. You then have to pass a list of files and the script will
                assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
@@ -57,53 +74,72 @@ Two ways of passing parameters to modifiy headers are possible:
                        On-Site Agency Preferred Abbreviation
                        Responsible Agency Preferred Abbreviation
 
-You can not provide both --modification_kw and --sitelog options.
+* `--modification_kw` : you pass as argument the field(s) that you want to modifiy and its value.
+                      Acceptable_keywords are : marker_name, marker_number,
+                      station (legacy alias for marker_name),
+                      receiver_serial, receiver_type, receiver_fw,
+                      antenna_serial, antenna_type, antenna_X_pos,
+                      antenna_Y_pos, antenna_Z_pos, antenna_H_delta,
+                      antenna_E_delta, antenna_N_delta, operator, agency,
+                      observables, interval, filename_file_period (01H,
+                      01D...), filename_data_freq (30S, 01S...).
 
-The script will add two comment lines, one indicating the source of the modifiaction
+You can not provide both `--modification_kw` and `--sitelog` options.
+
+rinexmod will add two comment lines, one indicating the source of the modification
 (sitelog or arguments) and the other the timestamp of the modification.
 
-USE :
 
-RINEXLIST : Rinex list file
-OUTPUTFOLDER : Folder where to write the modified files. This is a compulsory
-argument, you can not modify files inplace.
+#### Synopsis
+```
+usage: rinexmod.py [-h] [-s SITELOG] [-k [MODIF_KW ...]] [-m MARKER] [-n NINECHARFILE] [-r RELATIVE] [-c COMPRESSION] [-l] [-fs] [-fr] [-i] [-a] [-o OUTPUT_LOGS] [-w] [-v]
+                   [-t] [-u]
+                   rinexinput outputfolder
 
-OPTIONS :
+This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory
 
-* -k : --modification_kw :    Header fields that you want to modify.
-* -s : --sitelog :            Sitelog file in witch rinexmod will find file's period's
-                            instrumentation informations, or folder containing sitelogs.
-                            The sitelogs must be valid as the script does not check it.
-* -f : --force :              Force appliance of sitelog based header arguments when
-                            station name within file does not correspond to sitelog.
-* -i : --ignore :             Ignore firmware changes between instrumentation periods
-                            when getting headers args info from sitelogs.
-* -m : --marker :             A four characater station code that will be used to rename
-                            input files.
-* -n : --ninecharfile :       path a of a list file containing 9-char. site names from
-                            the M3G database generated with get_m3g_stations.
-                            This will be used for longname file's renaming.
-* -l : --longname             Rename file using long name rinex convention.
-                            Not mandatory, but nessessary to get the country code to rename
-                            files to long name standard. If not provided the country code will be XXX.
-* -a : --alone :               Option to provide if you want to run this script on a alone
-                            rinex file and not on a list of files.
-* -c : --compression :        Set file's compression (acceptables values : 'gz' (recommended
-                            to fit IGS standards), 'Z'. Default value will retrieve
-                            the actual compression of the input file.
-* -r : --reconstruct :        Reconstruct files subdirectory. You have to indicate the
-                            part of the path that is common to all files in the list and
-                            that will be replaced with output folder.
-* -o : --output_logs :        Folder where to write output log. If not provided, logs
-                            will be written to OUTPUTFOLDER.
-* -w : --write :              Write (rinex version, sample rate, file period, observatory)
-                            dependant output lists to log folder.
-* -v : --verbose:             Will prompt file's metadata before and after modifications.
+positional arguments:
+  rinexinput            Input list file of the RINEX paths to process (generated with a find or ls command for instance) OR a single RINEX file's path (see -a/--alone for
+                        a single input file)
+  outputfolder          Output folder for modified RINEX files
 
-EXAMPLES:
+options:
+  -h, --help            show this help message and exit
+  -s SITELOG, --sitelog SITELOG
+                        Get the RINEX header values from file's site's sitelog. Provide a single sitelog path or a folder contaning sitelogs.
+  -k [MODIF_KW ...], --modif_kw [MODIF_KW ...]
+                        Modification keywords for RINEX's header fields and/or filename. Will override the information from the sitelog. Format : keyword_1='value'
+                        keyword2='value'. Acceptable keywords: marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type,
+                        receiver_fw, antenna_serial, antenna_type, antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
+                        operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)
+  -m MARKER, --marker MARKER
+                        A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k
+                        marker_name='XXXX' overrides it)
+  -n NINECHARFILE, --ninecharfile NINECHARFILE
+                        Path of a file that contains 9-char. site names (e.g. from the M3G database)
+  -r RELATIVE, --relative RELATIVE
+                        Reconstruct files relative subfolders. You have to indicate the common parent folder, that will be replaced with the output folder
+  -c COMPRESSION, --compression COMPRESSION
+                        Set file's compression (acceptables values : 'gz' (recommended to fit IGS standards), 'Z', 'none')
+  -l, --longname        Rename file using long name RINEX convention (force gzip compression).
+  -fs, --force_sitelog  Force sitelog-based header values when RINEX's header and sitelog site name do not correspond
+  -fr, --force_rnx_load
+                        Force the loading of the input RINEX. Useful if its name is not standard
+  -i, --ignore          Ignore firmware changes between instrumentation periods when getting header values info from sitelogs
+  -a, --alone           INPUT is a single/alone RINEX file (and not a list file of RINEX paths)
+  -o OUTPUT_LOGS, --output_logs OUTPUT_LOGS
+                        Folder where to write output logs. If not provided, logs will be written to OUTPUTFOLDER
+  -w, --write           Write (RINEX version, sample rate, file period) dependant output lists
+  -v, --verbose         Print file's metadata before and after modifications.
+  -t, --sort            Sort the input RINEX list.
+  -u, --full_history    Add the full history of the station in the RINEX's 'header as comment.
+```
 
- ./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
- ./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+#### Exemples
+
+
+`./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)`
+`./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)`
 
 
 ### get_m3g_sitelogs.py
@@ -113,6 +149,7 @@ in an observatory dependent subfolder set in 'observatories'.
 The -d --delete option will delete old version as to get only last version even
 in a name changing case.
 
+```
 USE :
 
 * OUTPUTFOLDER : Folder where to write the downloaded sitelogs.
@@ -124,32 +161,19 @@ OPTION :
 EXAMPLE:
 
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
-
+```
 
 ### crzmeta.py
 
 Extract metadata from crz file.
 
 With -p option, will plot the file's samples intervals
-
+```
 EXAMPLE:
 ./crzmeta.py  RINEXFILE (-p)
+```
 
-## Requirements
-
-The tool is in Python 3, you must have it installed on your machine.
-
-You need Python Hatanaka library from Martin Valgur (https://github.com/valgur/hatanaka):
-
- `pip install hatanaka`
- 
-You need pycountry to associate country names with their ISO abbreviations (but it is facultative):
-
-`pip install pycountry`
-
-You need matplotlib for plotting samples intervals with crzmeta:
-
-`pip install matplotlib`
+## rinexmod in API mode
 
 ## rinexmod error messages
 
