@@ -617,7 +617,6 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     
     rnx_4char = rnxobj.get_site(True,True)
 
-
     if marker and len(marker) == 9:
         monum = marker[4:6]
         country = marker[6:]  
