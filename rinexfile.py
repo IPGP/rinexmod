@@ -8,6 +8,7 @@ Class
 import os
 import re
 import hatanaka
+from io import StringIO
 import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -26,19 +27,33 @@ class RinexFile:
     using the hatanaka library.
     Will then provide methods to modifiy the file's header.
     The method to get the sample rate will read the whole file and will set as
-    unknow sample rate files that have more than 10% of non-nominam sample rate.
+    unknow sample rate files that have more than 10% of non-nominal sample rate.
     The method to get the file duration is based on reading the file name and
     not the data.
     A method to write the file in selected compression is also available.
     The get_metadata method permits to have a printable string of all file's metadata.
     """
 
-    def __init__(self, rinexfile, force_rnx_load=False):
+    def __init__(self, rinex_input, force_rnx_load=False):
+        
+        ##### the RINEX input is a file, thus a string or a Path is given
+        if type(rinex_input) in (str,Path):      
+            self.source_from_file = True
+            self.path = rinex_input.strip()
+            self.path_output =  "" 
+            self.content_input = self.path
+        ##### the RINEX input is directely data, in a StringIO
+        elif type(rinex_input) is StringIO:
+            self.source_from_file = False
+            self.path = ""
+            self.path_output = ""
+            self.content_input = bytes(rinex_input.read(),'utf-8') ## ready-to-read for hatanaka
+        else:
+            logger.error("input rinex_input is not str, Path, or StringIO")
 
-        self.path = rinexfile.strip()
         self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
-        self.name_conv = self._get_naming_convention()
         self.size = self._get_size()
+        self.name_conv = self._get_naming_convention()
         self.compression, self.hatanka_input = self._get_compression()
         self.filename = self._get_filename()
         
@@ -308,7 +323,6 @@ class RinexFile:
 
         return shortname
     
-    
     def get_header_body(self,return_index_end=False):
         """
         get the RINEX's header and body as a list of lines, 
@@ -341,14 +355,15 @@ class RinexFile:
         03 - Invalid  or empty Zip file
         04 - Invalid Compressed Rinex file
         """
-
-        # Checking if existing file
-        if not os.path.isfile(self.path):
+        
+        ##### IF input is a file, checking if file exists
+        if self.source_from_file and not os.path.isfile(self.path):
             rinex_data = None
             status = "01 - The specified file does not exists"
+        ##### The input is a file
         else:
             try:
-                rinex_data = hatanaka.decompress(self.path).decode('utf-8')
+                rinex_data = hatanaka.decompress(self.content_input).decode('utf-8')
                 rinex_data = rinex_data.split('\n')
                 status = None
     
@@ -364,8 +379,8 @@ class RinexFile:
             bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
             
             if not force_rnx_load and not (bool_l1_obs or bool_l1_crx) :
-                logger.warning("File's 1st line does not match an Observation RINEX: " +
-                      os.path.basename(self.path))
+                logger.warning("File's 1st line does not match an Observation RINEX: " + 
+                               os.path.join(self.path))
                 logger.warning("try to force the loading with force_rnx_load = True")
                 rinex_data = None
                 status = '02 - Not an observation RINEX file'
@@ -403,8 +418,11 @@ class RinexFile:
 
         if self.status:
             return 0
-
-        size = os.path.getsize(self.path)
+        
+        if self.source_from_file:
+            size = os.path.getsize(self.path)
+        else:
+            size = 0
 
         return size
 
@@ -477,7 +495,80 @@ class RinexFile:
 
         return rinex_ver_meta
 
+
+    def _find_epoch_line(self, rnx_version,last_epoch = False):
+        if self.version[0] == '2':
+            date_pattern = re.compile(' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
+        else: 
+            date_pattern = re.compile('> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
+        
+        if last_epoch:
+            datause = reversed(self.rinex_data)
+        else:
+            datause = self.rinex_data
+        
+        # Searching the last one of the file
+        for line in datause:
+            m = re.search(date_pattern, line)
+            if m:
+                break
+        return m
+            
+        
+        
     def _get_dates(self):
+        """ 
+        Getting start and end date from rinex file.
+        we search for the date of the first and last observation directly in
+        the data.
+        if you want the values in the header, use _get_dates_in_header
+        """
+
+        if self.status:
+            return None, None
+
+
+        def _find_epoch_line(rnxobj, last_epoch = False):
+            if rnxobj.version[0] == '2':
+                date_pattern = re.compile(' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
+            else: 
+                date_pattern = re.compile('> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
+            
+            if last_epoch:
+                datause = reversed(rnxobj.rinex_data)
+            else:
+                datause = rnxobj.rinex_data
+            
+            # Searching the last one of the file
+            for line in datause:
+                m = re.search(date_pattern, line)
+                if m:
+                    break
+            if m:  
+                # Getting end date
+                if rnxobj.version[0] == '2':
+                    year = '20' + m.group(1)
+                else:
+                    year = m.group(1)
+                    
+                # Building a date string
+                epoc = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
+                    m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
+    
+                epoc = datetime.strptime(epoc, '%Y %m %d %H %M %S.%f')
+            else:
+                epoc = None
+                        
+            return epoc
+        
+        start_epoch = _find_epoch_line(self)
+        end_epoch   = _find_epoch_line(self,last_epoch = True)
+
+        return start_epoch, end_epoch
+    
+    
+    
+    def _get_dates_in_header(self):
         """ Getting start and end date from rinex file.
         Start date cames from TIME OF FIRST OBS file's header.
         In RINEX3, there's a TIME OF LAST OBS in the heder but it's not available
@@ -485,7 +576,7 @@ class RinexFile:
         the data.
         """
 
-        if self.status:
+        if self.status != 0:
             return None, None
 
         # Getting start date
@@ -515,6 +606,8 @@ class RinexFile:
                 if m:
                     break
 
+            year = m.group(1)
+
         elif self.version[0] == '2':
             # Pattern of an observation line containing a date
             date_pattern = re.compile(
@@ -525,23 +618,15 @@ class RinexFile:
                 if m:
                     break
 
-        if not m: ### No end Date Found
-            return start_meta, None
+            year = '20' + m.group(1)
 
-        else:
-            # Getting end date
-            if self.version[0] == '3':
-                year = m.group(1)
-            elif self.version[0] == '2':
-                year = '20' + m.group(1)
-                
-            # Building a date string
-            end_meta = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
-                m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
-    
-            end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
-    
-            return start_meta, end_meta
+        # Building a date string
+        end_meta = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
+            m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
+
+        end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
+
+        return start_meta, end_meta
 
     def _get_sample_rate(self, plot=False):
         """
@@ -1091,6 +1176,108 @@ class RinexFile:
         self.rinex_data[sat_system_header_idx] = new_line
 
         return
+    
+    
+    def mod_time_obs(self,first_obs=None,last_obs=None):
+        
+        if self.status:
+            return
+
+        if not first_obs:
+            first_obs = self.start_date
+            
+        if not last_obs:
+            last_obs = self.end_date
+            
+            
+        # Identify line that contains TIME OF FIRST OBS
+        first_obs_idx = search_idx_value(self.rinex_data,
+                                         'TIME OF FIRST OBS')
+        last_obs_idx = search_idx_value(self.rinex_data,
+                                        'TIME OF LAST OBS')
+
+        first_obs_meta = self.rinex_data[first_obs_idx]
+        
+        # Parse line
+        def _time_line_make(time,sys="GPS"):
+            timel = "{:6d}{:6d}{:6d}{:6d}{:6d}{:13.7f}     {:3s}        "
+            
+            timelout = timel.format(time.year,
+                                    time.month,
+                                    time.day,
+                                    time.hour,
+                                    time.minute,
+                                    time.second + time.microsecond * 10**-6,
+                                    sys)
+            
+            return timelout
+            
+        sysuse = first_obs_meta[48:52]
+        line_firstobs = _time_line_make(first_obs,sysuse) + "TIME OF FIRST OBS"
+        line_lastobs = _time_line_make(last_obs,sysuse)   + "TIME OF LAST OBS"
+            
+        self.rinex_data[first_obs_idx] = line_firstobs
+        if last_obs_idx:
+            self.rinex_data[last_obs_idx] = line_lastobs
+        else:
+            self.rinex_data.insert(first_obs_idx+1,line_lastobs)
+            
+        return
+            
+
+    def mod_sys_obs_types(self,dict_sys_obs):
+        
+        if self.status:
+            return
+
+        if not any([dict_sys_obs]):
+            return
+
+        # Identify line that contains SYS / # / OBS TYPES
+        sys_obs_idx0 = search_idx_value(self.rinex_data,
+                                       'SYS / # / OBS TYPES')
+        
+        sys_obs_idx_fin = sys_obs_idx0
+        
+        while 'SYS / # / OBS TYPES' in self.rinex_data[sys_obs_idx_fin]:
+            sys_obs_idx_fin += 1
+            
+        ### parse the dict
+        lfmt_stk = []
+        for sys, obs in dict_sys_obs.items():            
+            ### make slice of 13 elements, i.e. the number of obervable max in 
+            ### one line 
+            obs_slice = slice_list(obs,13)
+            
+            for iobss,obss in enumerate(obs_slice):
+                nobss = len(obss) 
+                if iobss == 0:
+                    l = "{:1s}  {:3d}" + " {:3s}" * nobss + "    " * (13-nobss)
+                    fmt_tup = tuple([sys,nobss] + obss)
+                    lfmt = l.format(*fmt_tup)
+                else:
+                    l = "      " + " {:3s}" * nobss + "   " * (13-nobss)
+                    lfmt = l.format(*obss)
+                lfmt = lfmt + '  SYS / # / OBS TYPES'
+                lfmt_stk.append(lfmt)                    
+                
+        self.rinex_data = self.rinex_data[:sys_obs_idx0] + \
+                          lfmt_stk +  \
+                          self.rinex_data[sys_obs_idx_fin:]
+                          
+                          
+        return
+                    
+                    
+        
+        
+        
+        
+        
+        
+ 
+        
+    
 
     def mod_filename_data_freq(self, data_freq_inp):
         self.sample_rate_str = data_freq_inp
@@ -1102,6 +1289,13 @@ class RinexFile:
     
 #############################################################################
 ### misc methods. change the content of the RINEX header
+
+    def get_as_string(self,encode='utf-8'):
+        """
+        get the RINEX data (header and body) as a string
+        """
+        return '\n'.join(self.rinex_data).encode(encode)
+
 
     def write_to_path(self, path, compression='gz'):
         """
@@ -1116,35 +1310,42 @@ class RinexFile:
         if self.status:
             return
 
-        output_data = '\n'.join(self.rinex_data).encode('utf-8')
-
         # make the compression compliant with hatanaka module
         # (accept only 'none' as string)
         if not compression:
             comp_htnk_inp = 'none'
         else:
             comp_htnk_inp = compression
+            
+        output_data = self.get_as_string()
 
         output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
 
-        # manage hatanaka compression extension
-        # RNX3
-        if "rnx" in self.filename:
-            filename_out = self.filename.replace("rnx", "crx")
-        # RNX2
-        elif self.filename[-1] in "o":
-            filename_out = self.filename[:-1] + "d"
+        ### The data source is an actual RINEX file
+        if self.source_from_file:
+            # manage hatanaka compression extension
+            # RNX3
+            if "rnx" in self.filename:
+                filename_out = self.filename.replace("rnx", "crx")
+            # RNX2
+            elif self.filename[-1] in "o":
+                filename_out = self.filename[:-1] + "d"
+            else:
+                filename_out = self.filename
+    
+            # manage low-level compression extension
+            if compression in ('none', None):
+                outputfile = os.path.join(path, filename_out)
+            else:
+                outputfile = os.path.join(path, filename_out + '.' + compression)
+        ### the data source is a StringIO
         else:
-            filename_out = self.filename
-
-        # manage low-level compression extension
-        if compression in ('none', None):
-            outputfile = os.path.join(path, filename_out)
-        else:
-            outputfile = os.path.join(path, filename_out + '.' + compression)
+            outputfile = path
 
         Path(outputfile).write_bytes(output_data)
-
+        
+        self.path_output = outputfile
+        
         return outputfile
 
 
@@ -1278,6 +1479,7 @@ class RinexFile:
 def search_idx_value(data, field):
     """
     find the index (line number) of a researched field in the RINEX data
+    return None if nothing has beeen found
     """
     idx = -1
     out_idx = None
@@ -1288,6 +1490,10 @@ def search_idx_value(data, field):
             break
     return out_idx
 
+def slice_list(seq,num):
+    """ make sublist of num elts of a list """
+    # http://stackoverflow.com/questions/4501636/creating-sublists
+    return [seq[i:i+num] for i in range(0, len(seq), num)]
 
 
 def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):

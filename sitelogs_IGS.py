@@ -365,7 +365,8 @@ class SiteLog:
 
         full_country = self.info['2.']['Country']
         try:
-            iso_country = pycountry.countries.get(name=full_country).alpha_3
+            full_country2 = full_country.strip(" (the)")
+            iso_country = pycountry.countries.get(name=full_country2).alpha_3
         except:
             iso_country = "XXX"
         

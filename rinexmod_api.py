@@ -263,7 +263,7 @@ def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
     return sitelogobj
         
 
-def _sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
+def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
     rnx_4char = rnxobj.get_site(True,True)
     # Site name from the sitelog
     sitelog_4char = sitelogobj.info['1.']['Four Character ID'].lower()
@@ -334,7 +334,7 @@ def _modif_kw_check(modif_kw):
     return None
         
    
-def _modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
+def modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
     rinexfileobj.mod_marker(modif_kw.get('marker_name'),
                             modif_kw.get('marker_number'))
 
@@ -372,7 +372,27 @@ def _modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
     return rinexfileobj
 
 # *****************************************************************************
-# dictionnary as output for rinexmod
+# dictionnary as output for gnss_delivery workflow
+
+def _return_lists_maker(rnxobj,return_lists=dict()):
+    """
+    Construct return dict
+    Specific usage for the IPGP's gnss_delivery workflow
+    """
+    
+    major_rinex_version = rnxobj.version[0]
+    # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
+    if major_rinex_version not in return_lists:
+        return_lists[major_rinex_version] = {}
+    if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
+        return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
+    if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
+        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
+
+    return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(rnxobj.path_output)
+    
+    return return_lists
+
 
 def _return_lists_write(return_lists,logfolder,now_dt=None):
     # Writing an output file for each RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD lists
@@ -530,6 +550,9 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     else:
         myoutputfolder = outputfolder
 
+    if not modif_kw:
+        modif_kw = dict()
+
     if os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder:
         logger.error(
             '{:110s} - {}'.format('30 - Input and output folders are the same !', rinexfile))
@@ -594,6 +617,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     
     rnx_4char = rnxobj.get_site(True,True)
 
+
     if marker and len(marker) == 9:
         monum = marker[4:6]
         country = marker[6:]  
@@ -618,12 +642,12 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog or modif_kw:        
-        rnxobj.clean_rinexmod_comments()
+        rnxobj.clean_rinexmod_comments(clean_history=True)
         
     ###########################################################################
     ########## Apply the sitelog objects on the RinexFile object
     if sitelog:        
-        rnxobj = _sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
+        rnxobj = sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         modif_source = sitelogobj.filename
         
@@ -634,15 +658,20 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         _modif_kw_check(modif_kw)
 
         modif_source = 'manual keywords'
-        rnxobj = _modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
+        rnxobj = modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
         logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
-    # Must be after _sitelogobj_apply_on_rnxobj and _modif_kw_apply_on_rnxobj
+    # Must be after sitelogobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
     if "marker_name" not in modif_kw.keys(): 
         rnxobj.mod_marker(rnxobj.get_site(False,False,True))    
+
+
+    ###########################################################################
+    ########## Correct the first and last time obs
+    rnxobj.mod_time_obs(rnxobj.start_date,rnxobj.end_date)
 
     ###########################################################################
     ########## Add comment in the header
@@ -693,8 +722,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Writing output file
     try:
-        outputfile = rnxobj.write_to_path(
-            myoutputfolder, compression=output_compression)
+        outputfile = rnxobj.write_to_path(myoutputfolder,
+                                          compression=output_compression)
         logger.info('Output file : ' + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
         logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', rinexfile))
@@ -705,17 +734,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ########## Construct return dict by adding key if doesn't exists
     ########## and appending file to corresponding list
     if type(return_lists) is dict:
-        major_rinex_version = rnxobj.version[0]
-        # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
-        if major_rinex_version not in return_lists:
-            return_lists[major_rinex_version] = {}
-        if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
-            return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
-        if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
-            return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
-    
-        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(outputfile)
-        
+        return_lists = _return_lists_maker(rnxobj,return_lists)
         final_return = return_lists
     else:
         ###########################################################################
@@ -723,7 +742,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         final_return = outputfile
         
     return final_return
-
+    
 
 # *****************************************************************************
 # Upper level rinexmod for a Console run
@@ -852,3 +871,8 @@ def rinexmod_cli(rinexlist,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         _return_lists_write(return_lists,logfolder,now)
 
     return return_lists
+
+
+# *****************************************************************************
+# Upper level return_lists maker
+# TO DO
