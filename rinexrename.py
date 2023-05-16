@@ -15,21 +15,21 @@ See rinexrename -h for option description
 from rinexfile import RinexFile
 import shutil, os
 
-def rinexrename(rinexlist, output=None, delete=False, alone=False, country="00XXX"):
+def rinexrename(rinexinput, output=None, delete=False, alone=False, country="00XXX"):
     if alone:
-        rinexlist = [rinexlist]
-    elif isinstance(rinexlist, list):
+        rinexinput = [rinexinput]
+    elif isinstance(rinexinput, list):
         pass
     else:
         try:
-            rinexlist = [line.strip() for line in open(rinexlist).readlines()]
+            rinexinput = [line.strip() for line in open(rinexinput).readlines()]
         except:
-            print('# ERROR : The input file is not a list : ' + rinexlist)
+            print('# ERROR : The input file is not a list : ' + rinexinput)
             return
 
     Output_path_list = []
 
-    for rinex in rinexlist:
+    for rinex in rinexinput:
 
         RINEX_OBJ = RinexFile(rinex)
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     # Parsing Args
     parser = argparse.ArgumentParser(description='rename a rinex file according to the short <> long name convention')
-    parser.add_argument('rinexlist', type=str, help='Input rinex list file to process')
+    parser.add_argument('rinexinput', type=str, help='Input rinex list file to process')
     parser.add_argument('-o', '--output', help='Output directory if different from input one',default=None)
     parser.add_argument('-d', '--delete', help='Delete input rinex file', action='store_true')
     parser.add_argument('-c', '--country', help='The monument/country code needed for the long name convention, e.g. 00FRA. 00XXX if not provided',default="00XXX")
@@ -73,10 +73,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    rinexlist = args.rinexlist
+    rinexinput = args.rinexinput
     output = args.output
     delete = args.delete
     alone  = args.alone
     country = args.country
 
-    rinexrename(rinexlist, output, delete, alone, country)
+    rinexrename(rinexinput, output, delete, alone, country)
