@@ -45,7 +45,7 @@ def logger_define(level_prompt,logfile,level_logfile=None):
     
     # This handler is for prompt (console)
     prompthandler = logging.StreamHandler()
-    promptformatter = logging.Formatter("%(asctime)s.%(msecs)03d|%(levelname).1s|%(funcName)-15s|%(message)s")
+    promptformatter = logging.Formatter("%(asctime)s.%(msecs)03d|%(levelname).1s|%(funcName)-15s|%(message)s",datefmt="%y%m%dT%H:%M:%S")
     prompthandler.setFormatter(promptformatter)
     prompthandler.setLevel(level_prompt)
     if not len(logger.handlers):
@@ -56,7 +56,7 @@ def logger_define(level_prompt,logfile,level_logfile=None):
         if not level_logfile:
             level_logfile = level_prompt
         filehandler = logging.FileHandler(logfile, mode='a', encoding='utf-8')  
-        fileformatter = logging.Formatter("%(asctime)s.%(msecs)03d|%(levelname).1s|%(funcName)-15s|%(message)s")
+        fileformatter = logging.Formatter("%(asctime)s.%(msecs)03d|%(levelname).1s|%(funcName)-15s|%(message)s",datefmt="%y%m%dT%H:%M:%S")
         filehandler.setFormatter(fileformatter)
         filehandler.setLevel(level_logfile)
         logger.addHandler(filehandler)
