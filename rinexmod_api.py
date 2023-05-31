@@ -11,7 +11,7 @@ import os
 import re
 from datetime import datetime
 import logging
-from sitelogs_IGS import SiteLog
+from sitelog import SiteLog
 from rinexfile import RinexFile
 import hatanaka
 import subprocess
