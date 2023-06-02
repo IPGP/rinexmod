@@ -5,13 +5,14 @@ API function of rinexmod
 
 Created on Wed Mar  8 12:14:54 2023
 
-@author: psakicki
+@author: psakic
 """
 import os
 import re
 from datetime import datetime
 import logging
-from sitelogs_IGS import SiteLog
+import colorlog
+from sitelog import SiteLog
 from rinexfile import RinexFile
 import hatanaka
 import subprocess
@@ -39,13 +40,21 @@ def logger_define(level_prompt,logfile,level_logfile=None):
     the other to a logfile defined by 'logfile'.
     '''
 
-    logger = logging.getLogger(__name__)
+    logger = colorlog.getLogger(__name__)
     logger.propagate = False
     logger.setLevel(level_prompt)
     
     # This handler is for prompt (console)
-    prompthandler = logging.StreamHandler()
-    promptformatter = logging.Formatter('%(asctime)s - %(levelname)-7s - %(message)s')
+    prompthandler = colorlog.StreamHandler()
+    promptformatter = colorlog.ColoredFormatter("%(asctime)s.%(msecs)03d|%(log_color)s%(levelname).1s%(reset)s|%(log_color)s%(funcName)-15s%(reset)s|%(message)s",
+    datefmt="%y%m%dT%H:%M:%S",
+    log_colors={
+		'DEBUG':    'cyan',
+		'INFO':     'green',
+		'WARNING':  'yellow',
+		'ERROR':    'red',
+		'CRITICAL': 'red,bg_white',
+	})
     prompthandler.setFormatter(promptformatter)
     prompthandler.setLevel(level_prompt)
     if not len(logger.handlers):
@@ -55,8 +64,16 @@ def logger_define(level_prompt,logfile,level_logfile=None):
     if logfile:
         if not level_logfile:
             level_logfile = level_prompt
-        filehandler = logging.FileHandler(logfile, mode='a', encoding='utf-8')  
-        fileformatter = logging.Formatter('%(asctime)s - %(levelname)-7s - %(message)s')
+        filehandler = colorlog.FileHandler(logfile, mode='a', encoding='utf-8')  
+        fileformatter = colorlog.Formatter("%(asctime)s.%(msecs)03d|%(log_color)s%(levelname).1s%(reset)s|%(log_color)s%(funcName)-15s%(reset)s|%(message)s",
+        datefmt="%y%m%dT%H:%M:%S",
+        log_colors={
+	    	'DEBUG':    'cyan',
+	    	'INFO':     'green',
+    		'WARNING':  'yellow',
+	    	'ERROR':    'red',
+	    	'CRITICAL': 'red,bg_white',
+    	})
         filehandler.setFormatter(fileformatter)
         filehandler.setLevel(level_logfile)
         logger.addHandler(filehandler)
@@ -304,7 +321,6 @@ def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
 # modification keyword dictionnary functions
 
 def _modif_kw_check(modif_kw):
-
     acceptable_keywords = ['station',
                            'marker_name',
                            'marker_number',
@@ -507,7 +523,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Specific option for file distribution through a GLASS node.
         Store the rinexmoded RINEXs in a dictionary
         to activates it, give a dict as input (an empty one - dict() works)
-        DESCRIPTION. The default is None.
+        The default is None.
 
     Raises
     ------

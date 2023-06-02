@@ -49,7 +49,7 @@ def crzmeta(rinexfile, plot):
 
     # We reload _get_sample_rate method with plot set to true
     if plot:
-        rinexfileobj._get_sample_rate(plot = True)
+        rinexfileobj.get_sample_rate(plot = True)
 
     return
 

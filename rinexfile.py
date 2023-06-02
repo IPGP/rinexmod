@@ -52,22 +52,22 @@ class RinexFile:
             logger.error("input rinex_input is not str, Path, or StringIO")
 
         self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
-        self.size = self._get_size()
-        self.name_conv = self._get_naming_convention()
-        self.compression, self.hatanka_input = self._get_compression()
-        self.filename = self._get_filename()
+        self.size = self.get_size()
+        self.name_conv = self.get_naming_convention()
+        self.compression, self.hatanka_input = self.get_compression()
+        self.filename = self.get_filename()
         
         #### site is an internal attribute, always 9char 
         # (filled with 00XXX in nothing else is provided)
         # it is accessible wit get_site()
-        self._site = self._get_site_from_filename(False,False)
+        self._site = self.get_site_from_filename(False,False)
         
-        self.version = self._get_version()
-        self.start_date, self.end_date = self._get_dates()
-        self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(plot=False)
-        #self.file_period, self.session = self._get_file_period_from_filename()
-        self.file_period, self.session = self._get_file_period_from_data()
-        self.sat_system = self._get_sat_system()
+        self.version = self.get_version()
+        self.start_date, self.end_date = self.get_dates()
+        self.sample_rate_string, self.sample_rate_numeric = self.get_sample_rate(plot=False)
+        #self.file_period, self.session = self.get_file_period_from_filename()
+        self.file_period, self.session = self.get_file_period_from_data()
+        self.sat_system = self.get_sat_system()
 
     def __str__(self):
         """
@@ -391,7 +391,7 @@ class RinexFile:
         return rinex_data, status
     
 
-    def _get_naming_convention(self):
+    def get_naming_convention(self):
         # Daily or hourly, hatanaka or not, gz or Z compressed file
         pattern_shortname = re.compile(
             '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
@@ -413,7 +413,7 @@ class RinexFile:
         return name_conv
     
 
-    def _get_size(self):
+    def get_size(self):
         """ Get RINEX file size """
 
         if self.status:
@@ -426,7 +426,7 @@ class RinexFile:
 
         return size
 
-    def _get_compression(self):
+    def get_compression(self):
         """
         get the compression type in a 2-tuple: (compress,hatanaka)
         compress is None or a string: gz, Z, 7z
@@ -467,7 +467,7 @@ class RinexFile:
 
         return compress, hatanaka
 
-    def _get_filename(self):
+    def get_filename(self):
         """ Get filename WITHOUT its compression extension """
 
         if self.status:
@@ -481,7 +481,7 @@ class RinexFile:
 
         return filename
 
-    def _get_version(self):
+    def get_version(self):
         """ Get RINEX version """
 
         if self.status:
@@ -493,46 +493,53 @@ class RinexFile:
         # Parse line
         rinex_ver_meta = version_header[0:9].strip()
 
-        return rinex_ver_meta
+        return rinex_ver_meta        
+        
+    
+    def _get_date_patterns(self):
+        """
+        Internal function to get the correct epoch pattern depending 
+        on the RINEX version
 
+        Returns
+        -------
+        date_pattern : str
+            a regex matching the epoch pattern.
+        year_prefix : str
+            for RINEX2, the year prefix.
+        """
+        # Date lines pattern
+        if self.version[0] >= '3':
+            # Pattern of an observation line containing a date - RINEX 3
+            #date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            date_pattern = re.compile(
+                '> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
+            year_prefix = ""  # Prefix of year for date formatting
 
-    def _find_epoch_line(self, rnx_version,last_epoch = False):
-        if self.version[0] == '2':
-            date_pattern = re.compile(' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
-        else: 
-            date_pattern = re.compile('> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
+        elif self.version[0] == '2':
+            # Pattern of an observation line containing a date - RINEX 2
+            date_pattern = re.compile(
+                ' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
+            year_prefix = "20"  # Prefix of year for date formatting
+            ### !!!!!!!!! before 2000 must be implemented !!!!!!
         
-        if last_epoch:
-            datause = reversed(self.rinex_data)
-        else:
-            datause = self.rinex_data
-        
-        # Searching the last one of the file
-        for line in datause:
-            m = re.search(date_pattern, line)
-            if m:
-                break
-        return m
-            
-        
-        
-    def _get_dates(self):
+        return date_pattern, year_prefix
+    
+    
+    def get_dates(self):
         """ 
         Getting start and end date from rinex file.
         we search for the date of the first and last observation directly in
         the data.
-        if you want the values in the header, use _get_dates_in_header
+        if you want the values in the header, use get_dates_in_header
         """
 
         if self.status:
             return None, None
 
-
-        def _find_epoch_line(rnxobj, last_epoch = False):
-            if rnxobj.version[0] == '2':
-                date_pattern = re.compile(' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
-            else: 
-                date_pattern = re.compile('> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
+        def _find_first_last_epoch_line(rnxobj, last_epoch = False):
+            
+            date_pattern , year_pattern = rnxobj._get_date_patterns()
             
             if last_epoch:
                 datause = reversed(rnxobj.rinex_data)
@@ -545,11 +552,7 @@ class RinexFile:
                 if m:
                     break
             if m:  
-                # Getting end date
-                if rnxobj.version[0] == '2':
-                    year = '20' + m.group(1)
-                else:
-                    year = m.group(1)
+                year = year_pattern + m.group(1)
                     
                 # Building a date string
                 epoc = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
@@ -561,15 +564,15 @@ class RinexFile:
                         
             return epoc
         
-        start_epoch = _find_epoch_line(self)
-        end_epoch   = _find_epoch_line(self,last_epoch = True)
+        start_epoch = _find_first_last_epoch_line(self)
+        end_epoch   = _find_first_last_epoch_line(self,last_epoch = True)
 
         return start_epoch, end_epoch
     
     
-    
-    def _get_dates_in_header(self):
-        """ Getting start and end date from rinex file.
+    def get_dates_in_header(self):
+        """ 
+        Getting start and end date from rinex file.
         Start date cames from TIME OF FIRST OBS file's header.
         In RINEX3, there's a TIME OF LAST OBS in the heder but it's not available
         in RINEX2, so we search for the date of the last observation directly in
@@ -579,56 +582,45 @@ class RinexFile:
         if self.status != 0:
             return None, None
 
-        # Getting start date
-        start_meta = 'TIME OF FIRST OBS'
-
-        for line in self.rinex_data:
-            if re.search(start_meta, line):
-                start_meta = line
-                break
-        # If not found
-        if start_meta == 'TIME OF FIRST OBS':
-            return None, None
-
-        start_meta = start_meta.split()
-        start_meta = datetime.strptime(
-            ' '.join(start_meta[0:6]), '%Y %m %d %H %M %S.%f0')
-
-        # Getting end date
-        if self.version[0] == '3':
-            # Pattern of an observation line containing a date
-            ## date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
-            date_pattern = re.compile(
-                '> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
-            # Searching the last one of the file
-            for line in reversed(self.rinex_data):
-                m = re.search(date_pattern, line)
-                if m:
+        def _find_meta_label(meta_label_in):
+            line_found = None
+            for line in self.rinex_data:
+                if re.search(meta_label_in, line):
+                    line_found = line
                     break
-
-            year = m.group(1)
-
-        elif self.version[0] == '2':
-            # Pattern of an observation line containing a date
-            date_pattern = re.compile(
-                ' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
-            # Searching the last one of the file
-            for line in reversed(self.rinex_data):
-                m = re.search(date_pattern, line)
-                if m:
-                    break
-
-            year = '20' + m.group(1)
-
-        # Building a date string
-        end_meta = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
-            m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
-
-        end_meta = datetime.strptime(end_meta, '%Y %m %d %H %M %S.%f')
+            # If not found
+            if not line_found:
+                date_out = None
+            else:
+                date_out = line.split()
+                date_out = datetime.strptime(' '.join(date_out[0:6]),
+                                             '%Y %m %d %H %M %S.%f0')
+            return date_out
+                        
+        start_meta = _find_meta_label('TIME OF FIRST OBS')
+        end_meta = _find_meta_label('TIME OF LAST OBS')
 
         return start_meta, end_meta
+            
+    def get_dates_all(self):
+        """
+        Returns all the epochs in the RINEX
+        """
+        if self.status:
+            return None, None
 
-    def _get_sample_rate(self, plot=False):
+        Samples_stack = []
+        
+        date_pattern, _ = self._get_date_patterns()
+
+        for line in self.rinex_data:  # We get all the epochs dates
+            if re.search(date_pattern, line):
+                Samples_stack.append(re.search(date_pattern, line))
+                
+        return Samples_stack
+
+
+    def get_sample_rate(self, plot=False):
         """
         Getting sample rate from rinex file.
         The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value
@@ -641,50 +633,22 @@ class RinexFile:
         We then round the obtained value and translate it to a rinex 3 longname compliant format.
         If plot is set to True, will plot the samples intervals.
         """
-
+        
         if self.status:
             return None, None
+        
+        Samples_stack = self.get_dates_all()
+        date_pattern, year_prefix = self._get_date_patterns()
 
-        # Removing this test on INTERVAL header line because not reliable (at least in IPGP data set)
-        # sr_meta = 'INTERVAL'
-        #
-        # for line in self.rinex_data:
-        #     if re.search(sr_meta, line):
-        #         sr_meta = line
-        #         break
-        # # If not found
-        # if sr_meta != 'INTERVAL':
-        #
-        #     return sr_meta
-
-        # Date lines pattern
-        if self.version[0] == '3':
-            # Pattern of an observation line containing a date - RINEX 3
-            #date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
-            date_pattern = re.compile(
-                '> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
-            year_prefix = ""  # Prefix of year for date formatting
-
-        elif self.version[0] == '2':
-            # Pattern of an observation line containing a date - RINEX 2
-            date_pattern = re.compile(
-                ' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
-            year_prefix = "20"  # Prefix of year for date formatting
-
-        Samples_stack = []
-
-        for line in self.rinex_data:  # We get all the epochs dates
-            if re.search(date_pattern, line):
-                Samples_stack.append(re.search(date_pattern, line))
 
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
             self.status = '05 - Less than two epochs in the file'
-            logger.error("_get_sample_rate: less than 2 samples found, can't get a sample rate %s", Samples_stack)
+            logger.error("get_sample_rate: less than 2 samples found, can't get a sample rate %s", Samples_stack)
             return None, None
 
         # Building a date string
-        def date_conv(sample):
+        def _date_conv(sample):
             date = year_prefix + sample.group(1) + ' ' + sample.group(2) + ' ' + sample.group(3) + ' ' + \
                 sample.group(4) + ' ' + sample.group(5) + ' ' + sample.group(6)
 
@@ -692,7 +656,7 @@ class RinexFile:
             return date
 
         # Format dates to datetime
-        Samples_stack = [date_conv(d) for d in Samples_stack]
+        Samples_stack = [_date_conv(d) for d in Samples_stack]
         Samples_rate_diff = np.diff(Samples_stack)  # Getting intervals
         # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
         Samples_rate_diff = [diff.total_seconds(
@@ -701,7 +665,7 @@ class RinexFile:
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = '05 - Less than two epochs in the file'
-            logger.error(" _get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
+            logger.error(" get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
             return None, None
 
         # If less than 2 intervals, can't compare intervals
@@ -769,7 +733,7 @@ class RinexFile:
 
         return sample_rate_str, sample_rate_num
 
-    def _get_file_period_from_filename(self):
+    def get_file_period_from_filename(self):
         """
         Get the file period from the file's name.
         In long name convention, gets it striaght from the file name.
@@ -807,7 +771,7 @@ class RinexFile:
         return file_period, session
     
     
-    def _get_file_period_from_data(self):
+    def get_file_period_from_data(self):
         """
         Get the file period from the data themselves.
         
@@ -831,7 +795,7 @@ class RinexFile:
             
         return file_period, session
 
-    def _get_sat_system(self):
+    def get_sat_system(self):
         """ Parse RINEX VERSION / TYPE line to get observable type """
 
         if self.status:
@@ -846,7 +810,7 @@ class RinexFile:
 
         return sat_system
 
-    def _get_site_from_filename(self, lower_case=True, only_4char=False):
+    def get_site_from_filename(self, lower_case=True, only_4char=False):
         """ Getting site name from the filename """
         
         if self.status:
@@ -866,7 +830,7 @@ class RinexFile:
             return site_out.upper()
         
         
-    def _get_site_from_header(self):
+    def get_site_from_header(self):
         """ Getting site name from the MARKER NAME line in rinex file's header """
 
         if self.status:
@@ -1268,17 +1232,6 @@ class RinexFile:
                           
         return
                     
-                    
-        
-        
-        
-        
-        
-        
- 
-        
-    
-
     def mod_filename_data_freq(self, data_freq_inp):
         self.sample_rate_str = data_freq_inp
         return
