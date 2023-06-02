@@ -52,22 +52,22 @@ class RinexFile:
             logger.error("input rinex_input is not str, Path, or StringIO")
 
         self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
-        self.size = self._get_size()
-        self.name_conv = self._get_naming_convention()
-        self.compression, self.hatanka_input = self._get_compression()
-        self.filename = self._get_filename()
+        self.size = self.get_size()
+        self.name_conv = self.get_naming_convention()
+        self.compression, self.hatanka_input = self.get_compression()
+        self.filename = self.get_filename()
         
         #### site is an internal attribute, always 9char 
         # (filled with 00XXX in nothing else is provided)
         # it is accessible wit get_site()
-        self._site = self._get_site_from_filename(False,False)
+        self._site = self.get_site_from_filename(False,False)
         
-        self.version = self._get_version()
-        self.start_date, self.end_date = self._get_dates()
-        self.sample_rate_string, self.sample_rate_numeric = self._get_sample_rate(plot=False)
-        #self.file_period, self.session = self._get_file_period_from_filename()
-        self.file_period, self.session = self._get_file_period_from_data()
-        self.sat_system = self._get_sat_system()
+        self.version = self.get_version()
+        self.start_date, self.end_date = self.get_dates()
+        self.sample_rate_string, self.sample_rate_numeric = self.get_sample_rate(plot=False)
+        #self.file_period, self.session = self.get_file_period_from_filename()
+        self.file_period, self.session = self.get_file_period_from_data()
+        self.sat_system = self.get_sat_system()
 
     def __str__(self):
         """
@@ -391,7 +391,7 @@ class RinexFile:
         return rinex_data, status
     
 
-    def _get_naming_convention(self):
+    def get_naming_convention(self):
         # Daily or hourly, hatanaka or not, gz or Z compressed file
         pattern_shortname = re.compile(
             '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
@@ -413,7 +413,7 @@ class RinexFile:
         return name_conv
     
 
-    def _get_size(self):
+    def get_size(self):
         """ Get RINEX file size """
 
         if self.status:
@@ -426,7 +426,7 @@ class RinexFile:
 
         return size
 
-    def _get_compression(self):
+    def get_compression(self):
         """
         get the compression type in a 2-tuple: (compress,hatanaka)
         compress is None or a string: gz, Z, 7z
@@ -467,7 +467,7 @@ class RinexFile:
 
         return compress, hatanaka
 
-    def _get_filename(self):
+    def get_filename(self):
         """ Get filename WITHOUT its compression extension """
 
         if self.status:
@@ -481,7 +481,7 @@ class RinexFile:
 
         return filename
 
-    def _get_version(self):
+    def get_version(self):
         """ Get RINEX version """
 
         if self.status:
@@ -526,12 +526,12 @@ class RinexFile:
         return date_pattern, year_prefix
     
     
-    def _get_dates(self):
+    def get_dates(self):
         """ 
         Getting start and end date from rinex file.
         we search for the date of the first and last observation directly in
         the data.
-        if you want the values in the header, use _get_dates_in_header
+        if you want the values in the header, use get_dates_in_header
         """
 
         if self.status:
@@ -570,7 +570,7 @@ class RinexFile:
         return start_epoch, end_epoch
     
     
-    def _get_dates_in_header(self):
+    def get_dates_in_header(self):
         """ 
         Getting start and end date from rinex file.
         Start date cames from TIME OF FIRST OBS file's header.
@@ -582,7 +582,7 @@ class RinexFile:
         if self.status != 0:
             return None, None
 
-        def _search_meta_label(meta_label_in):
+        def _find_meta_label(meta_label_in):
             line_found = None
             for line in self.rinex_data:
                 if re.search(meta_label_in, line):
@@ -597,12 +597,12 @@ class RinexFile:
                                              '%Y %m %d %H %M %S.%f0')
             return date_out
                         
-        start_meta = _search_meta_label('TIME OF FIRST OBS')
-        end_meta = _search_meta_label('TIME OF LAST OBS')
+        start_meta = _find_meta_label('TIME OF FIRST OBS')
+        end_meta = _find_meta_label('TIME OF LAST OBS')
 
         return start_meta, end_meta
             
-    def _get_dates_all(self):
+    def get_dates_all(self):
         """
         Returns all the epochs in the RINEX
         """
@@ -620,7 +620,7 @@ class RinexFile:
         return Samples_stack
 
 
-    def _get_sample_rate(self, plot=False):
+    def get_sample_rate(self, plot=False):
         """
         Getting sample rate from rinex file.
         The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value
@@ -637,18 +637,18 @@ class RinexFile:
         if self.status:
             return None, None
         
-        Samples_stack = self._get_epochs()
+        Samples_stack = self.get_dates_all()
         date_pattern, year_prefix = self._get_date_patterns()
 
 
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
             self.status = '05 - Less than two epochs in the file'
-            logger.error("_get_sample_rate: less than 2 samples found, can't get a sample rate %s", Samples_stack)
+            logger.error("get_sample_rate: less than 2 samples found, can't get a sample rate %s", Samples_stack)
             return None, None
 
         # Building a date string
-        def date_conv(sample):
+        def _date_conv(sample):
             date = year_prefix + sample.group(1) + ' ' + sample.group(2) + ' ' + sample.group(3) + ' ' + \
                 sample.group(4) + ' ' + sample.group(5) + ' ' + sample.group(6)
 
@@ -656,7 +656,7 @@ class RinexFile:
             return date
 
         # Format dates to datetime
-        Samples_stack = [date_conv(d) for d in Samples_stack]
+        Samples_stack = [_date_conv(d) for d in Samples_stack]
         Samples_rate_diff = np.diff(Samples_stack)  # Getting intervals
         # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
         Samples_rate_diff = [diff.total_seconds(
@@ -665,7 +665,7 @@ class RinexFile:
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = '05 - Less than two epochs in the file'
-            logger.error(" _get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
+            logger.error(" get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
             return None, None
 
         # If less than 2 intervals, can't compare intervals
@@ -733,7 +733,7 @@ class RinexFile:
 
         return sample_rate_str, sample_rate_num
 
-    def _get_file_period_from_filename(self):
+    def get_file_period_from_filename(self):
         """
         Get the file period from the file's name.
         In long name convention, gets it striaght from the file name.
@@ -771,7 +771,7 @@ class RinexFile:
         return file_period, session
     
     
-    def _get_file_period_from_data(self):
+    def get_file_period_from_data(self):
         """
         Get the file period from the data themselves.
         
@@ -795,7 +795,7 @@ class RinexFile:
             
         return file_period, session
 
-    def _get_sat_system(self):
+    def get_sat_system(self):
         """ Parse RINEX VERSION / TYPE line to get observable type """
 
         if self.status:
@@ -810,7 +810,7 @@ class RinexFile:
 
         return sat_system
 
-    def _get_site_from_filename(self, lower_case=True, only_4char=False):
+    def get_site_from_filename(self, lower_case=True, only_4char=False):
         """ Getting site name from the filename """
         
         if self.status:
@@ -830,7 +830,7 @@ class RinexFile:
             return site_out.upper()
         
         
-    def _get_site_from_header(self):
+    def get_site_from_header(self):
         """ Getting site name from the MARKER NAME line in rinex file's header """
 
         if self.status:
