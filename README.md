@@ -209,12 +209,15 @@ EXAMPLE:
 
 ## rinexmod in API mode
 
+RinexMod can be launched directly as a Python function:
 
 ```
-rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
-         longname=False, force_rnx_load=False, force_sitelog=False,
-         ignore=False, ninecharfile=None, compression=None, relative='', 
-         verbose=True, full_history=False, return_lists=None):
+import rinexmod_api as rma
+
+rma.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
+             longname=False, force_rnx_load=False, force_sitelog=False,
+             ignore=False, ninecharfile=None, compression=None, relative='', 
+             verbose=True, full_history=False, return_lists=None):
 
     Parameters
     ----------
@@ -319,8 +322,6 @@ rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     return_lists : dict
         a dictionary of rinexmoded RINEXs for GLASS distribution.
 ```
-
-
 
 ## rinexmod error messages
 
