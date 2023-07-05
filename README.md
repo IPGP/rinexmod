@@ -290,6 +290,17 @@ rma.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     return_lists : dict
         a dictionary of rinexmoded RINEXs for GLASS distribution.
 ```
+## Other command line functions
+
+### crzmeta.py
+
+Extract metadata from crz file.
+
+With -p option, will plot the file's samples intervals
+```
+EXAMPLE:
+./crzmeta.py  RINEXFILE (-p)
+```
 
 ### get_m3g_sitelogs.py
 
@@ -310,18 +321,6 @@ OPTION :
 EXAMPLE:
 
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
-```
-
-## Other command line functions
-
-### crzmeta.py
-
-Extract metadata from crz file.
-
-With -p option, will plot the file's samples intervals
-```
-EXAMPLE:
-./crzmeta.py  RINEXFILE (-p)
 ```
 
 ## rinexmod error messages
