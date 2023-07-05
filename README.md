@@ -43,7 +43,7 @@ You need colorlog to get the pretty colored log outputs:
 
 `pip install colorlog`
 
-## Frontend functions in command lines interfaces
+## rinexmod in command lines interface
 
 ### rinexmod.py
 
@@ -61,7 +61,7 @@ Two ways of passing parameters to modifiy headers are possible: `sitelog` and `m
                assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
                and use them to extract from the sitelog the station instrumentation
-               of the corresponding period and fill file's header with following infos :
+               of the corresponding period and fill file's header with following infos:  
                        Four Character ID
                        X coordinate (m)
                        Y coordinate (m)
@@ -94,7 +94,7 @@ rinexmod will add two comment lines, one indicating the source of the modificati
 (sitelog or arguments) and the other the timestamp of the modification.
 
 
-#### Synopsis
+### Synopsis
 ```
 usage: rinexmod.py [-h] [-s SITELOG] [-k [MODIF_KW ...]] [-m MARKER]
                    [-n NINECHARFILE] [-r RELATIVE] [-c COMPRESSION]
@@ -173,12 +173,138 @@ options:
                         RINEX's 'header as comment.
 ```
 
-#### Exemples
+### Exemples
 
 
 `./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)`
 `./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)`
 
+## rinexmod in API mode
+
+RinexMod can be launched directly as a Python function:
+
+```
+import rinexmod_api as rma
+
+rma.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
+             longname=False, force_rnx_load=False, force_sitelog=False,
+             ignore=False, ninecharfile=None, compression=None, relative='', 
+             verbose=True, full_history=False, return_lists=None):
+
+    Parameters
+    ----------
+    rinexfile : str
+        Input RINEX file to process.
+    outputfolder : str
+        Folder where to write the modified RINEX files.
+    sitelog : str, list of str, SiteLog object, list of SiteLog objects, optional
+        Get the RINEX header values from a sitelog.
+        Possible inputs are 
+        * list of string (sitelog file paths),
+        * single string (single sitelog file path or directory containing the sitelogs),
+        * list of SiteLog object
+        * single SiteLog object
+        The function will search for the latest and right sitelog
+        corresponding to the site.
+        One can force a single sitelog with force_sitelog.
+        The default is None.
+    modif_kw : dict, optional
+        Modification keywords for RINEX's header fields and/or filename.
+        Will override the information from the sitelog.
+        Acceptable keywords for the header fields:
+        * marker_name
+        * marker_number
+        * station (legacy alias for marker_name)
+        * receiver_serial
+        * receiver_type
+        * receiver_fw 
+        * antenna_serial
+        * antenna_type,
+        * antenna_X_pos
+        * antenna_Y_pos
+        * antenna_Z_pos
+        * antenna_H_delta, 
+        * antenna_E_delta
+        * antenna_N_delta,
+        * operator
+        * agency
+        * observables
+        * interval
+        Acceptable keywords for the header fields:
+        * filename_file_period (01H, 01D...), 
+        * filename_data_freq (30S, 01S...)
+        The default is dict().
+    marker : str, optional
+        A four or nine character site code that will be used to rename
+        input files.
+        Apply also to the header's MARKER NAME, 
+        but a custom modification kewyord marker_name='XXXX' overrides it 
+        (modif_kw argument below)
+        The default is ''.
+    longname : bool, optional
+        Rename file using long name RINEX convention (force gzip compression).
+        The default is False.
+    force_rnx_load : bool, optional
+        Force the loading of the input RINEX. Useful if its name is not standard.
+        The default is False.
+    force_sitelog : bool, optional
+        Force sitelog-based header values when RINEX's header
+        and sitelog site name do not correspond. The default is False.
+    ignore : bool, optional
+        Ignore firmware changes between instrumentation periods 
+        when getting header values info from sitelogs. The default is False.
+    ninecharfile : str, optional
+        Path of a file that contains 9-char. site names from the M3G database.
+        The default is None.
+    compression : str, optional
+        Set RINEX compression 
+        acceptables values : gz (recommended to fit IGS standards), 'Z', None. 
+        The default is None.
+    relative : str, optional
+        Reconstruct files relative subfolders. 
+        You have to indicate the common parent folder, 
+        that will be replaced with the output folder. The default is ''.
+    verbose : bool, optional
+        set the level of verbosity 
+        (False for the INFO level, True for the DEBUG level).
+        The default is True.
+    full_history : bool, optional
+        Add the full history of the station in 
+        the RINEX's header as comment.
+    return_lists : dict, optional
+        Specific option for file distribution through a GLASS node.
+        Store the rinexmoded RINEXs in a dictionary
+        to activates it, give a dict as input (an empty one - dict() works)
+        DESCRIPTION. The default is None.
+
+    Raises
+    ------
+    RinexModInputArgsError
+        Something is wrong with the input arguments.
+    RinexFileError
+        Something is wrong with the input RINEX File.
+
+    Returns
+    -------
+    outputfile : str
+        the path of the rinexmoded RINEX    
+
+    OR
+
+    return_lists : dict
+        a dictionary of rinexmoded RINEXs for GLASS distribution.
+```
+## Other command line functions
+
+### crzmeta.py
+
+Extract metadata from crz file.
+
+With -p option, will plot the file's samples intervals
+```
+EXAMPLE:
+./crzmeta.py  RINEXFILE (-p)
+```
 
 ### get_m3g_sitelogs.py
 
@@ -200,18 +326,6 @@ EXAMPLE:
 
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 ```
-
-### crzmeta.py
-
-Extract metadata from crz file.
-
-With -p option, will plot the file's samples intervals
-```
-EXAMPLE:
-./crzmeta.py  RINEXFILE (-p)
-```
-
-## rinexmod in API mode
 
 ## rinexmod error messages
 
