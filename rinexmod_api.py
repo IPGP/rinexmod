@@ -66,14 +66,7 @@ def logger_define(level_prompt,logfile,level_logfile=None):
             level_logfile = level_prompt
         filehandler = logging.FileHandler(logfile, mode='a', encoding='utf-8')  
         fileformatter = logging.Formatter("%(asctime)s.%(msecs)03d|(levelname).1s|%(funcName)-15s|%(message)s",
-        datefmt="%y%m%dT%H:%M:%S",
-        log_colors={
-	    	'DEBUG':    'cyan',
-	    	'INFO':     'green',
-    		'WARNING':  'yellow',
-	    	'ERROR':    'red',
-	    	'CRITICAL': 'red,bg_white',
-    	})
+        datefmt="%y%m%dT%H:%M:%S")
         filehandler.setFormatter(fileformatter)
         filehandler.setLevel(level_logfile)
         logger.addHandler(filehandler)
