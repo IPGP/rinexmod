@@ -39,7 +39,7 @@ You need matplotlib for plotting samples intervals with crzmeta:
 
 `pip install matplotlib`
 
-## Frontend functions in command lines interfaces
+## rinexmod in command lines interface
 
 ### rinexmod.py
 
@@ -57,7 +57,7 @@ Two ways of passing parameters to modifiy headers are possible: `sitelog` and `m
                assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
                and use them to extract from the sitelog the station instrumentation
-               of the corresponding period and fill file's header with following infos :
+               of the corresponding period and fill file's header with following infos:  
                        Four Character ID
                        X coordinate (m)
                        Y coordinate (m)
@@ -90,7 +90,7 @@ rinexmod will add two comment lines, one indicating the source of the modificati
 (sitelog or arguments) and the other the timestamp of the modification.
 
 
-#### Synopsis
+### Synopsis
 ```
 usage: rinexmod.py [-h] [-s SITELOG] [-k [MODIF_KW ...]] [-m MARKER]
                    [-n NINECHARFILE] [-r RELATIVE] [-c COMPRESSION]
@@ -169,43 +169,11 @@ options:
                         RINEX's 'header as comment.
 ```
 
-#### Exemples
+### Exemples
 
 
 `./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)`
 `./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)`
-
-
-### get_m3g_sitelogs.py
-
-This script will get last version of sitelogs from M3G repository and write them
-in an observatory dependent subfolder set in 'observatories'.
-The -d --delete option will delete old version as to get only last version even
-in a name changing case.
-
-```
-USE :
-
-* OUTPUTFOLDER : Folder where to write the downloaded sitelogs.
-
-OPTION :
-
-* -d : delete : Delete old sitelogs in storage folder. This permits to have only the last version, as version changing sitelogs changes of name.
-
-EXAMPLE:
-
-	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
-```
-
-### crzmeta.py
-
-Extract metadata from crz file.
-
-With -p option, will plot the file's samples intervals
-```
-EXAMPLE:
-./crzmeta.py  RINEXFILE (-p)
-```
 
 ## rinexmod in API mode
 
@@ -321,6 +289,39 @@ rma.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     return_lists : dict
         a dictionary of rinexmoded RINEXs for GLASS distribution.
+```
+
+### get_m3g_sitelogs.py
+
+This script will get last version of sitelogs from M3G repository and write them
+in an observatory dependent subfolder set in 'observatories'.
+The -d --delete option will delete old version as to get only last version even
+in a name changing case.
+
+```
+USE :
+
+* OUTPUTFOLDER : Folder where to write the downloaded sitelogs.
+
+OPTION :
+
+* -d : delete : Delete old sitelogs in storage folder. This permits to have only the last version, as version changing sitelogs changes of name.
+
+EXAMPLE:
+
+	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
+```
+
+## Other command line functions
+
+### crzmeta.py
+
+Extract metadata from crz file.
+
+With -p option, will plot the file's samples intervals
+```
+EXAMPLE:
+./crzmeta.py  RINEXFILE (-p)
 ```
 
 ## rinexmod error messages
