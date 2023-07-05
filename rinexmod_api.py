@@ -64,8 +64,8 @@ def logger_define(level_prompt,logfile,level_logfile=None):
     if logfile:
         if not level_logfile:
             level_logfile = level_prompt
-        filehandler = colorlog.FileHandler(logfile, mode='a', encoding='utf-8')  
-        fileformatter = colorlog.Formatter("%(asctime)s.%(msecs)03d|%(log_color)s%(levelname).1s%(reset)s|%(log_color)s%(funcName)-15s%(reset)s|%(message)s",
+        filehandler = logging.FileHandler(logfile, mode='a', encoding='utf-8')  
+        fileformatter = logging.Formatter("%(asctime)s.%(msecs)03d|(levelname).1s|%(funcName)-15s|%(message)s",
         datefmt="%y%m%dT%H:%M:%S",
         log_colors={
 	    	'DEBUG':    'cyan',
