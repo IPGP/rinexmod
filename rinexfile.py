@@ -1422,7 +1422,7 @@ class RinexFile:
             head_sort = sorted(head,key=lambda x: header_order.index(x[60:].strip()))
             self.rinex_data = head_sort + body
         except:
-            logger.warning("unable to sort header's lines, skip the action")
+            logger.warning("unable to sort header's lines, action skipped (only possible for RNXv3)")
         return
         
 
