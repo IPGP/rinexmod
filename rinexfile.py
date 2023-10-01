@@ -805,7 +805,6 @@ class RinexFile:
         else:
             file_period = '00U'
             session = False
-        print(file_period, session)
         ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs includes the epoch of the next hour/day
         ###        and then the present delta value reach 25
         ###        it justify also the necessity of the delta2 variable
