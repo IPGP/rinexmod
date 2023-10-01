@@ -258,12 +258,14 @@ class RinexFile:
         else:
             compression = ''
 
-        if self.file_period == '01D':
+        if self.file_period == '01D': ## Daily case
             if self.session:
                 timeformat = '%Y%j%H%M'
             else:
                 timeformat = '%Y%j0000'  # Start of the day
-        else:
+        elif self.file_period == '00U': ## Unknown case: the filename deserves a full description to identify potential bug 
+            timeformat = '%Y%j%H%M'
+        else: ## Hourly case
             timeformat = '%Y%j%H00'  # Start of the hour
 
         
@@ -670,7 +672,7 @@ class RinexFile:
 
         # If less than 2 intervals, can't compare intervals
         if len(Samples_rate_diff) < 2:
-            return 'XXU', 0.
+            return '00U', 0.
 
         # Most frequent
         sample_rate_num = max(set(Samples_rate_diff),
@@ -691,13 +693,13 @@ class RinexFile:
         if non_nominal_interval_percent > 0.1:  # Don't set sample rate to files
             # That have more that 10% of non
             # nominal sample rate
-            return 'XXU', 0.
+            return '00U', 0.
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
         # We round samples rates to avoid leap-seconds related problems
         if sample_rate_num <= 0.0001:
             # XXU – Unspecified
-            sample_rate_str = 'XXU'
+            sample_rate_str = '00U'
         elif sample_rate_num <= 0.01:
             # XXC – 100 Hertz
             sample_rate_num = round(sample_rate_num, 4)
@@ -712,6 +714,7 @@ class RinexFile:
             # XXS – Seconds
             sample_rate_num = round(sample_rate_num, 0)
             sample_rate_str = (str(int(sample_rate_num)) + 'S').rjust(3, '0')
+        ##### NB: a sample rate at the minute level or even above is very unlikely
         elif sample_rate_num < 3600:
             # XXM – Minutes
             sample_rate_num = round(sample_rate_num, 0)
@@ -729,7 +732,7 @@ class RinexFile:
                 str(int(sample_rate_num / 86400)) + 'D').rjust(3, '0')
         else:
             # XXU – Unspecified
-            sample_rate_str = 'XXU'
+            sample_rate_str = '00U'
 
         return sample_rate_str, sample_rate_num
 
@@ -771,7 +774,7 @@ class RinexFile:
         return file_period, session
     
     
-    def get_file_period_from_data(self):
+    def get_file_period_from_data(self,allow_several_hours=True):
         """
         Get the file period from the data themselves.
         
@@ -779,19 +782,33 @@ class RinexFile:
         period
         """
         
-        rndtup = lambda x: round_time(x,timedelta(minutes=60),"up")
-        rndtdown = lambda x: round_time(x,timedelta(minutes=60),"down")
-        delta = rndtup(self.end_date) - rndtdown(self.start_date)
-        
-        if delta <= timedelta(seconds=3600):
+        rndtup = lambda x,t: round_time(x,timedelta(minutes=t),"up")
+        rndtdown = lambda x,t: round_time(x,timedelta(minutes=t),"down")
+        rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
+        delta = rndtup(self.end_date,60) - rndtdown(self.start_date,60)
+
+        ### first, the special case : N *full* hours
+        if allow_several_hours and delta <= timedelta(seconds=86400 - 3600): ## = 23h max
+            # delta2 is a more precise delta (average)
+            delta2 = rndtaver(self.end_date,60) - rndtaver(self.start_date,60)
+            hours = int(delta2.total_seconds() / 3600 )
+            file_period = str(hours).zfill(2) + 'H'
+            session = True
+        ### more regular cases : 01H, 01D, or Unknown
+        elif delta <= timedelta(seconds=3600):
+            # NB: this test is useless, it is treated by the previous test
             file_period = '01H'
             session = True
-        elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400):
+        elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400 + 3600): ##Note1
             file_period = '01D'
             session = False
         else:
             file_period = '00U'
             session = False
+        print(file_period, session)
+        ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs includes the epoch of the next hour/day
+        ###        and then the present delta value reach 25
+        ###        it justify also the necessity of the delta2 variable
             
         return file_period, session
 
