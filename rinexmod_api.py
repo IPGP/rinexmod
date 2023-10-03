@@ -430,7 +430,7 @@ def _return_lists_write(return_lists,logfolder,now_dt=None):
 def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
              ignore=False, ninecharfile=None, compression=None, relative='', 
-             verbose=True, full_history=False, return_lists=None):
+             verbose=True, full_history=False,tolerant_file_period=False, return_lists=None):
     """
     Parameters
     ----------
@@ -512,6 +512,12 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     full_history : bool, optional
         Add the full history of the station in 
         the RINEX's header as comment.
+    tolerant_file_period : bool, optional
+        If True, the RINEX file period is tolerant and stick to
+        the actual data content, but then can be odd (e.g. 07H, 14H...).
+        If False, A strict file period is applied per default (01H or 01D),
+        being compatible with the IGS conventions.
+        The default is False.
     return_lists : dict, optional
         Specific option for file distribution through a GLASS node.
         Store the rinexmoded RINEXs in a dictionary
@@ -571,7 +577,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         logger.warning("the output folder does not exists")        
         os.makedirs(outputfolder)
 
-    # Declare the rinex file as an object
+    ###########################################################################
+    ########## Open the rinex file as an object
     rnxobj = RinexFile(rinexfile,force_rnx_load=force_rnx_load)
 
     if rnxobj.status:
@@ -579,6 +586,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         raise RinexFileError
         
     logger.debug('RINEX Origin Metadata :\n' + rnxobj.get_metadata()[0])
+
+    # apply tolerant / strict (per default) file period
+    if not tolerant_file_period:
+        rnxobj.file_period_round(inplace_set=True)
 
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
