@@ -821,8 +821,8 @@ class RinexFile:
             file_period_round = '01D'
             session_round = False
         else:
-            file_period_round = file_period
-            session_round = session 
+            file_period_round =self.file_period
+            session_round = self.session 
 
         if inplace_set:
             self.file_period = file_period_round 

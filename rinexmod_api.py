@@ -769,7 +769,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
      ninecharfile=None, compression=None, relative='', verbose=True,
-     alone=False, output_logs=None, write=False, sort=False, full_history=False):
+     alone=False, output_logs=None, write=False, sort=False, full_history=False,
+     tolerant_file_period=False):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -820,6 +821,9 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         raise RinexModInputArgsError
 
     outputfolder = os.path.abspath(outputfolder)
+    if not os.path.isdir(outputfolder):
+        # mkdirs ???
+        os.makedirs(outputfolder)
 
     # Creating log file
     now = datetime.now()
@@ -835,10 +839,6 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         _ = logger_define('DEBUG', logfile, 'DEBUG')
     else:
         _ = logger_define('INFO', logfile, 'INFO')
-
-    if not os.path.isdir(outputfolder):
-        # mkdirs ???
-        os.makedirs(outputfolder)
 
     # Opening and reading lines of the file containing list of rinex to proceed
     if alone:
@@ -879,8 +879,10 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
                                     relative=relative, 
                                     verbose=verbose,
                                     return_lists=return_lists,
-                                    full_history=full_history)
+                                    full_history=full_history,
+                                    tolerant_file_period=tolerant_file_period)
         except Exception as e:
+            raise e
             logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
         
     #########################################
