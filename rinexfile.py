@@ -1340,7 +1340,7 @@ class RinexFile:
         return '\n'.join(self.rinex_data).encode(encode)
 
 
-    def write_to_path(self, path, compression='gz'):
+    def write_to_path(self, output_directory, compression='gz'):
         """
         Will turn rinex_data from list to string, utf-8, then compress as hatanaka
         and zip to the 'compression' format, then write to file. The 'compression' param
@@ -1378,12 +1378,13 @@ class RinexFile:
     
             # manage low-level compression extension
             if compression in ('none', None):
-                outputfile = os.path.join(path, filename_out)
+                outputfile = os.path.join(output_directory, filename_out)
             else:
-                outputfile = os.path.join(path, filename_out + '.' + compression)
+                outputfile = os.path.join(output_directory,
+                                          filename_out + '.' + compression)
         ### the data source is a StringIO
         else:
-            outputfile = path
+            outputfile = output_directory
 
         Path(outputfile).write_bytes(output_data)
         
