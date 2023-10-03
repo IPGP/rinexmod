@@ -39,6 +39,10 @@ You need matplotlib for plotting samples intervals with crzmeta:
 
 `pip install matplotlib`
 
+You need colorlog to get the pretty colored log outputs:
+
+`pip install colorlog`
+
 ## Frontend functions in command lines interfaces
 
 ### rinexmod.py
