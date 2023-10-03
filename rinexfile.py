@@ -865,9 +865,68 @@ class RinexFile:
         site_meta = site_meta.split(' ')[0].upper()
 
         return site_meta
-         
+    
+    def get_sys_obs_types(self):
+        """
+        get the systems/observables values from the 
+        ``SYS / # / OBS TYPES`` lines
 
+        for RINEX 3/4 only
+        
+        Returns
+        -------
+        dict_sys_obs : dict
+            a dictionary of lists describing the observables per system, e.g.:
+            ``{"G" : ["C1C","C1W","C2W","L1C","L2W","S1C",S2W"]}``.
+                      
+        dict_sys_nobs : dict
+            a dictionary of integer describing the number of observables per system, e.g.:
+            ``{'C': 8, 'E': 16, 'G': 16, 'I': 4, 'R': 12, 'S': 4}``.
 
+        """
+        
+        if self.status:
+            return
+        
+        if self.version[0] < '3':
+            logger.warn("get_sys_obs_types is only compatible with RINEX3/4")
+            return
+        
+        # Identify line that contains SYS / # / OBS TYPES
+        sys_obs_idx0 = search_idx_value(self.rinex_data,
+                                       'SYS / # / OBS TYPES')
+        
+        sys_obs_idx_fin = sys_obs_idx0
+        while 'SYS / # / OBS TYPES' in self.rinex_data[sys_obs_idx_fin]:
+            sys_obs_idx_fin += 1
+            
+        #### get the systems and observations
+        Lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
+        print(Lines_sys)
+        ## clean SYS / # / OBS TYPES
+        Lines_sys = [l[:60] for l in Lines_sys]
+        
+        ## manage the 2 lines systems => they are stacked in one
+        for il,l in enumerate(Lines_sys):
+            if l[0] == " ":
+                Lines_sys[il-1] = Lines_sys[il-1] + l
+                Lines_sys.remove(l)
+        
+        #### store system and observables in a dictionnary
+        dict_sys_obs = dict()
+        dict_sys_nobs = dict()
+        
+        for il,l in enumerate(Lines_sys):
+            Sysobs = l.split()
+            sys = Sysobs[0]
+            dict_sys_obs[sys] = Sysobs[2:]
+            dict_sys_nobs[sys] = int(Sysobs[1])
+            ## adds the LLI and SSI indicators
+            if len(Sysobs[2:]) != int(Sysobs[1]):
+                logger.warn("difference between theorectical (%d) and actual (%d) obs nbr for sys (%s)",
+                            len(Sysobs[2:]),int(Sysobs[1]),sys)
+
+        return dict_sys_obs, dict_sys_nobs
     
 ### ***************************************************************************
 ### mod methods. change the content of the RINEX header
@@ -1206,11 +1265,26 @@ class RinexFile:
             
 
     def mod_sys_obs_types(self,dict_sys_obs):
+        """
+        change the systems/observables from the ``SYS / # / OBS TYPES`` lines
+        
+        for RINEX 3/4 only
+
+        Parameters
+        ----------
+        dict_sys_obs : dict
+            a dictionary of lists describing the observables per system, e.g.:
+            ``{"G" : ["C1C","C1W","C2W","L1C","L2W","S1C",S2W"]}``
+        """
         
         if self.status:
             return
 
         if not any([dict_sys_obs]):
+            return
+        
+        if self.version[0] < '3':
+            logger.warn("mod_sys_obs_types is only compatible with RINEX3/4")
             return
 
         # Identify line that contains SYS / # / OBS TYPES
@@ -1218,7 +1292,6 @@ class RinexFile:
                                        'SYS / # / OBS TYPES')
         
         sys_obs_idx_fin = sys_obs_idx0
-        
         while 'SYS / # / OBS TYPES' in self.rinex_data[sys_obs_idx_fin]:
             sys_obs_idx_fin += 1
             
@@ -1245,9 +1318,10 @@ class RinexFile:
                           lfmt_stk +  \
                           self.rinex_data[sys_obs_idx_fin:]
                           
-                          
-        return
-                    
+        return   
+
+
+
     def mod_filename_data_freq(self, data_freq_inp):
         self.sample_rate_str = data_freq_inp
         return
@@ -1266,7 +1340,7 @@ class RinexFile:
         return '\n'.join(self.rinex_data).encode(encode)
 
 
-    def write_to_path(self, path, compression='gz'):
+    def write_to_path(self, output_directory, compression='gz'):
         """
         Will turn rinex_data from list to string, utf-8, then compress as hatanaka
         and zip to the 'compression' format, then write to file. The 'compression' param
@@ -1304,12 +1378,13 @@ class RinexFile:
     
             # manage low-level compression extension
             if compression in ('none', None):
-                outputfile = os.path.join(path, filename_out)
+                outputfile = os.path.join(output_directory, filename_out)
             else:
-                outputfile = os.path.join(path, filename_out + '.' + compression)
+                outputfile = os.path.join(output_directory,
+                                          filename_out + '.' + compression)
         ### the data source is a StringIO
         else:
-            outputfile = path
+            outputfile = output_directory
 
         Path(outputfile).write_bytes(output_data)
         
@@ -1394,6 +1469,34 @@ class RinexFile:
                 rinex_data_new.append(l)
         self.rinex_data = rinex_data_new
         return 
+    
+    
+    def clean_gfzrnx_comments(self,
+                              internal_use_only=True,
+                              format_conversion=False):
+        
+        def __gfzrnx_cleaner(self,block_title):
+            
+            i_start,i_end = None,None            
+            for il,l in enumerate(self.rinex_data):
+                if block_title in l:
+                    i_start = il - 1 ## -1 for the "*********" line
+                if "***********************************************************" in l:
+                    i_end = il
+                if "END OF HEADER" in l:
+                    break
+                            
+            if i_start and i_end:
+                self.rinex_data = self.rinex_data[0:i_start-1] + self.rinex_data[i_end+1:]
+            return
+        
+        if internal_use_only:
+            self.__gfzrnx_cleaner("WARNING - FOR INTERNAL USE ONLY")
+        if format_conversion:
+            self.__gfzrnx_cleaner("WARNING - FORMAT CONVERSION")
+        
+        return 
+
         
     def sort_header(self):
         header_order = ['RINEX VERSION / TYPE',
