@@ -13,11 +13,10 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-
-
 # Create a logger object.
 import logging
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+logger = logging.getLogger("rinexmod_api")
 
 # *****************************************************************************
 # class definition
@@ -822,8 +821,8 @@ class RinexFile:
             file_period_round = '01D'
             session_round = False
         else:
-            file_period_round = file_period
-            session_round = session 
+            file_period_round =self.file_period
+            session_round = self.session 
 
         if inplace_set:
             self.file_period = file_period_round 
@@ -1590,7 +1589,7 @@ class RinexFile:
             head_sort = sorted(head,key=lambda x: header_order.index(x[60:].strip()))
             self.rinex_data = head_sort + body
         except:
-            logger.warning("unable to sort header's lines, action skipped (only possible for RNXv3)")
+            logger.warning("unable to sort header's lines, action skipped (RNXv3 only)")
         return
         
 
