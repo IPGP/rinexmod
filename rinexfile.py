@@ -13,11 +13,10 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-
-
 # Create a logger object.
 import logging
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+logger = logging.getLogger("rinexmod_api")
 
 # *****************************************************************************
 # class definition
@@ -774,12 +773,11 @@ class RinexFile:
         return file_period, session
     
     
-    def get_file_period_from_data(self,allow_several_hours=True):
+    def get_file_period_from_data(self):
         """
         Get the file period from the data themselves.
         
-        NB: this method respects the IGS convention and thus uses NOMINAL 
-        period
+        see also file_period_round() to round this value to an conventional one
         """
         
         rndtup = lambda x,t: round_time(x,timedelta(minutes=t),"up")
@@ -788,7 +786,7 @@ class RinexFile:
         delta = rndtup(self.end_date,60) - rndtdown(self.start_date,60)
 
         ### first, the special case : N *full* hours
-        if allow_several_hours and delta <= timedelta(seconds=86400 - 3600): ## = 23h max
+        if  delta <= timedelta(seconds=86400 - 3600): ## = 23h max
             # delta2 is a more precise delta (average)
             delta2 = rndtaver(self.end_date,60) - rndtaver(self.start_date,60)
             hours = int(delta2.total_seconds() / 3600 )
@@ -810,6 +808,31 @@ class RinexFile:
         ###        it justify also the necessity of the delta2 variable
             
         return file_period, session
+
+    def file_period_round(self,inplace_set=True):
+        """
+        Round the RINEX file period to a conventional value: 01D, 01H
+
+        NB: this method aims to respect the IGS convention and thus uses NOMINAL 
+        period
+        """
+
+        if self.file_period[2] == "H" and int(self.file_period[:2]) > 1:
+            file_period_round = '01D'
+            session_round = False
+        else:
+            file_period_round =self.file_period
+            session_round = self.session 
+
+        if inplace_set:
+            self.file_period = file_period_round 
+            self.session = session_round 
+
+        return file_period_round, session_round 
+
+
+    
+
 
     def get_sat_system(self):
         """ Parse RINEX VERSION / TYPE line to get observable type """
@@ -1572,7 +1595,7 @@ class RinexFile:
             head_sort = sorted(head,key=lambda x: header_order.index(x[60:].strip()))
             self.rinex_data = head_sort + body
         except:
-            logger.warning("unable to sort header's lines, action skipped (only possible for RNXv3)")
+            logger.warning("unable to sort header's lines, action skipped (RNXv3 only)")
         return
         
 
