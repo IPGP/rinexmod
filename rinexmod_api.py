@@ -430,7 +430,8 @@ def _return_lists_write(return_lists,logfolder,now_dt=None):
 def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
              ignore=False, ninecharfile=None, compression=None, relative='', 
-             verbose=True, full_history=False,tolerant_file_period=False, return_lists=None):
+             verbose=True, full_history=False,tolerant_file_period=False,
+             return_lists=None):
     """
     Parameters
     ----------
@@ -589,7 +590,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     # apply tolerant / strict (per default) file period
     if not tolerant_file_period:
-        rnxobj.file_period_round(inplace_set=True)
+        rnxobj.get_file_period_round(inplace_set=True)
 
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
@@ -719,9 +720,11 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## we regenerate the filenames
     if rnxobj.name_conv == "SHORT" and not longname:
-        rnxobj.get_shortname(inplace_set=True, compression='')
+        rnxobj.get_shortname(inplace_set=True, compression='',
+                             tolerant_file_period=tolerant_file_period)
     else:
-        rnxobj.get_longname(inplace_set=True, compression='')
+        rnxobj.get_longname(inplace_set=True, compression='',
+                            tolerant_file_period=tolerant_file_period)
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step 
