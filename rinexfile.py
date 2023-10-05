@@ -249,7 +249,7 @@ class RinexFile:
             ext = 'rnx'
 
         ext = '.' + ext
-
+        
         if compression == 'auto' and self.compression:
             compression = '.' + self.compression
         elif compression == 'auto' and not self.compression:
@@ -279,7 +279,7 @@ class RinexFile:
         longname = '_'.join((self.get_site(False,False),
                              data_source,
                              self.start_date.strftime(timeformat),
-                             self.file_period,
+                             file_period_name,
                              self.sample_rate_string,
                              self.sat_system + obs_type + ext + compression))
 
@@ -817,8 +817,6 @@ class RinexFile:
 
         """
         
-
-        
         rndtup = lambda x,t: round_time(x,timedelta(minutes=t),"up")
         rndtdown = lambda x,t: round_time(x,timedelta(minutes=t),"down")
         rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
@@ -853,7 +851,6 @@ class RinexFile:
         
         if not tolerant_file_period:
             self.get_file_period_round(inplace_set=True)
-        
         
         return file_period, session
 
@@ -1011,11 +1008,12 @@ class RinexFile:
 ### ***************************************************************************
 ### mod methods. change the content of the RINEX header
 
-    def mod_marker(self, marker_inp, number_inp=None):
+    def mod_marker(self, marker_inp=None, number_inp=None):
 
         if self.status:
             return
 
+        ###marker_inp is a mandatory arguement, no None!
         if not marker_inp:
             return
 
@@ -1402,11 +1400,19 @@ class RinexFile:
 
 
 
-    def mod_filename_data_freq(self, data_freq_inp):
+    def mod_filename_data_freq(self, data_freq_inp=None):
+
+        if not data_freq_inp:
+            return
+
         self.sample_rate_str = data_freq_inp
         return
 
-    def mod_filename_file_period(self, file_period_inp):
+    def mod_filename_file_period(self, file_period_inp=None):
+
+        if not file_period_inp:
+            return
+
         self.file_period = file_period_inp
         return
     
@@ -1487,7 +1493,7 @@ class RinexFile:
         return outputfile
 
 
-    def add_comment(self, comment, add_pgm_cmt=False):
+    def add_comment(self, comment=None, add_pgm_cmt=False):
         '''
         We add the argument comment line at the end of the header
         Append as last per default
@@ -1496,6 +1502,9 @@ class RinexFile:
         Then comment is a 2-tuple (program,run_by)
         '''
         if self.status:
+            return
+
+        if not comment:
             return
 
         end_of_header_idx = search_idx_value(

@@ -333,7 +333,8 @@ def _modif_kw_check(modif_kw):
                            'observables',
                            'interval',
                            'filename_data_freq',
-                           'filename_file_period']
+                           'filename_file_period',
+                           'comment']
 
     for kw in modif_kw:
         if kw not in acceptable_keywords:
@@ -343,7 +344,11 @@ def _modif_kw_check(modif_kw):
     return None
         
    
-def modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
+def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
+
+    def __keys_in_modif_kw(keys_in):
+        return all([e in  modif_kw.keys() for e in keys_in])
+
     rinexfileobj.mod_marker(modif_kw.get('marker_name'),
                             modif_kw.get('marker_number'))
 
@@ -377,6 +382,9 @@ def modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
         modif_kw.get('filename_file_period'))
     rinexfileobj.mod_filename_data_freq(
         modif_kw.get('filename_data_freq')) 
+
+    # comment
+    rinexfileobj.add_comment(modif_kw.get('comment'))
     
     return rinexfileobj
 
@@ -669,7 +677,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     if sitelog:        
         rnxobj = sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
-        modif_source = sitelogobj.filename
+        modif_source_sitelog = sitelogobj.filename
         
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
@@ -677,7 +685,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         # Checking input keyword modification arguments
         _modif_kw_check(modif_kw)
 
-        modif_source = 'manual keywords'
+        modif_source_kw = 'manual keywords'
         rnxobj = modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
         logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         
@@ -702,8 +710,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     rnxobj.add_comment('RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)')
     rnxobj.add_comment('rinexmoded on {}'.format(
         datetime.strftime(now, '%Y-%m-%d %H:%M')))
-    if sitelog or modif_kw:
-        rnxobj.add_comment('rinexmoded with {}'.format(modif_source))
+    if sitelog: 
+        rnxobj.add_comment('rinexmoded with {}'.format(modif_source_sitelog))
+    if modif_kw:
+        rnxobj.add_comment('rinexmoded with {}'.format(modif_source_kw))
     #if marker: ##### Useless...
     #    rnxobj.add_comment('filename assigned from {}'.format(modif_marker))
     
