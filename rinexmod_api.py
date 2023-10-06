@@ -895,8 +895,9 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
                                     full_history=full_history,
                                     tolerant_file_period=tolerant_file_period)
         except Exception as e:
-            raise e
+            # raise e
             logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
+            continue
         
     #########################################
     logger.handlers.clear()
