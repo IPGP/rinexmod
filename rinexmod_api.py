@@ -685,7 +685,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         # Checking input keyword modification arguments
         _modif_kw_check(modif_kw)
 
-        modif_source_kw = 'manual keywords'
+        modif_source_kw = 'keywords:' + " ".join(modif_kw.keys())
         rnxobj = modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
         logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         
