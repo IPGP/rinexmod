@@ -55,6 +55,7 @@ class RinexFile:
         self.name_conv = self.get_naming_convention()
         self.compression, self.hatanka_input = self.get_compression()
         self.filename = self.get_filename()
+        self.data_source = self.get_data_source()
         
         #### site is an internal attribute, always 9char 
         # (filled with 00XXX in nothing else is provided)
@@ -249,7 +250,7 @@ class RinexFile:
             ext = 'rnx'
 
         ext = '.' + ext
-
+        
         if compression == 'auto' and self.compression:
             compression = '.' + self.compression
         elif compression == 'auto' and not self.compression:
@@ -279,7 +280,7 @@ class RinexFile:
         longname = '_'.join((self.get_site(False,False),
                              data_source,
                              self.start_date.strftime(timeformat),
-                             self.file_period,
+                             file_period_name,
                              self.sample_rate_string,
                              self.sat_system + obs_type + ext + compression))
 
@@ -511,7 +512,21 @@ class RinexFile:
 
         return rinex_ver_meta        
         
-    
+    def get_data_source(self):
+        """Get data source: R, S, U from LONG filename, R per default"""
+
+        if self.status:
+            return None
+
+        if not "LONG" in self.name_conv:
+            src = "R"
+        else:
+            src = self.filename[10]
+
+        return src
+
+
+   
     def _get_date_patterns(self):
         """
         Internal function to get the correct epoch pattern depending 
@@ -681,7 +696,7 @@ class RinexFile:
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = '05 - Less than two epochs in the file'
-            logger.error(" get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
+            logger.error("get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
             return None, None
 
         # If less than 2 intervals, can't compare intervals
@@ -704,9 +719,13 @@ class RinexFile:
             plt.plot(Samples_rate_diff)
             plt.show()
 
-        if non_nominal_interval_percent > 0.1:  # Don't set sample rate to files
-            # That have more that 10% of non
-            # nominal sample rate
+        non_nominal_trigger=0.45
+        if non_nominal_interval_percent > non_nominal_trigger:  # Don't set sample rate to files
+            # That have more that 45% of non nominal sample rate
+            logger.error("get_sample_rate: non nominal sample rate >%d%%: %d%% (# epochs: %d)",
+                         non_nominal_trigger*100,
+                         non_nominal_interval_percent*100,
+                         len(Samples_stack))
             return '00U', 0.
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
@@ -817,8 +836,6 @@ class RinexFile:
 
         """
         
-
-        
         rndtup = lambda x,t: round_time(x,timedelta(minutes=t),"up")
         rndtdown = lambda x,t: round_time(x,timedelta(minutes=t),"down")
         rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
@@ -853,7 +870,6 @@ class RinexFile:
         
         if not tolerant_file_period:
             self.get_file_period_round(inplace_set=True)
-        
         
         return file_period, session
 
@@ -1011,11 +1027,12 @@ class RinexFile:
 ### ***************************************************************************
 ### mod methods. change the content of the RINEX header
 
-    def mod_marker(self, marker_inp, number_inp=None):
+    def mod_marker(self, marker_inp=None, number_inp=None):
 
         if self.status:
             return
 
+        ###marker_inp is a mandatory arguement, no None!
         if not marker_inp:
             return
 
@@ -1401,12 +1418,19 @@ class RinexFile:
         return   
 
 
+    def mod_filename_data_freq(self, data_freq_inp=None):
 
-    def mod_filename_data_freq(self, data_freq_inp):
+        if not data_freq_inp:
+            return
+
         self.sample_rate_str = data_freq_inp
         return
 
-    def mod_filename_file_period(self, file_period_inp):
+    def mod_filename_file_period(self, file_period_inp=None):
+
+        if not file_period_inp:
+            return
+
         self.file_period = file_period_inp
         return
     
@@ -1487,7 +1511,7 @@ class RinexFile:
         return outputfile
 
 
-    def add_comment(self, comment, add_pgm_cmt=False):
+    def add_comment(self, comment=None, add_pgm_cmt=False):
         '''
         We add the argument comment line at the end of the header
         Append as last per default
@@ -1496,6 +1520,9 @@ class RinexFile:
         Then comment is a 2-tuple (program,run_by)
         '''
         if self.status:
+            return
+
+        if not comment:
             return
 
         end_of_header_idx = search_idx_value(
@@ -1603,7 +1630,7 @@ class RinexFile:
             if i_start and i_end:
                 rinex_data_out = rinex_data_in[0:i_start-1] + rinex_data_in[i_end+1:]
             else: 
-                logger.warn("no blocki %s found in header",block_title)
+                logger.warn("no block %s found in header",block_title)
                 rinex_data_out = rinex_data_in
 
             return rinex_data_out 
