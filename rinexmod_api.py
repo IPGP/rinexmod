@@ -734,7 +734,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                              tolerant_file_period=tolerant_file_period)
     else:
         rnxobj.get_longname(inplace_set=True, compression='',
-                            tolerant_file_period=tolerant_file_period)
+                            tolerant_file_period=tolerant_file_period,
+                            data_source=rnxobj.data_source)
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step 
@@ -895,8 +896,10 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
                                     full_history=full_history,
                                     tolerant_file_period=tolerant_file_period)
         except Exception as e:
-            # raise e
-            logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
+            if True: ### set as True for debug mode
+                raise e
+            else:
+                logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
             continue
         
     #########################################
