@@ -18,7 +18,7 @@ import rinexmod_api as rma
 if __name__ == '__main__':
 
     import argparse
-
+    ##### Class for --modif_kw
     class ParseKwargs(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
             setattr(namespace, self.dest, dict())
@@ -33,7 +33,7 @@ if __name__ == '__main__':
                     print("*******************************************")
                     raise e
 
-    # Parsing Args
+    ##### Parsing Args
     parser = argparse.ArgumentParser(description='This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory')
     parser.add_argument('rinexinput', type=str,
                         help='Input list file of the RINEX paths to process (generated with a find or ls command for instance) OR a single RINEX file\'s path (see -a/--alone for a single input file)')
@@ -118,3 +118,5 @@ if __name__ == '__main__':
                      sort=sort,
                      full_history=full_history,
                      tolerant_file_period=tolerant_file_period) 
+
+
