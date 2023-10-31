@@ -68,6 +68,7 @@ if __name__ == '__main__':
         '-u', '--full_history', help="Add the full history of the station in the RINEX's 'header as comment.", action='store_true', default=False)
     parser.add_argument(
             '-tol', '--tolerant_file_period', help="the RINEX file period is tolerant and stick to the actual data content, but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), being compatible with the IGS conventions", action='store_true', default=False)
+    parser.add_argument('-mp', '--multi_process', help="number of parallel multiprocesing (default: %(default)s, no parallelization)", type=int, default=1)
     
     
     args = parser.parse_args()
@@ -91,6 +92,7 @@ if __name__ == '__main__':
     sort = args.sort
     full_history = args.full_history
     tolerant_file_period = args.tolerant_file_period 
+    multi_process = args.multi_process
     
     rma.rinexmod_cli(rinexinput,
                      outputfolder,
@@ -110,4 +112,5 @@ if __name__ == '__main__':
                      write=write, 
                      sort=sort,
                      full_history=full_history,
-                     tolerant_file_period=tolerant_file_period) 
+                     tolerant_file_period=tolerant_file_period,
+                     multi_process=multi_process) 
