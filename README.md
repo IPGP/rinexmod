@@ -275,7 +275,7 @@ rma.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Specific option for file distribution through a GLASS node.
         Store the rinexmoded RINEXs in a dictionary
         to activates it, give a dict as input (an empty one - dict() works)
-        DESCRIPTION. The default is None.
+        The default is None.
 
     Raises
     ------
