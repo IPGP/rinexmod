@@ -38,7 +38,8 @@ if __name__ == '__main__':
                                                            Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            comment, marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
-                                                           operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)''', nargs='*', action=ParseKwargs, default=None)
+                                                           operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)''', nargs='*', action=ParseKwargs, default=None)
+        
     parser.add_argument('-m', '--marker', help="A four or nine character site code that will be used to rename input files. (apply also to the header\'s MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
     parser.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names (e.g. from the M3G database)', type=str, default="")
