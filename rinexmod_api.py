@@ -334,6 +334,7 @@ def _modif_kw_check(modif_kw):
                            'interval',
                            'filename_data_freq',
                            'filename_file_period',
+                           'filename_data_source',
                            'comment']
 
     for kw in modif_kw:
@@ -382,6 +383,8 @@ def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
         modif_kw.get('filename_file_period'))
     rinexfileobj.mod_filename_data_freq(
         modif_kw.get('filename_data_freq')) 
+    rinexfileobj.mod_filename_data_source(
+        modif_kw.get('filename_data_source')) 
 
     # comment
     rinexfileobj.add_comment(modif_kw.get('comment'))
@@ -462,6 +465,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Modification keywords for RINEX's header fields and/or filename.
         Will override the information from the sitelog.
         Acceptable keywords for the header fields:
+        * comment
         * marker_name
         * marker_number
         * station (legacy alias for marker_name)
@@ -469,20 +473,21 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         * receiver_type
         * receiver_fw 
         * antenna_serial
-        * antenna_type,
+        * antenna_type
         * antenna_X_pos
         * antenna_Y_pos
         * antenna_Z_pos
-        * antenna_H_delta, 
+        * antenna_H_delta 
         * antenna_E_delta
-        * antenna_N_delta,
+        * antenna_N_delta
         * operator
         * agency
         * observables
         * interval
         Acceptable keywords for the header fields:
-        * filename_file_period (01H, 01D...), 
+        * filename_file_period (01H, 01D...)
         * filename_data_freq (30S, 01S...)
+        * filename_data_source (R, S, U)
         The default is dict().
     marker : str, optional
         A four or nine character site code that will be used to rename
@@ -734,7 +739,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                              tolerant_file_period=tolerant_file_period)
     else:
         rnxobj.get_longname(inplace_set=True, compression='',
-                            tolerant_file_period=tolerant_file_period)
+                            tolerant_file_period=tolerant_file_period,
+                            data_source=rnxobj.data_source)
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step 
@@ -902,17 +908,16 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         try:
             return_lists_out = rinexmod(**rnxmod_kwargs_inp)
         except Exception as e:
-            raise e
-            logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
-        return return_lists_out 
-
+            if True: ### set as True for debug mode
+                raise e
+            else:
+                logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
+            continue
+            
     nbproc = 4 # number of parallel processing
     Pool = mp.Pool(processes=nbproc)
     Results2_raw  = [Pool.apply_async(rinexmod_mp_wrapper, args=x) for x in rinexmod_kwargs_list]
     Results2      = [e.get() for e in Results2]
-        
-
-
 
     #########################################
     logger.handlers.clear()
