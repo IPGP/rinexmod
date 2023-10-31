@@ -27,10 +27,13 @@ if __name__ == '__main__':
                     key, value = value.split('=')
                     getattr(namespace, self.dest)[key] = value
                 except Exception as e:
-                    print("*******************************************")
-                    print("TIP: be sure you have respected the syntax:")
-                    print("     -k keyword_1='value' keyword2='value' ")
-                    print("*******************************************")
+                    print("********************************************")
+                    print("TIP1: be sure you have respected the syntax:")
+                    print("      -k keyword_1='value' keyword2='value' ")
+                    print("TIP2: don't use -k as last option, it will  ")
+                    print("      enroll rinexinput & outputfolder args ")
+                    print("********************************************")
+                    print(values)
                     raise e
 
     ##### Parsing Args
