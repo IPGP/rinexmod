@@ -16,6 +16,7 @@ from sitelog import SiteLog
 from rinexfile import RinexFile
 import hatanaka
 import subprocess
+import multiprocessing as mp
 
 # *****************************************************************************
 # define Python user-defined exceptions
@@ -789,7 +790,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
      ninecharfile=None, compression=None, relative='', verbose=True,
      alone=False, output_logs=None, write=False, sort=False, full_history=False,
-     tolerant_file_period=False):
+     tolerant_file_period=False, multi_process=1):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -882,31 +883,43 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     ### Looping in file list ###
     return_lists = {}
     ####### Iterate over each RINEX
-    for rnx in rinexinput:     
+    
+
+    rinexmod_kwargs_list = []
+    for rnx in rinexinput:    
+        rnxmod_kwargs = {"rinexfile":rnx,
+                         "outputfolder":outputfolder,
+                         "sitelog":sitelog_use,
+                         "modif_kw":modif_kw,
+                         "marker":marker,
+                         "longname":longname,
+                         "force_rnx_load":force_rnx_load,
+                         "force_sitelog":force_sitelog,
+                         "ignore":ignore,
+                         "ninecharfile":ninecharfile,
+                         "compression":compression,
+                         "relative":relative, 
+                         "verbose":verbose,
+                         "return_lists":return_lists,
+                         "full_history":full_history,
+                         "tolerant_file_period":tolerant_file_period}
+        rinexmod_kwargs_list.append(rnxmod_kwargs) 
+
+    global rinexmod_mp_wrapper
+    def rinexmod_mp_wrapper(rnxmod_kwargs_inp):
         try:
-            return_lists = rinexmod(rinexfile=rnx,
-                                    outputfolder=outputfolder,
-                                    sitelog=sitelog_use,
-                                    modif_kw=modif_kw,
-                                    marker=marker,
-                                    longname=longname,
-                                    force_rnx_load=force_rnx_load,
-                                    force_sitelog=force_sitelog,
-                                    ignore=ignore,
-                                    ninecharfile=ninecharfile,
-                                    compression=compression,
-                                    relative=relative, 
-                                    verbose=verbose,
-                                    return_lists=return_lists,
-                                    full_history=full_history,
-                                    tolerant_file_period=tolerant_file_period)
+            return_lists_out = rinexmod(**rnxmod_kwargs_inp)
         except Exception as e:
             if True: ### set as True for debug mode
                 raise e
             else:
                 logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
-            continue
-        
+            
+    # number of parallel processing
+    Pool = mp.Pool(processes=multi_process)
+    Results2_raw = [Pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list]
+    Results2     = [e.get() for e in Results2_raw]
+
     #########################################
     logger.handlers.clear()
 
