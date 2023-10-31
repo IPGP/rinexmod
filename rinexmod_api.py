@@ -462,6 +462,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Modification keywords for RINEX's header fields and/or filename.
         Will override the information from the sitelog.
         Acceptable keywords for the header fields:
+        * comment
         * marker_name
         * marker_number
         * station (legacy alias for marker_name)

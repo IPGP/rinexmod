@@ -36,7 +36,7 @@ if __name__ == '__main__':
         '-s', '--sitelog', help='Get the RINEX header values from file\'s site\'s sitelog. Provide a single sitelog path or a folder contaning sitelogs.', type=str, default="")
     parser.add_argument('-k', '--modif_kw', help='''Modification keywords for RINEX's header fields and/or filename. Will override the information from the sitelog. 
                                                            Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
-                                                           marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
+                                                           comment, marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
                                                            operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...)''', nargs='*', action=ParseKwargs, default=None)
     parser.add_argument('-m', '--marker', help="A four or nine character site code that will be used to rename input files. (apply also to the header\'s MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
