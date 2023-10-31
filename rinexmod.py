@@ -18,15 +18,25 @@ import rinexmod_api as rma
 if __name__ == '__main__':
 
     import argparse
-
+    ##### Class for --modif_kw
     class ParseKwargs(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
             setattr(namespace, self.dest, dict())
             for value in values:
-                key, value = value.split('=')
-                getattr(namespace, self.dest)[key] = value
+                try:
+                    key, value = value.split('=')
+                    getattr(namespace, self.dest)[key] = value
+                except Exception as e:
+                    print("********************************************")
+                    print("TIP1: be sure you have respected the syntax:")
+                    print("      -k keyword_1='value' keyword2='value' ")
+                    print("TIP2: don't use -k as last option, it will  ")
+                    print("      enroll rinexinput & outputfolder args ")
+                    print("********************************************")
+                    print(values)
+                    raise e
 
-    # Parsing Args
+    ##### Parsing Args
     parser = argparse.ArgumentParser(description='This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory')
     parser.add_argument('rinexinput', type=str,
                         help='Input list file of the RINEX paths to process (generated with a find or ls command for instance) OR a single RINEX file\'s path (see -a/--alone for a single input file)')
@@ -35,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-s', '--sitelog', help='Get the RINEX header values from file\'s site\'s sitelog. Provide a single sitelog path or a folder contaning sitelogs.', type=str, default="")
     parser.add_argument('-k', '--modif_kw', help='''Modification keywords for RINEX's header fields and/or filename. Will override the information from the sitelog. 
-                                                           Format : keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
+                                                           Format : -k keyword_1=\'value\' keyword2=\'value\'. Acceptable keywords:\n
                                                            comment, marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                            antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
                                                            operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)''', nargs='*', action=ParseKwargs, default=None)
