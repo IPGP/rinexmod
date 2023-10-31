@@ -1433,7 +1433,16 @@ class RinexFile:
 
         self.file_period = file_period_inp
         return
-    
+
+    def mod_filename_data_source(self, data_source_inp=None):
+
+        if not data_source_inp:
+            return
+
+        self.data_source  = data_source_inp 
+        return
+
+   
 #############################################################################
 ### misc methods. change the content of the RINEX header
 
