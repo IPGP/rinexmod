@@ -16,6 +16,7 @@ from sitelog import SiteLog
 from rinexfile import RinexFile
 import hatanaka
 import subprocess
+import multiprocessing as mp
 
 # *****************************************************************************
 # define Python user-defined exceptions
@@ -789,7 +790,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
      ninecharfile=None, compression=None, relative='', verbose=True,
      alone=False, output_logs=None, write=False, sort=False, full_history=False,
-     tolerant_file_period=False):
+     tolerant_file_period=False, multi_process=1):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -904,6 +905,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
                          "tolerant_file_period":tolerant_file_period}
         rinexmod_kwargs_list.append(rnxmod_kwargs) 
 
+    global rinexmod_mp_wrapper
     def rinexmod_mp_wrapper(rnxmod_kwargs_inp):
         try:
             return_lists_out = rinexmod(**rnxmod_kwargs_inp)
@@ -912,12 +914,11 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
                 raise e
             else:
                 logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
-            continue
             
-    nbproc = 4 # number of parallel processing
-    Pool = mp.Pool(processes=nbproc)
-    Results2_raw  = [Pool.apply_async(rinexmod_mp_wrapper, args=x) for x in rinexmod_kwargs_list]
-    Results2      = [e.get() for e in Results2]
+    # number of parallel processing
+    Pool = mp.Pool(processes=multi_process)
+    Results2_raw = [Pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list]
+    Results2     = [e.get() for e in Results2_raw]
 
     #########################################
     logger.handlers.clear()
