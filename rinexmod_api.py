@@ -395,22 +395,38 @@ def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
 # *****************************************************************************
 # dictionnary as output for gnss_delivery workflow
 
-def _return_lists_maker(rnxobj,return_lists=dict()):
+def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
     """
-    Construct return dict
+    Construct return_lists (which are actually  dict)
+    if a dict is provided, we assume it is a singleton to be merged in a big return_lists
+
     Specific usage for the IPGP's gnss_delivery workflow
     """
-    
-    major_rinex_version = rnxobj.version[0]
+    if type(rnxobj_or_dict) is RinexFile:
+        rnxobj = rnxobj_or_dict
+        major_rinex_version = rnxobj.version[0]
+        sample_rate_string = rnxobj.sample_rate_string
+        file_period=rnxobj.file_period
+        path_output=rnxobj.path_output
+    elif type(rnxobj_or_dict) is dict:
+        rtrnlst = rnxobj_or_dict
+        major_rinex_version = list(rtrnlst.keys())[0] 
+        sample_rate_string = list(rtrnlst[major_rinex_version].keys())[0] 
+        file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0] 
+        path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0] 
+    else:
+        log.error("wrong input")
+        raise Exception("wrong input")
+
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
         return_lists[major_rinex_version] = {}
-    if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
-        return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
-    if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
-        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
+    if sample_rate_string not in return_lists[major_rinex_version]:
+        return_lists[major_rinex_version][sample_rate_string] = {}
+    if file_period not in return_lists[major_rinex_version][sample_rate_string]:
+        return_lists[major_rinex_version][sample_rate_string][file_period] = []
 
-    return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(rnxobj.path_output)
+    return_lists[major_rinex_version][sample_rate_string][file_period].append(path_output)
     
     return return_lists
 
@@ -790,7 +806,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
      ninecharfile=None, compression=None, relative='', verbose=True,
      alone=False, output_logs=None, write=False, sort=False, full_history=False,
-     tolerant_file_period=False, multi_process=1):
+     tolerant_file_period=False, multi_process=1,debug=False):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -881,7 +897,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         sitelog_use = sitelog_input_manage(sitelog, force_sitelog)
 
     ### Looping in file list ###
-    return_lists = {}
+    return_lists = dict()
     ####### Iterate over each RINEX
     
 
@@ -909,16 +925,22 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     def rinexmod_mp_wrapper(rnxmod_kwargs_inp):
         try:
             return_lists_out = rinexmod(**rnxmod_kwargs_inp)
+            return return_lists_out 
         except Exception as e:
-            if True: ### set as True for debug mode
+            if debug: ### set as True for debug mode
                 raise e
             else:
                 logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
             
     # number of parallel processing
+    if multi_process > 1:
+        logger.info("multiprocessing: %d cores used",multi_process)
     Pool = mp.Pool(processes=multi_process)
-    Results2_raw = [Pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list]
-    Results2     = [e.get() for e in Results2_raw]
+    results_raw = [Pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list]
+    results     = [e.get() for e in results_raw]
+
+    for return_lists_mono in results: 
+        _return_lists_maker(return_lists_mono,return_lists)
 
     #########################################
     logger.handlers.clear()
@@ -928,7 +950,4 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
 
     return return_lists
 
-
 # *****************************************************************************
-# Upper level return_lists maker
-# TO DO
