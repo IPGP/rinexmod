@@ -13,11 +13,10 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-
-
 # Create a logger object.
 import logging
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+logger = logging.getLogger("rinexmod_api")
 
 # *****************************************************************************
 # class definition
@@ -56,17 +55,21 @@ class RinexFile:
         self.name_conv = self.get_naming_convention()
         self.compression, self.hatanka_input = self.get_compression()
         self.filename = self.get_filename()
+        self.data_source = self.get_data_source()
         
         #### site is an internal attribute, always 9char 
         # (filled with 00XXX in nothing else is provided)
         # it is accessible wit get_site()
-        self._site = self.get_site_from_filename(False,False)
+        self._site = self.get_site_from_filename(lower_case=False,
+                                                 only_4char=False)
         
         self.version = self.get_version()
         self.start_date, self.end_date = self.get_dates()
         self.sample_rate_string, self.sample_rate_numeric = self.get_sample_rate(plot=False)
         #self.file_period, self.session = self.get_file_period_from_filename()
-        self.file_period, self.session = self.get_file_period_from_data()
+        self.file_period, self.session = self.get_file_period_from_data(tolerant_file_period=True,
+                                                                        inplace_set=False)
+        ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
         self.sat_system = self.get_sat_system()
 
     def __str__(self):
@@ -218,14 +221,13 @@ class RinexFile:
             self._site = site_4or9char + monum + country
             
         return None
-
         
-    
     def get_longname(self, 
                      data_source="R",
                      obs_type='O',
                      ext='auto',
                      compression='auto',
+                     tolerant_file_period=False,
                      inplace_set=False):
         """
         generate the long RINEX filename
@@ -248,7 +250,7 @@ class RinexFile:
             ext = 'rnx'
 
         ext = '.' + ext
-
+        
         if compression == 'auto' and self.compression:
             compression = '.' + self.compression
         elif compression == 'auto' and not self.compression:
@@ -257,20 +259,28 @@ class RinexFile:
             compression = '.' + compression
         else:
             compression = ''
+            
+        if tolerant_file_period:
+           file_period_name = self.file_period 
+           session_name = self.session 
+        else:
+           file_period_name, session_name = self.get_file_period_round()             
 
-        if self.file_period == '01D':
-            if self.session:
+        if file_period_name == '01D': ## Daily case
+            if session_name:
                 timeformat = '%Y%j%H%M'
             else:
                 timeformat = '%Y%j0000'  # Start of the day
-        else:
+        elif file_period_name == '00U': ## Unknown case: the filename deserves a full description to identify potential bug 
+            timeformat = '%Y%j%H%M'
+        else: ## Hourly case
             timeformat = '%Y%j%H00'  # Start of the hour
 
         
         longname = '_'.join((self.get_site(False,False),
                              data_source,
                              self.start_date.strftime(timeformat),
-                             self.file_period,
+                             file_period_name,
                              self.sample_rate_string,
                              self.sat_system + obs_type + ext + compression))
 
@@ -283,6 +293,7 @@ class RinexFile:
     def get_shortname(self,
                       file_type='auto',
                       compression='auto',
+                      tolerant_file_period = False,
                       inplace_set=False):
         """
         generate the short RINEX filename
@@ -306,8 +317,14 @@ class RinexFile:
 
         if compression != "":
             compression = '.' + compression
+            
+        if tolerant_file_period:
+           file_period_name = self.file_period 
+           session_name = self.session 
+        else:
+           file_period_name, session_name = self.get_file_period_round()         
 
-        if self.file_period == '01D':
+        if file_period_name == '01D':
             timeformat = '%j0.%y' + file_type + compression
         else:
             Alphabet = list(map(chr, range(97, 123)))
@@ -495,7 +512,21 @@ class RinexFile:
 
         return rinex_ver_meta        
         
-    
+    def get_data_source(self):
+        """Get data source: R, S, U from LONG filename, R per default"""
+
+        if self.status:
+            return None
+
+        if not "LONG" in self.name_conv:
+            src = "R"
+        else:
+            src = self.filename[10]
+
+        return src
+
+
+   
     def _get_date_patterns(self):
         """
         Internal function to get the correct epoch pattern depending 
@@ -665,12 +696,12 @@ class RinexFile:
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
             self.status = '05 - Less than two epochs in the file'
-            logger.error(" get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
+            logger.error("get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
             return None, None
 
         # If less than 2 intervals, can't compare intervals
         if len(Samples_rate_diff) < 2:
-            return 'XXU', 0.
+            return '00U', 0.
 
         # Most frequent
         sample_rate_num = max(set(Samples_rate_diff),
@@ -688,16 +719,20 @@ class RinexFile:
             plt.plot(Samples_rate_diff)
             plt.show()
 
-        if non_nominal_interval_percent > 0.1:  # Don't set sample rate to files
-            # That have more that 10% of non
-            # nominal sample rate
-            return 'XXU', 0.
+        non_nominal_trigger=0.45
+        if non_nominal_interval_percent > non_nominal_trigger:  # Don't set sample rate to files
+            # That have more that 45% of non nominal sample rate
+            logger.error("get_sample_rate: non nominal sample rate >%d%%: %d%% (# epochs: %d)",
+                         non_nominal_trigger*100,
+                         non_nominal_interval_percent*100,
+                         len(Samples_stack))
+            return '00U', 0.
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
         # We round samples rates to avoid leap-seconds related problems
         if sample_rate_num <= 0.0001:
             # XXU – Unspecified
-            sample_rate_str = 'XXU'
+            sample_rate_str = '00U'
         elif sample_rate_num <= 0.01:
             # XXC – 100 Hertz
             sample_rate_num = round(sample_rate_num, 4)
@@ -712,6 +747,7 @@ class RinexFile:
             # XXS – Seconds
             sample_rate_num = round(sample_rate_num, 0)
             sample_rate_str = (str(int(sample_rate_num)) + 'S').rjust(3, '0')
+        ##### NB: a sample rate at the minute level or even above is very unlikely
         elif sample_rate_num < 3600:
             # XXM – Minutes
             sample_rate_num = round(sample_rate_num, 0)
@@ -729,7 +765,7 @@ class RinexFile:
                 str(int(sample_rate_num / 86400)) + 'D').rjust(3, '0')
         else:
             # XXU – Unspecified
-            sample_rate_str = 'XXU'
+            sample_rate_str = '00U'
 
         return sample_rate_str, sample_rate_num
 
@@ -771,29 +807,105 @@ class RinexFile:
         return file_period, session
     
     
-    def get_file_period_from_data(self):
+    def get_file_period_from_data(self,tolerant_file_period=False,
+                                  inplace_set=False):
         """
         Get the file period from the data themselves.
+
+        see also get_file_period_round() 
+        to round this value to an conventional one
         
-        NB: this method respects the IGS convention and thus uses NOMINAL 
-        period
+        the RINEX file period is tolerant and stick to the actual data content,
+        but then can be odd (e.g. 07H, 14H...). A strict file period is applied
+        per default (01H or 01D), being compatible with the IGS conventions
+
+        Parameters
+        ----------
+        tolerant_file_period : bool, optional
+            apply (if True) or not (if False) get_file_period_round. 
+            The default is False.
+        inplace_set : bool, optional
+            change the values in the RinexFile object. The default is False.
+
+        Returns
+        -------
+        file_period : str
+            the file period: '01H', '01D', '00U'...
+        session : bool
+            RINEX is a hourly session or not.
+
         """
         
-        rndtup = lambda x: round_time(x,timedelta(minutes=60),"up")
-        rndtdown = lambda x: round_time(x,timedelta(minutes=60),"down")
-        delta = rndtup(self.end_date) - rndtdown(self.start_date)
-        
-        if delta <= timedelta(seconds=3600):
+        rndtup = lambda x,t: round_time(x,timedelta(minutes=t),"up")
+        rndtdown = lambda x,t: round_time(x,timedelta(minutes=t),"down")
+        rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
+        delta = rndtup(self.end_date,60) - rndtdown(self.start_date,60)
+
+        ### first, the special case : N *full* hours
+        if  delta <= timedelta(seconds=86400 - 3600): ## = 23h max
+            # delta2 is a more precise delta (average)
+            delta2 = rndtaver(self.end_date,60) - rndtaver(self.start_date,60)
+            hours = int(delta2.total_seconds() / 3600 )
+            file_period = str(hours).zfill(2) + 'H'
+            session = True
+        ### more regular cases : 01H, 01D, or Unknown
+        elif delta <= timedelta(seconds=3600):
+            # NB: this test is useless, it is treated by the previous test
             file_period = '01H'
             session = True
-        elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400):
+        elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400 + 3600): ##Note1
             file_period = '01D'
             session = False
         else:
             file_period = '00U'
             session = False
-            
+        ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs 
+        ###        includes the epoch of the next hour/day
+        ###        and then the present delta value reach 25
+        ###        it justify also the necessity of the delta2 variable
+        
+        if inplace_set:
+            self.file_period = file_period
+            self.session = session
+        
+        if not tolerant_file_period:
+            self.get_file_period_round(inplace_set=True)
+        
         return file_period, session
+
+    def get_file_period_round(self,inplace_set=False):
+        """
+        Round the RINEX file period to a conventional value: 01D, 01H
+
+        NB: this method aims to respect the IGS convention and thus uses NOMINAL 
+        period
+
+        Parameters
+        ----------
+        inplace_set : bool, optional
+            change the values in the RinexFile object. The default is False.
+
+        Returns
+        -------
+        file_period_rnd : str
+            the file period: '01H', '01D', '00U'...
+        session_rnd : bool
+            RINEX is a hourly session or not.
+
+        """
+
+        if self.file_period[2] == "H" and int(self.file_period[:2]) > 1:
+            file_period_rnd = '01D'
+            session_rnd = False
+        else:
+            file_period_rnd =self.file_period
+            session_rnd = self.session 
+
+        if inplace_set:
+            self.file_period = file_period_rnd 
+            self.session = session_rnd 
+
+        return file_period_rnd, session_rnd 
 
     def get_sat_system(self):
         """ Parse RINEX VERSION / TYPE line to get observable type """
@@ -849,18 +961,78 @@ class RinexFile:
         site_meta = site_meta.split(' ')[0].upper()
 
         return site_meta
-         
+    
+    def get_sys_obs_types(self):
+        """
+        get the systems/observables values from the 
+        ``SYS / # / OBS TYPES`` lines
 
+        for RINEX 3/4 only
+        
+        Returns
+        -------
+        dict_sys_obs : dict
+            a dictionary of lists describing the observables per system, e.g.:
+            ``{"G" : ["C1C","C1W","C2W","L1C","L2W","S1C",S2W"]}``.
+                      
+        dict_sys_nobs : dict
+            a dictionary of integer describing the number of observables per system, e.g.:
+            ``{'C': 8, 'E': 16, 'G': 16, 'I': 4, 'R': 12, 'S': 4}``.
 
+        """
+        
+        if self.status:
+            return
+        
+        if self.version[0] < '3':
+            logger.warn("get_sys_obs_types is only compatible with RINEX3/4")
+            return
+        
+        # Identify line that contains SYS / # / OBS TYPES
+        sys_obs_idx0 = search_idx_value(self.rinex_data,
+                                       'SYS / # / OBS TYPES')
+        
+        sys_obs_idx_fin = sys_obs_idx0
+        while 'SYS / # / OBS TYPES' in self.rinex_data[sys_obs_idx_fin]:
+            sys_obs_idx_fin += 1
+            
+        #### get the systems and observations
+        Lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
+
+        ## clean SYS / # / OBS TYPES
+        Lines_sys = [l[:60] for l in Lines_sys]
+        
+        ## manage the 2 lines systems => they are stacked in one
+        for il,l in enumerate(Lines_sys):
+            if l[0] == " ":
+                Lines_sys[il-1] = Lines_sys[il-1] + l
+                Lines_sys.remove(l)
+        
+        #### store system and observables in a dictionnary
+        dict_sys_obs = dict()
+        dict_sys_nobs = dict()
+        
+        for il,l in enumerate(Lines_sys):
+            Sysobs = l.split()
+            sys = Sysobs[0]
+            dict_sys_obs[sys] = Sysobs[2:]
+            dict_sys_nobs[sys] = int(Sysobs[1])
+            ## adds the LLI and SSI indicators
+            if len(Sysobs[2:]) != int(Sysobs[1]):
+                logger.warn("difference between theorectical (%d) and actual (%d) obs nbr for sys (%s)",
+                            len(Sysobs[2:]),int(Sysobs[1]),sys)
+
+        return dict_sys_obs, dict_sys_nobs
     
 ### ***************************************************************************
 ### mod methods. change the content of the RINEX header
 
-    def mod_marker(self, marker_inp, number_inp=None):
+    def mod_marker(self, marker_inp=None, number_inp=None):
 
         if self.status:
             return
 
+        ###marker_inp is a mandatory arguement, no None!
         if not marker_inp:
             return
 
@@ -1190,11 +1362,26 @@ class RinexFile:
             
 
     def mod_sys_obs_types(self,dict_sys_obs):
+        """
+        change the systems/observables from the ``SYS / # / OBS TYPES`` lines
+        
+        for RINEX 3/4 only
+
+        Parameters
+        ----------
+        dict_sys_obs : dict
+            a dictionary of lists describing the observables per system, e.g.:
+            ``{"G" : ["C1C","C1W","C2W","L1C","L2W","S1C",S2W"]}``
+        """
         
         if self.status:
             return
 
         if not any([dict_sys_obs]):
+            return
+        
+        if self.version[0] < '3':
+            logger.warn("mod_sys_obs_types is only compatible with RINEX3/4")
             return
 
         # Identify line that contains SYS / # / OBS TYPES
@@ -1202,7 +1389,6 @@ class RinexFile:
                                        'SYS / # / OBS TYPES')
         
         sys_obs_idx_fin = sys_obs_idx0
-        
         while 'SYS / # / OBS TYPES' in self.rinex_data[sys_obs_idx_fin]:
             sys_obs_idx_fin += 1
             
@@ -1229,17 +1415,34 @@ class RinexFile:
                           lfmt_stk +  \
                           self.rinex_data[sys_obs_idx_fin:]
                           
-                          
-        return
-                    
-    def mod_filename_data_freq(self, data_freq_inp):
+        return   
+
+
+    def mod_filename_data_freq(self, data_freq_inp=None):
+
+        if not data_freq_inp:
+            return
+
         self.sample_rate_str = data_freq_inp
         return
 
-    def mod_filename_file_period(self, file_period_inp):
+    def mod_filename_file_period(self, file_period_inp=None):
+
+        if not file_period_inp:
+            return
+
         self.file_period = file_period_inp
         return
-    
+
+    def mod_filename_data_source(self, data_source_inp=None):
+
+        if not data_source_inp:
+            return
+
+        self.data_source  = data_source_inp 
+        return
+
+   
 #############################################################################
 ### misc methods. change the content of the RINEX header
 
@@ -1250,14 +1453,28 @@ class RinexFile:
         return '\n'.join(self.rinex_data).encode(encode)
 
 
-    def write_to_path(self, path, compression='gz'):
+    def write_to_path(self, output_directory, compression='gz'):
         """
         Will turn rinex_data from list to string, utf-8, then compress as hatanaka
         and zip to the 'compression' format, then write to file. The 'compression' param
         will be used as an argument to hatanaka.compress and for naming the output file.
         Available compressions are those of hatanaka compress function :
-        'gz' (default), 'bz2', 'Z', 'none' (string, compliant with hatanaka module) or 
-        None (NoneType, compliant with the rinex object initialisation)
+
+        Parameters
+        ----------
+        output_directory : str
+            The output directory.
+            
+        compression : TYPE, optional
+            'gz' (default), 'bz2', 'Z', 
+            'none' (string, compliant with hatanaka module) or 
+            None (NoneType, compliant with the rinex object initialisation). 
+            The default is 'gz'.
+        Returns
+        -------
+        outputfile : str
+            The output RINEX file path.
+
         """
 
         if self.status:
@@ -1288,12 +1505,13 @@ class RinexFile:
     
             # manage low-level compression extension
             if compression in ('none', None):
-                outputfile = os.path.join(path, filename_out)
+                outputfile = os.path.join(output_directory, filename_out)
             else:
-                outputfile = os.path.join(path, filename_out + '.' + compression)
+                outputfile = os.path.join(output_directory,
+                                          filename_out + '.' + compression)
         ### the data source is a StringIO
         else:
-            outputfile = path
+            outputfile = output_directory
 
         Path(outputfile).write_bytes(output_data)
         
@@ -1302,7 +1520,7 @@ class RinexFile:
         return outputfile
 
 
-    def add_comment(self, comment, add_pgm_cmt=False):
+    def add_comment(self, comment=None, add_pgm_cmt=False):
         '''
         We add the argument comment line at the end of the header
         Append as last per default
@@ -1311,6 +1529,9 @@ class RinexFile:
         Then comment is a 2-tuple (program,run_by)
         '''
         if self.status:
+            return
+
+        if not comment:
             return
 
         end_of_header_idx = search_idx_value(
@@ -1378,6 +1599,58 @@ class RinexFile:
                 rinex_data_new.append(l)
         self.rinex_data = rinex_data_new
         return 
+    
+    
+    def clean_gfzrnx_comments(self,
+                              internal_use_only=True,
+                              format_conversion=False):
+        """
+        clean warning blocks generated by GFZRNX's RINEX 2>3 conversion
+
+        Parameters
+        ----------
+        internal_use_only : bool, optional
+            clean ``"WARNING - FOR INTERNAL USE ONLY"`` block. 
+            The default is True.
+        format_conversion : bool, optional
+            clean ``WARNING - FORMAT CONVERSION`` block. 
+            The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        def __gfzrnx_cleaner(rinex_data_in,block_title):            
+            i_start,i_end = None,None            
+            inblock = False
+            for il,l in enumerate(rinex_data_in):
+                if block_title in l:
+                    i_start = il - 1 ## -1 for the 1st "*********" line
+                    inblock = True
+                if inblock and "*"*50 in l:
+                    i_end = il
+                    inblock = False
+                    break
+                if "END OF HEADER" in l:
+                    break
+                            
+            if i_start and i_end:
+                rinex_data_out = rinex_data_in[0:i_start-1] + rinex_data_in[i_end+1:]
+            else: 
+                logger.warn("no block %s found in header",block_title)
+                rinex_data_out = rinex_data_in
+
+            return rinex_data_out 
+        
+        if internal_use_only:
+            self.rinex_data=__gfzrnx_cleaner(self.rinex_data,"WARNING - FOR INTERNAL USE ONLY")
+        if format_conversion:
+            self.rinex_data=__gfzrnx_cleaner(self.rinex_data,"WARNING - FORMAT CONVERSION")
+        
+        return 
+
         
     def sort_header(self):
         header_order = ['RINEX VERSION / TYPE',
@@ -1422,7 +1695,7 @@ class RinexFile:
             head_sort = sorted(head,key=lambda x: header_order.index(x[60:].strip()))
             self.rinex_data = head_sort + body
         except:
-            logger.warning("unable to sort header's lines, action skipped (only possible for RNXv3)")
+            logger.warning("unable to sort header's lines, action skipped (RNXv3 only)")
         return
         
 
@@ -1474,5 +1747,3 @@ def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
             rounding = (seconds + round_to / 2) // round_to * round_to
 
     return dt + timedelta(0, rounding - seconds, - dt.microsecond)
-
-
