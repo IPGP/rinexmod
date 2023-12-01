@@ -16,6 +16,7 @@ from sitelog import SiteLog
 from rinexfile import RinexFile
 import hatanaka
 import subprocess
+import multiprocessing as mp
 
 # *****************************************************************************
 # define Python user-defined exceptions
@@ -333,7 +334,9 @@ def _modif_kw_check(modif_kw):
                            'observables',
                            'interval',
                            'filename_data_freq',
-                           'filename_file_period']
+                           'filename_file_period',
+                           'filename_data_source',
+                           'comment']
 
     for kw in modif_kw:
         if kw not in acceptable_keywords:
@@ -343,7 +346,11 @@ def _modif_kw_check(modif_kw):
     return None
         
    
-def modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
+def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
+
+    def __keys_in_modif_kw(keys_in):
+        return all([e in  modif_kw.keys() for e in keys_in])
+
     rinexfileobj.mod_marker(modif_kw.get('marker_name'),
                             modif_kw.get('marker_number'))
 
@@ -377,28 +384,49 @@ def modif_kw_apply_on_rnxobj(modif_kw,rinexfileobj):
         modif_kw.get('filename_file_period'))
     rinexfileobj.mod_filename_data_freq(
         modif_kw.get('filename_data_freq')) 
+    rinexfileobj.mod_filename_data_source(
+        modif_kw.get('filename_data_source')) 
+
+    # comment
+    rinexfileobj.add_comment(modif_kw.get('comment'))
     
     return rinexfileobj
 
 # *****************************************************************************
 # dictionnary as output for gnss_delivery workflow
 
-def _return_lists_maker(rnxobj,return_lists=dict()):
+def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
     """
-    Construct return dict
+    Construct return_lists (which are actually  dict)
+    if a dict is provided, we assume it is a singleton to be merged in a big return_lists
+
     Specific usage for the IPGP's gnss_delivery workflow
     """
-    
-    major_rinex_version = rnxobj.version[0]
+    if type(rnxobj_or_dict) is RinexFile:
+        rnxobj = rnxobj_or_dict
+        major_rinex_version = rnxobj.version[0]
+        sample_rate_string = rnxobj.sample_rate_string
+        file_period=rnxobj.file_period
+        path_output=rnxobj.path_output
+    elif type(rnxobj_or_dict) is dict:
+        rtrnlst = rnxobj_or_dict
+        major_rinex_version = list(rtrnlst.keys())[0] 
+        sample_rate_string = list(rtrnlst[major_rinex_version].keys())[0] 
+        file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0] 
+        path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0] 
+    else:
+        log.error("wrong input")
+        raise Exception("wrong input")
+
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
         return_lists[major_rinex_version] = {}
-    if rnxobj.sample_rate_string not in return_lists[major_rinex_version]:
-        return_lists[major_rinex_version][rnxobj.sample_rate_string] = {}
-    if rnxobj.file_period not in return_lists[major_rinex_version][rnxobj.sample_rate_string]:
-        return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period] = []
+    if sample_rate_string not in return_lists[major_rinex_version]:
+        return_lists[major_rinex_version][sample_rate_string] = {}
+    if file_period not in return_lists[major_rinex_version][sample_rate_string]:
+        return_lists[major_rinex_version][sample_rate_string][file_period] = []
 
-    return_lists[major_rinex_version][rnxobj.sample_rate_string][rnxobj.file_period].append(rnxobj.path_output)
+    return_lists[major_rinex_version][sample_rate_string][file_period].append(path_output)
     
     return return_lists
 
@@ -454,6 +482,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Modification keywords for RINEX's header fields and/or filename.
         Will override the information from the sitelog.
         Acceptable keywords for the header fields:
+        * comment
         * marker_name
         * marker_number
         * station (legacy alias for marker_name)
@@ -461,20 +490,21 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         * receiver_type
         * receiver_fw 
         * antenna_serial
-        * antenna_type,
+        * antenna_type
         * antenna_X_pos
         * antenna_Y_pos
         * antenna_Z_pos
-        * antenna_H_delta, 
+        * antenna_H_delta 
         * antenna_E_delta
-        * antenna_N_delta,
+        * antenna_N_delta
         * operator
         * agency
         * observables
         * interval
         Acceptable keywords for the header fields:
-        * filename_file_period (01H, 01D...), 
+        * filename_file_period (01H, 01D...)
         * filename_data_freq (30S, 01S...)
+        * filename_data_source (R, S, U)
         The default is dict().
     marker : str, optional
         A four or nine character site code that will be used to rename
@@ -669,7 +699,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     if sitelog:        
         rnxobj = sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
-        modif_source = sitelogobj.filename
+        modif_source_sitelog = sitelogobj.filename
         
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
@@ -677,7 +707,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         # Checking input keyword modification arguments
         _modif_kw_check(modif_kw)
 
-        modif_source = 'manual keywords'
+        modif_source_kw = 'keywords:' + " ".join(modif_kw.keys())
         rnxobj = modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
         logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         
@@ -702,8 +732,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     rnxobj.add_comment('RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)')
     rnxobj.add_comment('rinexmoded on {}'.format(
         datetime.strftime(now, '%Y-%m-%d %H:%M')))
-    if sitelog or modif_kw:
-        rnxobj.add_comment('rinexmoded with {}'.format(modif_source))
+    if sitelog: 
+        rnxobj.add_comment('rinexmoded with {}'.format(modif_source_sitelog))
+    if modif_kw:
+        rnxobj.add_comment('rinexmoded with {}'.format(modif_source_kw))
     #if marker: ##### Useless...
     #    rnxobj.add_comment('filename assigned from {}'.format(modif_marker))
     
@@ -724,7 +756,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                              tolerant_file_period=tolerant_file_period)
     else:
         rnxobj.get_longname(inplace_set=True, compression='',
-                            tolerant_file_period=tolerant_file_period)
+                            tolerant_file_period=tolerant_file_period,
+                            data_source=rnxobj.data_source)
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step 
@@ -773,7 +806,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
      ninecharfile=None, compression=None, relative='', verbose=True,
      alone=False, output_logs=None, write=False, sort=False, full_history=False,
-     tolerant_file_period=False):
+     tolerant_file_period=False, multi_process=1,debug=False):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -864,30 +897,51 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         sitelog_use = sitelog_input_manage(sitelog, force_sitelog)
 
     ### Looping in file list ###
-    return_lists = {}
+    return_lists = dict()
     ####### Iterate over each RINEX
-    for rnx in rinexinput:     
+    
+
+    rinexmod_kwargs_list = []
+    for rnx in rinexinput:    
+        rnxmod_kwargs = {"rinexfile":rnx,
+                         "outputfolder":outputfolder,
+                         "sitelog":sitelog_use,
+                         "modif_kw":modif_kw,
+                         "marker":marker,
+                         "longname":longname,
+                         "force_rnx_load":force_rnx_load,
+                         "force_sitelog":force_sitelog,
+                         "ignore":ignore,
+                         "ninecharfile":ninecharfile,
+                         "compression":compression,
+                         "relative":relative, 
+                         "verbose":verbose,
+                         "return_lists":return_lists,
+                         "full_history":full_history,
+                         "tolerant_file_period":tolerant_file_period}
+        rinexmod_kwargs_list.append(rnxmod_kwargs) 
+
+    global rinexmod_mp_wrapper
+    def rinexmod_mp_wrapper(rnxmod_kwargs_inp):
         try:
-            return_lists = rinexmod(rinexfile=rnx,
-                                    outputfolder=outputfolder,
-                                    sitelog=sitelog_use,
-                                    modif_kw=modif_kw,
-                                    marker=marker,
-                                    longname=longname,
-                                    force_rnx_load=force_rnx_load,
-                                    force_sitelog=force_sitelog,
-                                    ignore=ignore,
-                                    ninecharfile=ninecharfile,
-                                    compression=compression,
-                                    relative=relative, 
-                                    verbose=verbose,
-                                    return_lists=return_lists,
-                                    full_history=full_history,
-                                    tolerant_file_period=tolerant_file_period)
+            return_lists_out = rinexmod(**rnxmod_kwargs_inp)
+            return return_lists_out 
         except Exception as e:
-            raise e
-            logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
-        
+            if debug: ### set as True for debug mode
+                raise e
+            else:
+                logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
+            
+    # number of parallel processing
+    if multi_process > 1:
+        logger.info("multiprocessing: %d cores used",multi_process)
+    Pool = mp.Pool(processes=multi_process)
+    results_raw = [Pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list]
+    results     = [e.get() for e in results_raw]
+
+    for return_lists_mono in results: 
+        _return_lists_maker(return_lists_mono,return_lists)
+
     #########################################
     logger.handlers.clear()
 
@@ -896,7 +950,4 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
 
     return return_lists
 
-
 # *****************************************************************************
-# Upper level return_lists maker
-# TO DO

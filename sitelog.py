@@ -308,6 +308,7 @@ class SiteLog:
         modification between two periods and consider only the other parameters.
         '''
 
+
         # We get the installation corresponding to the starttime and endtime
         thisinstall = None
         ignored = False
@@ -321,7 +322,6 @@ class SiteLog:
         # option, we will force ignoring the firmware version modification and
         # consider only the other parameters
         if not thisinstall and ignore:
-
             # We work with consecutive instrumentation periods
             for i in range(0, len(self.instrumentations) - 1):
                 if self.instrumentations[i]['dates'][0] <= starttime \
