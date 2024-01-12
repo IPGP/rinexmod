@@ -1,4 +1,3 @@
-from .rinexfile    import *
-from .sitelog      import *
-from .rinexmod_api import *
-from .rinexmod     import *
+from . import rinexfile
+from . import sitelog
+from . import rinexmod_api

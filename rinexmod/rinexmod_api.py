@@ -12,8 +12,8 @@ import re
 from datetime import datetime
 import logging
 import colorlog
-from sitelog import SiteLog
-from rinexfile import RinexFile
+from .sitelog import SiteLog
+from .rinexfile import RinexFile
 import hatanaka
 import subprocess
 import multiprocessing as mp
