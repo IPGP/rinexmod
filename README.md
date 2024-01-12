@@ -6,7 +6,7 @@ It is developed in python3, and can be run from the command line or directly in 
 The required input metadata can come from a sitelogs file, or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
-v1 - 2022-02-07 Félix Léger  - leger@ipgp.fr  
+v1 - 2022-02-07 Félix Léger  - leger@ipgp.fr
 v2 - 2023-05-15 Pierre Sakic - sakic@ipgp.fr
 
 Last version: v2.2 - 2024-01-12

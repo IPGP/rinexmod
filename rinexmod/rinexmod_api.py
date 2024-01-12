@@ -12,8 +12,8 @@ import re
 from datetime import datetime
 import logging
 import colorlog
-from sitelog import SiteLog
-from rinexfile import RinexFile
+from .sitelog import SiteLog
+from .rinexfile import RinexFile
 import hatanaka
 import subprocess
 import multiprocessing as mp
@@ -397,11 +397,42 @@ def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
 
 def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
     """
-    Construct return_lists (which are actually  dict)
-    if a dict is provided, we assume it is a singleton to be merged in a big return_lists
+    Construct the so called ``return_lists`` (which are actually dict)
+    
+    return_list has the structure:
+        
+    ```
+    return_lists[major_rinex_version][sample_rate_string][file_period]
+    ```
+    
+    the input ``return_lists`` is populated with the content of the input 
+    ``rnxobj_or_dict``
 
+    Parameters
+    ----------
+    rnxobj_or_dict : RinexFile object or dict
+    
+        The input new information which will populate the return_lists
+        
+        if a dict is provided, we assume it is a singleton with a standard 
+        return_lists structure to be merged in a bigger return_lists
+
+    return_lists : dict, optional
+        A potential pre-exisiting return_lists. 
+        Per default it is a brand new return_lists for scratch.
+        The default is dict().
+
+    Returns
+    -------
+    return_lists : dict
+        The input return_lists populated with the input rnxobj_or_dict.
+        
+    Note
+    ----
     Specific usage for the IPGP's gnss_delivery workflow
+
     """
+
     if type(rnxobj_or_dict) is RinexFile:
         rnxobj = rnxobj_or_dict
         major_rinex_version = rnxobj.version[0]
@@ -415,8 +446,8 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
         file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0] 
         path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0] 
     else:
-        log.error("wrong input")
-        raise Exception("wrong input")
+        logger.error("wrong input (must be RinexFile object or dict)")
+        raise Exception("wrong input (must be RinexFile object or dict)")
 
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
