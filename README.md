@@ -190,7 +190,7 @@ options:
 RinexMod can be launched directly as a Python function:
 
 ```
-import rinexmod_api as rma
+import rinexmod.rinexmod_api as rma
 
 rma.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
