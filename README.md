@@ -9,38 +9,44 @@ It is available under the GNU license on the following GitHub repository: https:
 v1 - 2022-02-07 Félix Léger  - leger@ipgp.fr
 v2 - 2023-05-15 Pierre Sakic - sakic@ipgp.fr
 
-## Project Overview
+Last version: v2.2 - 2024-01-12
 
-This project is composed of 3 scripts:
+## Tools overview
+
+This project is composed of 3 programs:
 
 * `rinexmod.py` takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the rinex files list to modifiy the file's headers. It then write them back to Hanakata
-compressed format in an output folder. It permits also to rename the files changing
+loops the rinex files list to modify the file's headers. It then write them back to Hanakata
+compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
 
-* `get_m3g_sitelogs.py` will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder.
+* `get_m3g_sitelogs.py` will get the last version of site logs from the M3G repository and write them in an observatory-dependent subfolder.
 
-* `crzmeta.py` will extract rinex file's header information and prompt the result. This permits to access quickly the header informations without uncompressing manually the file. It's a teqc-free equivalent of teqc +meta.
+* `crzmeta.py` will extract RINEX file's header information and prompt the result. This permits to quickly access the header information without uncompressing the file manually. It's a teqc-free equivalent of teqc +meta.
 
-## Requirements
+## Installation
 
+### Assisted installation 
 The tool is in Python 3, you must have it installed on your machine.
 
-You need Python Hatanaka library from Martin Valgur (https://github.com/valgur/hatanaka):
+You can use `pip` to install the last GitHub-hosted version with the following command:  
+```pip install git+https://github.com/IPGP/rinexmod```
 
+### Required external modules
+
+*NB*: Following the assisted installation procedure above, the required external modules will be automatically installed.
+
+You need Python Hatanaka library from Martin Valgur (https://github.com/valgur/hatanaka):  
  `pip install hatanaka`
  
-You need pycountry to associate country names with their ISO abbreviations (but it is facultative):
-
+You need pycountry to associate country names with their ISO abbreviations (but it is facultative):  
 `pip install pycountry`
 
-You need matplotlib for plotting samples intervals with crzmeta:
-
+You need matplotlib for plotting samples intervals with crzmeta:  
 `pip install matplotlib`
 
-You need colorlog to get the pretty colored log outputs:
-
+You need colorlog to get the pretty colored log outputs:  
 `pip install colorlog`
 
 ## rinexmod in command lines interface
