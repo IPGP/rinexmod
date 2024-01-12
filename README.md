@@ -11,7 +11,7 @@ v2 - 2023-05-15 Pierre Sakic - sakic@ipgp.fr
 
 ## Project Overview
 
-This project is composed of 3 scripts.
+This project is composed of 3 scripts:
 
 * `rinexmod.py` takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
 loop the rinex files list to modifiy the file's headers. It then write them back to Hanakata
