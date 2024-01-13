@@ -110,12 +110,14 @@ def git_get_revision_short_hash():
     7 characters Git hash
 
     """
-    script_path = os.path.dirname(os.path.realpath(__file__))
+    script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
     cmd = ['git', '--git-dir', script_path +
            '/.git', 'rev-parse', '--short', 'HEAD']
     try:
         return subprocess.check_output(cmd).decode('ascii').strip()[:7]
     except:
+        logger.warn('unable to get the git commit version')
         return "xxxxxxx"
 
 
