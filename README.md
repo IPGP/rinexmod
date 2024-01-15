@@ -62,7 +62,8 @@ those files with the long name naming convention with the --longname option.
 Two ways of passing parameters to modifiy headers are possible: `sitelog` and `modification_kw`.
 
 
-* `--sitelog`  : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
+* ```
+   --sitelog : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
                containing sitelogs. You then have to pass a list of files and the script will
                assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
@@ -75,16 +76,18 @@ Two ways of passing parameters to modifiy headers are possible: `sitelog` and `m
                        Receiver Type
                        Serial Number
                        Firmware Version
-                       Satellite System (will translate this info to one-letter code, see RinexFile.set_observable_type())
+                       Satellite System (will translate this info to one-letter code,
+                                         see RinexFile.set_observable_type())
                        Antenna Type
                        Serial Number
                        Marker->ARP Up Ecc. (m)
                        Marker->ARP East Ecc(m)
                        Marker->ARP North Ecc(m)
                        On-Site Agency Preferred Abbreviation
-                       Responsible Agency Preferred Abbreviation
+                       Responsible Agency Preferred Abbreviation 
 
-* `--modification_kw` : you pass as argument the field(s) that you want to modifiy and its value.
+* ```
+  --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
                       Acceptable_keywords are : marker_name, marker_number,
                       station (legacy alias for marker_name),
                       receiver_serial, receiver_type, receiver_fw,
@@ -92,7 +95,8 @@ Two ways of passing parameters to modifiy headers are possible: `sitelog` and `m
                       antenna_Y_pos, antenna_Z_pos, antenna_H_delta,
                       antenna_E_delta, antenna_N_delta, operator, agency,
                       observables, interval, filename_file_period (01H,
-                      01D...), filename_data_freq (30S, 01S...).
+                      01D...), filename_data_freq (30S, 01S...),
+                      filename_data_source (R, S, U) 
 
 You can not provide both `--modification_kw` and `--sitelog` options.
 
@@ -182,12 +186,16 @@ options:
 ### Exemples
 
 
-`./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)`
-`./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)`
+```
+./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+```
+```
+./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+```
 
 ## rinexmod in API mode
 
-RinexMod can be launched directly as a Python function:
+rinexmod can be launched directly as a Python function:
 
 ```
 import rinexmod.rinexmod_api as rma
