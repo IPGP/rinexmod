@@ -39,16 +39,16 @@ You can use `pip` to install the last GitHub-hosted version with the following c
 
 *NB*: Following the assisted installation procedure above, the required external modules will be automatically installed.
 
-You need Python Hatanaka library from Martin Valgur (https://github.com/valgur/hatanaka):  
+You need _Python Hatanaka_ library from Martin Valgur @valgur (https://github.com/valgur/hatanaka):  
  `pip install hatanaka`
  
-You need pycountry to associate country names with their ISO abbreviations (but it is facultative):  
+You need _pycountry_ to associate country names with their ISO abbreviations (but it is facultative):  
 `pip install pycountry`
 
-You need matplotlib for plotting samples intervals with crzmeta:  
+You need _matplotlib_ for plotting samples intervals with crzmeta:  
 `pip install matplotlib`
 
-You need colorlog to get the pretty colored log outputs:  
+You need _colorlog_ to get the pretty colored log outputs:  
 `pip install colorlog`
 
 ## rinexmod in command lines interface
