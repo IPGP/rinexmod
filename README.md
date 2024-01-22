@@ -1,46 +1,54 @@
 #  rinexmod
 
-rinexmod is a tool to batch modify the headers of GNSS data files in RINEX format, as well as to rename them correctly.  
-It supports Hatakana-compressed and non-compressed files, RINEX versions 2 and 3, as well as short and long naming conventions.  
+<img src="./logo_rinexmod.png" width="300">
+
+rinexmod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
+It supports Hatakana-compressed and non-compressed files, RINEX versions 2 and 3, and short and long naming conventions.  
 It is developed in python3, and can be run from the command line or directly in API mode by calling a python function.  
 The required input metadata can come from a sitelogs file, or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
-v1 - 2022-02-07 Félix Léger  - leger@ipgp.fr  
-v2 - 2023-05-15 Pierre Sakic - sakic@ipgp.fr
+v2 - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
+v1 - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-## Project Overview
+Last version: v2.2.1 - 2024-01-13
 
-This project is composed of 3 scripts:
+## Tools overview
+
+This project is composed of 3 programs:
 
 * `rinexmod.py` takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the rinex files list to modifiy the file's headers. It then write them back to Hanakata
-compressed format in an output folder. It permits also to rename the files changing
+loops the rinex files list to modify the file's headers. It then write them back to Hanakata
+compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
 
-* `get_m3g_sitelogs.py` will get last version of sitelogs from M3G repository and write them in an observatory dependent subfolder.
+* `get_m3g_sitelogs.py` will get the last version of site logs from the M3G repository and write them in an observatory-dependent subfolder.
 
-* `crzmeta.py` will extract rinex file's header information and prompt the result. This permits to access quickly the header informations without uncompressing manually the file. It's a teqc-free equivalent of teqc +meta.
+* `crzmeta.py` will extract RINEX file's header information and prompt the result. This permits to quickly access the header information without uncompressing the file manually. It's a teqc-free equivalent of teqc +meta.
 
-## Requirements
+## Installation
 
+### Assisted installation 
 The tool is in Python 3, you must have it installed on your machine.
 
-You need Python Hatanaka library from Martin Valgur (https://github.com/valgur/hatanaka):
+You can use `pip` to install the last GitHub-hosted version with the following command:  
+```pip install git+https://github.com/IPGP/rinexmod```
 
+### Required external modules
+
+*NB*: Following the assisted installation procedure above, the required external modules will be automatically installed.
+
+You need _Python Hatanaka_ library from Martin Valgur @valgur (https://github.com/valgur/hatanaka):  
  `pip install hatanaka`
  
-You need pycountry to associate country names with their ISO abbreviations (but it is facultative):
-
+You need _pycountry_ to associate country names with their ISO abbreviations (but it is facultative):  
 `pip install pycountry`
 
-You need matplotlib for plotting samples intervals with crzmeta:
-
+You need _matplotlib_ for plotting samples intervals with crzmeta:  
 `pip install matplotlib`
 
-You need colorlog to get the pretty colored log outputs:
-
+You need _colorlog_ to get the pretty colored log outputs:  
 `pip install colorlog`
 
 ## rinexmod in command lines interface
@@ -56,7 +64,8 @@ those files with the long name naming convention with the --longname option.
 Two ways of passing parameters to modifiy headers are possible: `sitelog` and `modification_kw`.
 
 
-* `--sitelog`  : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
+* ```
+   --sitelog : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
                containing sitelogs. You then have to pass a list of files and the script will
                assign sitelogs to correspondig files, based on the file's name.
                The script will take the start and end time of each proceeded file
@@ -69,16 +78,18 @@ Two ways of passing parameters to modifiy headers are possible: `sitelog` and `m
                        Receiver Type
                        Serial Number
                        Firmware Version
-                       Satellite System (will translate this info to one-letter code, see RinexFile.set_observable_type())
+                       Satellite System (will translate this info to one-letter code,
+                                         see RinexFile.set_observable_type())
                        Antenna Type
                        Serial Number
                        Marker->ARP Up Ecc. (m)
                        Marker->ARP East Ecc(m)
                        Marker->ARP North Ecc(m)
                        On-Site Agency Preferred Abbreviation
-                       Responsible Agency Preferred Abbreviation
+                       Responsible Agency Preferred Abbreviation 
 
-* `--modification_kw` : you pass as argument the field(s) that you want to modifiy and its value.
+* ```
+  --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
                       Acceptable_keywords are : marker_name, marker_number,
                       station (legacy alias for marker_name),
                       receiver_serial, receiver_type, receiver_fw,
@@ -86,7 +97,8 @@ Two ways of passing parameters to modifiy headers are possible: `sitelog` and `m
                       antenna_Y_pos, antenna_Z_pos, antenna_H_delta,
                       antenna_E_delta, antenna_N_delta, operator, agency,
                       observables, interval, filename_file_period (01H,
-                      01D...), filename_data_freq (30S, 01S...).
+                      01D...), filename_data_freq (30S, 01S...),
+                      filename_data_source (R, S, U) 
 
 You can not provide both `--modification_kw` and `--sitelog` options.
 
@@ -176,15 +188,19 @@ options:
 ### Exemples
 
 
-`./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)`
-`./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)`
+```
+./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+```
+```
+./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+```
 
 ## rinexmod in API mode
 
-RinexMod can be launched directly as a Python function:
+rinexmod can be launched directly as a Python function:
 
 ```
-import rinexmod_api as rma
+import rinexmod.rinexmod_api as rma
 
 rma.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
