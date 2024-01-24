@@ -90,15 +90,28 @@ Two ways of passing parameters to modifiy headers are possible: `sitelog` and `m
 
 * ```
   --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
-                      Acceptable_keywords are : marker_name, marker_number,
-                      station (legacy alias for marker_name),
-                      receiver_serial, receiver_type, receiver_fw,
-                      antenna_serial, antenna_type, antenna_X_pos,
-                      antenna_Y_pos, antenna_Z_pos, antenna_H_delta,
-                      antenna_E_delta, antenna_N_delta, operator, agency,
-                      observables, interval, filename_file_period (01H,
-                      01D...), filename_data_freq (30S, 01S...),
-                      filename_data_source (R, S, U) 
+                      Acceptable_keywords are:
+                              marker_name,
+                              marker_number,
+                              station (legacy alias for marker_name),
+                              receiver_serial,
+                              receiver_type,
+                              receiver_fw,
+                              antenna_serial,
+                              antenna_type,
+                              antenna_X_pos,
+                              antenna_Y_pos,
+                              antenna_Z_pos,
+                              antenna_H_delta,
+                              antenna_E_delta,
+                              antenna_N_delta,
+                              operator,
+                              agency,
+                              observables,
+                              interval,
+                              filename_file_period (01H, 01D...),
+                              filename_data_freq (30S, 01S...),
+                              filename_data_source (R, S, U) 
 
 You can not provide both `--modification_kw` and `--sitelog` options.
 
