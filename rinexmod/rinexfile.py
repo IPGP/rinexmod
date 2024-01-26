@@ -855,7 +855,7 @@ class RinexFile:
             session = True    
             file_period = None            
             for m in [5,10,15,20,30]:
-                if (m*60-30) <= delta_sec and delta_sec <= (m*60+30):
+                if (m*60-1) <= delta_sec and delta_sec <= (m*60+1):
                     file_period = str(m).zfill(2) + 'M'
             if not file_period:
                 # NB: this test is useless, it is treated by the previous test
