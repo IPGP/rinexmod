@@ -840,19 +840,25 @@ class RinexFile:
         rndtdown = lambda x,t: round_time(x,timedelta(minutes=t),"down")
         rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
         delta = rndtup(self.end_date,60) - rndtdown(self.start_date,60)
+        delta2 = rndtaver(self.end_date,60) - rndtaver(self.start_date,60)
+        hours = int(delta2.total_seconds() / 3600 )
 
         ### first, the special case : N *full* hours
-        if  delta <= timedelta(seconds=86400 - 3600): ## = 23h max
+        if delta <= timedelta(seconds=86400 - 3600): ## = 23h max
             # delta2 is a more precise delta (average)
-            delta2 = rndtaver(self.end_date,60) - rndtaver(self.start_date,60)
-            hours = int(delta2.total_seconds() / 3600 )
             file_period = str(hours).zfill(2) + 'H'
             session = True
         ### more regular cases : 01H, 01D, or Unknown
-        elif delta <= timedelta(seconds=3600):
-            # NB: this test is useless, it is treated by the previous test
-            file_period = '01H'
-            session = True
+        elif delta <= timedelta(seconds=3600) or hours == 0:
+            ### Here we consider sub hourly cases
+            session = True    
+            file_period = None            
+            for m in [5,10,15,20,30]:
+                if timedelta(seconds=m*60-30) <= delta and delta <= timedelta(seconds=m*60+30):
+                    file_period = str(m).zfill(2) + 'M'
+            if not file_period:
+                # NB: this test is useless, it is treated by the previous test
+                file_period = '01H'
         elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400 + 3600): ##Note1
             file_period = '01D'
             session = False
