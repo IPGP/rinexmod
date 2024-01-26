@@ -605,7 +605,7 @@ class RinexFile:
         """ 
         Getting start and end date from rinex file.
         Start date cames from TIME OF FIRST OBS file's header.
-        In RINEX3, there's a TIME OF LAST OBS in the heder but it's not available
+        In RINEX3, there's a TIME OF LAST OBS in the header but it's not available
         in RINEX2, so we search for the date of the last observation directly in
         the data.
         """
