@@ -843,17 +843,18 @@ class RinexFile:
         hours = int(delta2.total_seconds() / 3600 )
 
         ### first, the special case : N *full* hours
-        if delta <= timedelta(seconds=86400 - 3600): ## = 23h max
+        if delta <= timedelta(seconds=86400 - 3600) and hours > 0: ## = 23h max
             # delta2 is a more precise delta (average)
             file_period = str(hours).zfill(2) + 'H'
             session = True
-        ### more regular cases : 01H, 01D, or Unknown
-        elif delta <= timedelta(seconds=3600) or hours == 0:
+        ### more regular cases : 01H, 01D, nnM, or Unknown
+        elif delta <= timedelta(seconds=3600):
+            delta_sec = (self.end_date - self.start_date).total_seconds()
             ### Here we consider sub hourly cases
             session = True    
             file_period = None            
             for m in [5,10,15,20,30]:
-                if timedelta(seconds=m*60-30) <= delta and delta <= timedelta(seconds=m*60+30):
+                if (m*60-1) <= delta_sec and delta_sec <= (m*60+1):
                     file_period = str(m).zfill(2) + 'M'
             if not file_period:
                 # NB: this test is useless, it is treated by the previous test
