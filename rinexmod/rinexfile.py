@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 # Create a logger object.
 import logging
 #logger = logging.getLogger(__name__)
+import string
 logger = logging.getLogger("rinexmod_api")
 
 # *****************************************************************************
@@ -407,16 +408,14 @@ class RinexFile:
     
         return rinex_data, status
     
-
     def get_naming_convention(self):
         # Daily or hourly, hatanaka or not, gz or Z compressed file
-        pattern_shortname = re.compile(
-            '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
-        pattern_longname = re.compile(
-            '.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
+        pattern_dic = regex_pattern_rinex_filename()
+        
+        pattern_shortname = re.compile(pattern_dic['shortname'])
+        pattern_longname = re.compile(pattern_dic['longname'])
         # GFZ's DataCenter internal naming convention (here it is equivalent to a longname)
-        pattern_longname_gfz = re.compile(
-            '.{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?')
+        pattern_longname_gfz = re.compile(pattern_dic['longname_gfz'])
 
         if pattern_shortname.match(os.path.basename(self.path)):
             name_conv = 'SHORT'
@@ -1753,3 +1752,117 @@ def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
             rounding = (seconds + round_to / 2) // round_to * round_to
 
     return dt + timedelta(0, rounding - seconds, - dt.microsecond)
+    
+    
+def regex_pattern_rinex_filename():
+    """
+    return a dictionnary with the different REGEX patterns to describe a RIENX filename
+    """
+    pattern_dic = dict()
+    pattern_dic['shortname'] = '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))'
+    pattern_dic['longname'] =  '.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)'
+    pattern_dic['longname_gfz'] = '.{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?'
+    
+    return pattern_dic
+
+
+def dates_from_rinex_filename(rnx_inp):
+    """
+    determine the start epoch, the end epoch and the period of a RINEX
+    file based on its name only.
+    The RINEX is not readed. This function is much faster but less reliable 
+    than the RinexFile.start_date and RinexFile.end_date attribute
+    
+    return the start epoch and end epoch as datetime 
+    and the period as timedelta
+    """
+    pattern_dic = regex_pattern_rinex_filename()
+    
+    pattern_shortname = re.compile(pattern_dic['shortname'])
+    pattern_longname = re.compile(pattern_dic['longname'])
+    pattern_longname_gfz = re.compile(pattern_dic['longname_gfz'])
+
+    rinexname = os.path.basename(rnx_inp)
+    
+    def _period_to_timedelta(peri_inp):   
+        peri_val = int(peri_inp[0:2])
+        peri_unit = str(peri_inp[2])
+        
+        if peri_unit == "M":
+            unit_sec = 60
+        elif peri_unit == "H":
+            unit_sec = 3600
+        elif peri_unit == "D":
+            unit_sec = 86400
+        else:
+            logger.warn("odd RINEX period: %s, assume it as 01D",peri_inp)
+            unit_sec = 86400
+        
+        return timedelta(seconds=peri_val * unit_sec)
+            
+    
+    ##### LONG rinex name
+    if re.search(pattern_longname,rinexname):
+        date_str = rinexname.split("_")[2]
+        period_str = rinexname.split("_")[3]
+
+        yyyy = int(date_str[:4])
+        doy  = int(date_str[4:7])        
+        hh   = int(date_str[7:9])        
+        mm   = int(date_str[9:11])       
+        dt_srt = datetime(yyyy,1,1) + timedelta(days = doy - 1,seconds=hh*3600 + mm*60)
+        period = _period_to_timedelta(period_str)
+        dt_end = dt_srt + period
+
+        return dt_srt, dt_end, period
+
+    ##### LONG rinex name -- GFZ's GODC internal name
+    elif re.search(pattern_longname_gfz,rinexname): 
+        date_str = rinexname.split("_")[5]
+        time_str = rinexname.split("_")[6]
+        period_str = rinexname.split("_")[7]
+
+        yyyy = int(date_str[:4])
+        mo   = int(date_str[4:6])     
+        dd   = int(date_str[6:8])     
+        
+        hh   = int(time_str[0:2])        
+        mm   = int(time_str[2:4])       
+        ss   = int(time_str[4:6])  
+
+        dt_srt = datetime(yyyy,mo,dd,hh,mm,ss)        
+        period = _period_to_timedelta(period_str)
+        dt_end = dt_srt + period
+        
+        return dt_srt, dt_end, period
+    
+    ##### SHORT rinex name
+    elif re.search(pattern_shortname,rinexname):
+        alphabet = list(string.ascii_lowercase)
+
+        doy  = int(rinexname[4:7])
+        yy   = int(rinexname[9:11])
+    
+        if yy > 80:
+            year = yy + 1900
+        else:
+            year = yy + 2000
+    
+        if rinexname[7] in alphabet:
+            h = alphabet.index(rinexname[7])
+            period = timedelta(seconds=3600)
+        else:
+            h = 0
+            period = timedelta(seconds=86400)
+            
+        dt_srt = datetime(year,1,1) + timedelta(days = doy - 1 , seconds = h * 3600)
+        dt_end = dt_srt + period
+        return dt_srt, dt_end, period
+                    
+    else:
+        logger.error("%s has not a RINEX name well formatted")
+        return None, None, None
+    
+    
+    
+    
