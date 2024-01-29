@@ -177,7 +177,7 @@ class RinexFile:
                  only_4char=False,
                  no_country_then_4char=False):
         """
-        get the site of the Rinex Object
+        Get the site of the Rinex Object
         if no_country_then_4char = True, the return site code
         falls back to a 4-char code, if no monum/country is provided 
         (i.e. the 9char code ends with 00XXX)
@@ -231,7 +231,7 @@ class RinexFile:
                      tolerant_file_period=False,
                      inplace_set=False):
         """
-        generate the long RINEX filename
+        Generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
 
         ext :
@@ -297,7 +297,7 @@ class RinexFile:
                       tolerant_file_period = False,
                       inplace_set=False):
         """
-        generate the short RINEX filename
+        Generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
 
         file_type :
@@ -343,7 +343,7 @@ class RinexFile:
     
     def get_header_body(self,return_index_end=False):
         """
-        get the RINEX's header and body as a list of lines, 
+        Get the RINEX's header and body as a list of lines, 
         and the index of the END OF HEADER line if asked
         """
         i_end = None
@@ -409,6 +409,9 @@ class RinexFile:
         return rinex_data, status
     
     def get_naming_convention(self):
+        """
+        Get the naming convention based on a regular expression test
+        """
         # Daily or hourly, hatanaka or not, gz or Z compressed file
         pattern_dic = regex_pattern_rinex_filename()
         
@@ -430,7 +433,9 @@ class RinexFile:
     
 
     def get_size(self):
-        """ Get RINEX file size """
+        """ 
+        Get RINEX file size
+        """
 
         if self.status:
             return 0
@@ -484,7 +489,9 @@ class RinexFile:
         return compress, hatanaka
 
     def get_filename(self):
-        """ Get filename WITHOUT its compression extension """
+        """ 
+        Get filename WITHOUT its compression extension
+        """
 
         if self.status:
             return None
@@ -498,7 +505,9 @@ class RinexFile:
         return filename
 
     def get_version(self):
-        """ Get RINEX version """
+        """
+        Get RINEX version
+        """
 
         if self.status:
             return ''
@@ -512,7 +521,9 @@ class RinexFile:
         return rinex_ver_meta        
         
     def get_data_source(self):
-        """Get data source: R, S, U from LONG filename, R per default"""
+        """
+        Get data source: R, S, U from LONG filename, R per default
+        """
 
         if self.status:
             return None
@@ -558,7 +569,7 @@ class RinexFile:
     
     def get_dates(self):
         """ 
-        Getting start and end date from rinex file.
+        Get start and end date from rinex file.
         we search for the date of the first and last observation directly in
         the data.
         if you want the values in the header, use get_dates_in_header
@@ -602,7 +613,7 @@ class RinexFile:
     
     def get_dates_in_header(self):
         """ 
-        Getting start and end date from rinex file.
+        Get start and end date from rinex file.
         Start date cames from TIME OF FIRST OBS file's header.
         In RINEX3, there's a TIME OF LAST OBS in the header but it's not available
         in RINEX2, so we search for the date of the last observation directly in
@@ -652,7 +663,7 @@ class RinexFile:
 
     def get_sample_rate(self, plot=False):
         """
-        Getting sample rate from rinex file.
+        Get sample rate from rinex file.
         The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value
         We get all the samples dates and get intervals. We then remove 0 ones (due to potential double samples).
         Then, we set the most frequent value as sample rate, and if more than 10% of the intervals are different
@@ -914,7 +925,9 @@ class RinexFile:
         return file_period_rnd, session_rnd 
 
     def get_sat_system(self):
-        """ Parse RINEX VERSION / TYPE line to get observable type """
+        """
+        Parse RINEX VERSION / TYPE line to get observable type
+        """
 
         if self.status:
             return None
@@ -929,8 +942,10 @@ class RinexFile:
         return sat_system
 
     def get_site_from_filename(self, lower_case=True, only_4char=False):
-        """ Getting site name from the filename """
-        
+        """ 
+        Get site name from the filename
+        """
+
         if self.status:
             return None
             
@@ -949,7 +964,9 @@ class RinexFile:
         
         
     def get_site_from_header(self):
-        """ Getting site name from the MARKER NAME line in rinex file's header """
+        """ 
+        Get site name from the MARKER NAME line in rinex file's header
+        """
 
         if self.status:
             return ''
@@ -970,7 +987,7 @@ class RinexFile:
     
     def get_sys_obs_types(self):
         """
-        get the systems/observables values from the 
+        Get the systems/observables values from the 
         ``SYS / # / OBS TYPES`` lines
 
         for RINEX 3/4 only
@@ -1034,6 +1051,22 @@ class RinexFile:
 ### mod methods. change the content of the RINEX header
 
     def mod_marker(self, marker_inp=None, number_inp=None):
+        """
+        Modify within the RINEX header the marker
+        (``MARKER NAME`` line)
+
+        Parameters
+        ----------
+        marker_inp : str, optional
+            site marker ID a.k.a. station code (4 or 9 characters).
+            The default is None.
+        number_inp : str, optional
+            DOMES number. The default is None.
+            
+        Returns
+        -------
+        None.
+        """
 
         if self.status:
             return
@@ -1073,6 +1106,25 @@ class RinexFile:
         return
 
     def mod_receiver(self, serial=None, type=None, firmware=None):
+        """
+        Modify within the RINEX header the receiver information
+        (``REC # / TYPE / VERS`` line)
+
+        Parameters
+        ----------
+        serial : str, optional
+            Receiver Serial Number. The default is None.
+        type : str, optional
+            Receiver model. The default is None.
+        firmware : str, optional
+            Firmware version. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+
 
         if self.status:
             return
@@ -1103,6 +1155,22 @@ class RinexFile:
         return
 
     def mod_antenna(self, serial=None, type=None):
+        """
+        Modify within the RINEX header the antenna information
+        (``ANT # / TYPE`` line)
+
+        Parameters
+        ----------
+        serial : str, optional
+            Antenne Serial Number. The default is None.
+        type : TYPE, optional
+            Antenna model. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1129,6 +1197,20 @@ class RinexFile:
         return
 
     def mod_interval(self, sample_rate_input=None):
+        """
+        Modify within the RINEX header the data sample rate
+        (``INTERVAL`` line)
+
+        Parameters
+        ----------
+        sample_rate_input : TYPE, optional
+            Data sample rate. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1174,6 +1256,20 @@ class RinexFile:
         return
 
     def mod_antenna_pos(self, X=None, Y=None, Z=None):
+        """
+        Modify within the RINEX header the X Y Z RINEX's approximative position.
+        (``APPROX POSITION XYZ`` line)
+
+        Parameters
+        ----------
+        X,Y,Z : float, optional
+            X Y Z position. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1210,6 +1306,22 @@ class RinexFile:
         return
 
     def mod_antenna_delta(self, H=None, E=None, N=None):
+        """
+        Modify within the RINEX header the E N U antenna's excentricity
+        (``ANTENNA: DELTA H/E/N`` line).
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        H,N,U : float, optional
+            H N U position. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1246,6 +1358,21 @@ class RinexFile:
         return
 
     def mod_agencies(self, operator=None, agency=None):
+        """
+        Modify within the RINEX header the ``OBSERVER / AGENCY`` line
+
+        Parameters
+        ----------
+        operator : str, optional
+            Operator. The default is None.
+        agency : str, optional
+            Agency. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1273,6 +1400,21 @@ class RinexFile:
         return
 
     def mod_sat_system(self, sat_system):
+        """
+        Modify within the RINEX header the *type* of the 
+        ``RINEX VERSION / TYPE`` line
+
+
+        Parameters
+        ----------
+        sat_system : 
+            Satellite system.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1321,6 +1463,23 @@ class RinexFile:
     
     
     def mod_time_obs(self,first_obs=None,last_obs=None):
+        """
+        Modify within the RINEX header the ``TIME OF FIRST OBS`` 
+        and ``TIME OF LAST OBS``
+        
+
+        Parameters
+        ----------
+        first_obs : datetime, optional
+            epoch of first observation. The default is None.
+        last_obs : datetime, optional
+            epoch of last observation. The default is None.
+
+        Returns
+        -------
+        None
+
+        """
         
         if self.status:
             return
@@ -1369,7 +1528,8 @@ class RinexFile:
 
     def mod_sys_obs_types(self,dict_sys_obs):
         """
-        change the systems/observables from the ``SYS / # / OBS TYPES`` lines
+        Modify within the RINEX header the systems/observables 
+        of the ``SYS / # / OBS TYPES`` lines
         
         for RINEX 3/4 only
 
@@ -1425,7 +1585,11 @@ class RinexFile:
 
 
     def mod_filename_data_freq(self, data_freq_inp=None):
-
+        """
+        Modify within the RINEX filename the data freqency 
+        (``30S``, ``01S``...)
+        """
+        
         if not data_freq_inp:
             return
 
@@ -1433,6 +1597,10 @@ class RinexFile:
         return
 
     def mod_filename_file_period(self, file_period_inp=None):
+        """
+        Modify within the RINEX filename the period
+        (``01D``, ``01H``, ``15M``...)
+        """
 
         if not file_period_inp:
             return
@@ -1441,7 +1609,10 @@ class RinexFile:
         return
 
     def mod_filename_data_source(self, data_source_inp=None):
-
+        """
+        Modify within the RINEX filename the data source
+        (``R``, ``S``, ``U``)
+        """
         if not data_source_inp:
             return
 
@@ -1861,7 +2032,7 @@ def dates_from_rinex_filename(rnx_inp):
         return dt_srt, dt_end, period
                     
     else:
-        logger.error("%s has not a RINEX name well formatted")
+        logger.error("%s has not a RINEX name well formatted",rinexname)
         return None, None, None
     
     
