@@ -32,6 +32,9 @@ class RinexFileError(RinexModError):
 class SitelogError(RinexModError):
     pass
 
+class ReturnListError(RinexModError):
+    pass
+
 # *****************************************************************************
 # logger definition
 
@@ -452,8 +455,9 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
         file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0] 
         path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0] 
     else:
-        logger.error("wrong input (must be RinexFile object or dict)")
-        raise Exception("wrong input (must be RinexFile object or dict)")
+        logger.error("Wrong Input, must be RinexFile object or dict. Input given: %s, %s",
+                rnxobj_or_dict,type(rnxobj_or_dict))
+        raise ReturnListError 
 
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
@@ -977,7 +981,11 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     results     = [e.get() for e in results_raw]
 
     for return_lists_mono in results: 
-        _return_lists_maker(return_lists_mono,return_lists)
+        try:
+            _return_lists_maker(return_lists_mono,return_lists)
+        except ReturnListError:
+            logger.warning("one file has been skipped because of an odd individual return list")
+            continue
 
     #########################################
     logger.handlers.clear()
