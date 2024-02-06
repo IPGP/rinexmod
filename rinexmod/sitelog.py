@@ -6,7 +6,7 @@ Class
 """
 
 import os, re
-from   datetime import datetime, timedelta
+from   datetime import datetime
 import configparser
 import json, copy
 #         import pycountry
@@ -16,7 +16,7 @@ class SiteLog:
     Parses and store in a dict informations from an IGS sitelog.
     Requires one parameter, the sitelog path.
     At instantiation, will parse the sitelog and store in a dict all parsed values.
-    Dict accessible via Sitelog.info
+    Dict accessible via Sitelog.raw_content
     Will also create a tab, stored in Sitelog.instrumentations, containing all
     the different instrumentation periods, tab containing a start and an end date,
     and for each line a dict of antenna instrumentation an receiver instrumentation.
@@ -37,17 +37,16 @@ class SiteLog:
         self.path = sitelogfile
         self.filename = os.path.basename(self.path)
         self.site4char = self.filename[:4].lower()
-        self.info, self.status = self._sitelog2dict()
-        if self.info:
-            self.instrumentations = self._instrumentations()
+        self.raw_content, self.status = self._sitelog2raw_content_dict()
+        if self.raw_content:
+            self.instrumentations = self._get_instrumentations()
         else:
             self.instrumentations = None
             
     def __repr__(self):
         return self.filename
 
-
-    def _sitelog2dict(self,keys_float=False):
+    def _sitelog2raw_content_dict(self,keys_float=False):
         """
         Main function for reading a Sitelog file. From the sitelog file,
         returns a dict with all readed values.
@@ -99,8 +98,8 @@ class SiteLog:
         sitelogdict = {}
 
         # We split the file into major blocs (reading the '4.'' type pattern)
-        iter = re.finditer(r'\d{1,2}\. +.+\n', sitelog)
-        indices = [m.start(0) for m in iter]
+        itr = re.finditer(r'\d{1,2}\. +.+\n', sitelog)
+        indices = [m.start(0) for m in itr]
 
         blocs = [sitelog[i:j] for i,j in zip(indices, indices[1:]+[None])]
 
@@ -113,8 +112,8 @@ class SiteLog:
         for bloc in [bloc for bloc in blocs if re.match(r'\d.', bloc[:2])]:
 
             # We search for '4.3', '4.3.', '4.2.3' patterns for subbloc detection
-            iter = re.finditer(r'\n\d{1,2}\.\d{0,2}\.{0,1}\w{0,2}\.{0,1}', bloc)
-            indices = [m.start(0) +1 for m in iter]
+            itr = re.finditer(r'\n\d{1,2}\.\d{0,2}\.{0,1}\w{0,2}\.{0,1}', bloc)
+            indices = [m.start(0) +1 for m in itr]
 
             if len(indices) > 0: # If subblocs
                 subblocs = [bloc[i:j] for i,j in zip(indices, indices[1:]+[None])]
@@ -129,7 +128,7 @@ class SiteLog:
                         if ':' not in title:
                             title = 'type : ' + title
                         subbloc = title.lstrip() + '\n' + subbloc
-                    except :
+                    except Exception:
                         pass
                     # We append the subbloc to the list of blocs to read
                     formatedblocs.append([index, subbloc])
@@ -194,37 +193,65 @@ class SiteLog:
         return sitelogdict, 0
 
 
-    def _instrumentations(self):
+    def _get_instrumentations(self):
         """
-        This function identifies the different complete installations from the antenna
-        and receiver change dates, then returns a table with only instrumented periods.
+        This function identifies the different complete installations from the
+        antenna and receiver change dates, then returns a table with only 
+        instrumented periods.
+        
+        It uses the raw_content attribute (dictionnary) 
+        
+        This "table" a list containing one or several dictionnaries with 3 keys
+        'dates' 'receiver' 'antenna' and the following structure:
+            
+         {
+        'dates': [datetime.datetime(2008, 7, 8, 4, 48),
+                  datetime.datetime(2009, 1, 1, 0, 0)],
+          
+        'receiver': {'Receiver Type': 'TPS GB-1000',
+                     'Satellite System': 'GPS+GLO',
+                     'Serial Number': 'T225373',
+                     'Firmware Version': '3.32',
+                     'Elevation Cutoff Setting': '15 deg',
+                     'Date Installed': datetime.datetime(2008, 7, 8, 4, 48),
+                     'Date Removed': datetime.datetime(2010, 3, 16, 5, 0),
+                     'Temperature Stabiliz.': 'none',
+                     'Additional Information': '(multiple lines)'},
+          
+          'antenna': {'Antenna Type': 'ASH701975.01A   NONE',
+                      'Serial Number': '8279',
+                      'Antenna Reference Point': 'TOP',
+                      'Marker->ARP Up Ecc. (m)': '0.0000',
+                      'Marker->ARP North Ecc(m)': '0.0000',
+                      'Marker->ARP East Ecc(m)': '0.0000',
+                      'Alignment from True N': '0 deg',
+                      'Antenna Radome Type': 'NONE',
+                      'Radome Serial Number': '',
+                      'Antenna Cable Type': 'TNC',
+                      'Antenna Cable Length': '4 m',
+                      'Date Installed': datetime.datetime(2008, 3, 14, 0, 0),
+                      'Date Removed': datetime.datetime(2009, 1, 1, 0, 0),
+                      'Additional Information': 'La date de desinstallation est inconnue'},
+                      'metpack': None
+          }
+
+        Returns
+        -------
+        installations : list
         """
+
 
         ##### Constructing a list of date intervals from all changes dates #####
 
         listdates = []
 
         # We extract dates for blocs 3. and 4. (reveiver, antenna)
-        for key in [key for key in self.info.keys() if key.startswith('3.') or key.startswith('4.')]:
+        for key in [key for key in self.raw_content.keys() if key.startswith('3.') or key.startswith('4.')]:
             # Formating parsed dates - set empty to 'infinity' date. If not a date, it's because it's an open border.
-            self.info[key]['Date Installed'] = self._tryparsedate(self.info[key]['Date Installed'])
-            self.info[key]['Date Removed'] = self._tryparsedate(self.info[key]['Date Removed'])
+            self.raw_content[key]['Date Installed'] = self._tryparsedate(self.raw_content[key]['Date Installed'])
+            self.raw_content[key]['Date Removed'] = self._tryparsedate(self.raw_content[key]['Date Removed'])
             # Adding dates to listdate
-            listdates += self.info[key]['Date Installed'], self.info[key]['Date Removed']
-
-        # # We extract dates from blocs 8 (meteo). If found and parsable, we add them to the list.
-        # for key in [key for key in self.info.keys() if key.startswith('8.')]:
-        #     dates = re.findall(r'\d{4}-\d{1,2}-\d{1,2}', self.info[key]['Effective Dates'])
-        #     if len(dates) == 2:
-        #         metpackstartdate = self._tryparsedate(dates[0])
-        #         metpackenddate = self._tryparsedate(dates[1])
-        #         listdates += metpackstartdate, metpackenddate
-        #     elif len(dates) == 1:
-        #         metpackstartdate = self._tryparsedate(dates[0])
-        #         metpackenddate = self._tryparsedate(None) # Infinity date
-        #         listdates += metpackstartdate, metpackenddate
-        #     else:
-        #         pass
+            listdates += self.raw_content[key]['Date Installed'], self.raw_content[key]['Date Removed']
 
         # Quitting null values
         listdates = [date for date in listdates if date]
@@ -241,13 +268,14 @@ class SiteLog:
             # Construct interval from listdates
             dates = [listdates[i], listdates[i+1]]
             # Setting date interval in Dict of installation
-            installation = dict(dates = dates, receiver = None, antenna = None, metpack = None)
+            installation = dict(dates = dates, receiver = None, 
+                                antenna = None, metpack = None)
             # Append it to list of installations
             installations.append(installation)
 
         ##### Getting Receiver info for each interval #####
 
-        receivers = [self.info[key] for key in self.info.keys() if key.startswith('3.')]
+        receivers = [self.raw_content[key] for key in self.raw_content.keys() if key.startswith('3.')]
 
         # Constructiong the installations list - Receivers
         for installation in installations:
@@ -261,14 +289,14 @@ class SiteLog:
 
         ##### Getting Antena info for each interval #####
 
-        antennas = [self.info[key] for key in self.info.keys() if key.startswith('4.')]
+        antennas = [self.raw_content[key] for key in self.raw_content.keys() if key.startswith('4.')]
 
         # Constructiong the installations list - Antennas
         for installation in installations:
             # We get the antenna corresponding to the date interval
             for antenna in antennas:
-                if (antenna['Date Installed']  <= installation['dates'][0]) and \
-                   (antenna['Date Removed'] >= installation['dates'][1]) :
+                if (antenna['Date Installed'] <= installation['dates'][0]) and \
+                   (antenna['Date Removed'] >= installation['dates'][1]):
                     installation['antenna'] = antenna
                     # Once found, we quit the loop
                     break
@@ -282,7 +310,8 @@ class SiteLog:
 
     def _tryparsedate(self, date):
         # Different date format to test on the string in case of bad standard compliance
-        formats = ['%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%MZ', '%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M',
+        formats = ['%Y-%m-%d %H:%M:%S.%f',
+                   '%Y-%m-%dT%H:%MZ', '%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M',
                    '%Y/%m/%dT%H:%MZ', '%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M',
                    '%d/%m/%YT%H:%MZ', '%d/%m/%Y %H:%M', '%d/%m/%YT%H:%M',
                    '%Y-%m-%d',        '%Y/%m/%d',       '%d/%m/%Y'      ]
@@ -363,7 +392,7 @@ class SiteLog:
         except ModuleNotFoundError:
             print("Python's module 'pycountry' is recommended to recover the Country name automatically")
 
-        full_country = self.info['2.']['Country']
+        full_country = self.raw_content['2.']['Country']
         full_country2 = full_country.split("(the)")[0].strip()
         try:
             iso_country = pycountry.countries.get(name=full_country2).alpha_3
@@ -412,12 +441,12 @@ class SiteLog:
 
         # We construct the TEQC args line
         teqcargs = [
-                    "-O.mo[nument] '{}'".format(self.info['1.']['Four Character ID']),
-                    "-M.mo[nument] '{}'".format(self.info['1.']['Four Character ID']),
-                    "-O.mn '{}'".format(self.info['1.']['Four Character ID']),
-                    "-O.px[WGS84xyz,m] {} {} {}".format(self.info['2.']['X coordinate (m)'],
-                                                        self.info['2.']['Y coordinate (m)'],
-                                                        self.info['2.']['Z coordinate (m)']),
+                    "-O.mo[nument] '{}'".format(self.raw_content['1.']['Four Character ID']),
+                    "-M.mo[nument] '{}'".format(self.raw_content['1.']['Four Character ID']),
+                    "-O.mn '{}'".format(self.raw_content['1.']['Four Character ID']),
+                    "-O.px[WGS84xyz,m] {} {} {}".format(self.raw_content['2.']['X coordinate (m)'],
+                                                        self.raw_content['2.']['Y coordinate (m)'],
+                                                        self.raw_content['2.']['Z coordinate (m)']),
                     "-O.s[ystem] {}".format(o_system),
                     "-O.rt '{}'".format(instrumentation['receiver']['Receiver Type']),
                     "-O.rn '{}'".format(instrumentation['receiver']['Serial Number']),
@@ -427,9 +456,9 @@ class SiteLog:
                     "-O.pe[hEN,m] {} {} {}".format(instrumentation['antenna']['Marker->ARP Up Ecc. (m)'].zfill(8),
                                                    instrumentation['antenna']['Marker->ARP East Ecc(m)'].zfill(8),
                                                    instrumentation['antenna']['Marker->ARP North Ecc(m)'].zfill(8)),
-                    "-O.o[perator] '{}'".format(self.info['11.']['Preferred Abbreviation']),
-                    "-O.r[un_by] '{}'".format(self.info['11.']['Preferred Abbreviation']),
-                    "-O.ag[ency] '{}'".format(self.info['12.']['Preferred Abbreviation'])
+                    "-O.o[perator] '{}'".format(self.raw_content['11.']['Preferred Abbreviation']),
+                    "-O.r[un_by] '{}'".format(self.raw_content['11.']['Preferred Abbreviation']),
+                    "-O.ag[ency] '{}'".format(self.raw_content['12.']['Preferred Abbreviation'])
                     ]
 
         return teqcargs, ignored
@@ -446,13 +475,13 @@ class SiteLog:
         if not instrumentation:
             return None, ignored
 
-        fourchar_id        = self.info['1.']['Four Character ID']
-        domes_id           = self.info['1.']['IERS DOMES Number']
+        fourchar_id        = self.raw_content['1.']['Four Character ID']
+        domes_id           = self.raw_content['1.']['IERS DOMES Number']
 
         observable_type = instrumentation['receiver']['Satellite System']
 
-        agencies        = {'operator' : self.info['11.']['Preferred Abbreviation'],
-                           'agency' : self.info['12.']['Preferred Abbreviation']}
+        agencies        = {'operator' : self.raw_content['11.']['Preferred Abbreviation'],
+                           'agency' : self.raw_content['12.']['Preferred Abbreviation']}
 
         receiver        = {'serial' : instrumentation['receiver']['Serial Number'],
                            'type' : instrumentation['receiver']['Receiver Type'],
@@ -461,9 +490,9 @@ class SiteLog:
         antenna         = {'serial' : instrumentation['antenna']['Serial Number'],
                            'type' : instrumentation['antenna']['Antenna Type']}
 
-        antenna_pos     = {'X' : self.info['2.']['X coordinate (m)'],
-                           'Y' : self.info['2.']['Y coordinate (m)'],
-                           'Z' : self.info['2.']['Z coordinate (m)']}
+        antenna_pos     = {'X' : self.raw_content['2.']['X coordinate (m)'],
+                           'Y' : self.raw_content['2.']['Y coordinate (m)'],
+                           'Z' : self.raw_content['2.']['Z coordinate (m)']}
 
         antenna_delta   = {'H' : instrumentation['antenna']['Marker->ARP Up Ecc. (m)'],
                            'E' : instrumentation['antenna']['Marker->ARP East Ecc(m)'],
@@ -527,7 +556,7 @@ class SiteLog:
 
         outputfilejson = os.path.join(output, filename + '.json')
         with open(outputfilejson, "w+") as j:
-            json.dump(self.info, j, default=str)
+            json.dump(self.raw_content, j, default=str)
 
         return outputfilejson
 
@@ -550,16 +579,16 @@ class SiteLog:
     #
     #     now = datetime.strftime(datetime.now(), '%Y-%m-%d %H%M')
     #
-    #     header.append("# Station.info written by Rinexmod user             on ".format(now))
-    #     header.append("* Reference file : station.info")
+    #     header.append("# Station.raw_content written by Rinexmod user             on ".format(now))
+    #     header.append("* Reference file : station.raw_content")
     #     header.append("*")
     #     header.append("*")
     #     header.append("*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant N    Ant E    Receiver Type         Vers                  SwVer  Receiver SN           Antenna Type     Dome   Antenna SN")
     #
     #     stationinfo = []
     #
-    #     SITE = self.info['1.']['Four Character ID']
-    #     Station_Name = self.info['1.']['Site Name']
+    #     SITE = self.raw_content['1.']['Four Character ID']
+    #     Station_Name = self.raw_content['1.']['Site Name']
     #
     #     pattern = re.compile(r'[ 0](0+)[0-9]')
     #
@@ -587,11 +616,11 @@ class SiteLog:
     #         # Session_Stop = Session_Stop.replace(' 00', '  0')
     #
     #         Ant_Ht = installation['antenna']['Marker->ARP Up Ecc. (m)']
-    #         HtCod = None #installation['antenna'][''] # XXX
+    #         HtCod = None #installation['antenna'][''] # 
     #         Ant_N = installation['antenna']['Marker->ARP North Ecc(m)']
     #         Ant_E = installation['antenna']['Marker->ARP East Ecc(m)']
     #         Receiver_Type = installation['receiver']['Receiver Type']
-    #         Vers = None #installation['receiver'][''] # XXX
+    #         Vers = None #installation['receiver'][''] # 
     #         SwVer = installation['receiver']['Firmware Version']
     #         Receiver_SN = installation['receiver']['Serial Number']
     #         Antenna_Type = installation['antenna']['Antenna Type']
