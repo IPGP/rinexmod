@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 # Create a logger object.
 import logging
 #logger = logging.getLogger(__name__)
+import string
 logger = logging.getLogger("rinexmod_api")
 
 # *****************************************************************************
@@ -176,7 +177,7 @@ class RinexFile:
                  only_4char=False,
                  no_country_then_4char=False):
         """
-        get the site of the Rinex Object
+        Get the site of the Rinex Object
         if no_country_then_4char = True, the return site code
         falls back to a 4-char code, if no monum/country is provided 
         (i.e. the 9char code ends with 00XXX)
@@ -230,7 +231,7 @@ class RinexFile:
                      tolerant_file_period=False,
                      inplace_set=False):
         """
-        generate the long RINEX filename
+        Generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
 
         ext :
@@ -296,7 +297,7 @@ class RinexFile:
                       tolerant_file_period = False,
                       inplace_set=False):
         """
-        generate the short RINEX filename
+        Generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
 
         file_type :
@@ -342,7 +343,7 @@ class RinexFile:
     
     def get_header_body(self,return_index_end=False):
         """
-        get the RINEX's header and body as a list of lines, 
+        Get the RINEX's header and body as a list of lines, 
         and the index of the END OF HEADER line if asked
         """
         i_end = None
@@ -407,16 +408,17 @@ class RinexFile:
     
         return rinex_data, status
     
-
     def get_naming_convention(self):
+        """
+        Get the naming convention based on a regular expression test
+        """
         # Daily or hourly, hatanaka or not, gz or Z compressed file
-        pattern_shortname = re.compile(
-            '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))')
-        pattern_longname = re.compile(
-            '.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)')
+        pattern_dic = regex_pattern_rinex_filename()
+        
+        pattern_shortname = re.compile(pattern_dic['shortname'])
+        pattern_longname = re.compile(pattern_dic['longname'])
         # GFZ's DataCenter internal naming convention (here it is equivalent to a longname)
-        pattern_longname_gfz = re.compile(
-            '.{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?')
+        pattern_longname_gfz = re.compile(pattern_dic['longname_gfz'])
 
         if pattern_shortname.match(os.path.basename(self.path)):
             name_conv = 'SHORT'
@@ -431,7 +433,9 @@ class RinexFile:
     
 
     def get_size(self):
-        """ Get RINEX file size """
+        """ 
+        Get RINEX file size
+        """
 
         if self.status:
             return 0
@@ -485,7 +489,9 @@ class RinexFile:
         return compress, hatanaka
 
     def get_filename(self):
-        """ Get filename WITHOUT its compression extension """
+        """ 
+        Get filename WITHOUT its compression extension
+        """
 
         if self.status:
             return None
@@ -499,7 +505,9 @@ class RinexFile:
         return filename
 
     def get_version(self):
-        """ Get RINEX version """
+        """
+        Get RINEX version
+        """
 
         if self.status:
             return ''
@@ -513,7 +521,9 @@ class RinexFile:
         return rinex_ver_meta        
         
     def get_data_source(self):
-        """Get data source: R, S, U from LONG filename, R per default"""
+        """
+        Get data source: R, S, U from LONG filename, R per default
+        """
 
         if self.status:
             return None
@@ -559,7 +569,7 @@ class RinexFile:
     
     def get_dates(self):
         """ 
-        Getting start and end date from rinex file.
+        Get start and end date from rinex file.
         we search for the date of the first and last observation directly in
         the data.
         if you want the values in the header, use get_dates_in_header
@@ -603,7 +613,7 @@ class RinexFile:
     
     def get_dates_in_header(self):
         """ 
-        Getting start and end date from rinex file.
+        Get start and end date from rinex file.
         Start date cames from TIME OF FIRST OBS file's header.
         In RINEX3, there's a TIME OF LAST OBS in the header but it's not available
         in RINEX2, so we search for the date of the last observation directly in
@@ -653,7 +663,7 @@ class RinexFile:
 
     def get_sample_rate(self, plot=False):
         """
-        Getting sample rate from rinex file.
+        Get sample rate from rinex file.
         The method returns 2 outputs: a str sample rate for the RINEX filenames, and the float value
         We get all the samples dates and get intervals. We then remove 0 ones (due to potential double samples).
         Then, we set the most frequent value as sample rate, and if more than 10% of the intervals are different
@@ -915,7 +925,9 @@ class RinexFile:
         return file_period_rnd, session_rnd 
 
     def get_sat_system(self):
-        """ Parse RINEX VERSION / TYPE line to get observable type """
+        """
+        Parse RINEX VERSION / TYPE line to get observable type
+        """
 
         if self.status:
             return None
@@ -930,8 +942,10 @@ class RinexFile:
         return sat_system
 
     def get_site_from_filename(self, lower_case=True, only_4char=False):
-        """ Getting site name from the filename """
-        
+        """ 
+        Get site name from the filename
+        """
+
         if self.status:
             return None
             
@@ -950,7 +964,9 @@ class RinexFile:
         
         
     def get_site_from_header(self):
-        """ Getting site name from the MARKER NAME line in rinex file's header """
+        """ 
+        Get site name from the MARKER NAME line in rinex file's header
+        """
 
         if self.status:
             return ''
@@ -971,7 +987,7 @@ class RinexFile:
     
     def get_sys_obs_types(self):
         """
-        get the systems/observables values from the 
+        Get the systems/observables values from the 
         ``SYS / # / OBS TYPES`` lines
 
         for RINEX 3/4 only
@@ -1035,6 +1051,22 @@ class RinexFile:
 ### mod methods. change the content of the RINEX header
 
     def mod_marker(self, marker_inp=None, number_inp=None):
+        """
+        Modify within the RINEX header the marker
+        (``MARKER NAME`` line)
+
+        Parameters
+        ----------
+        marker_inp : str, optional
+            site marker ID a.k.a. station code (4 or 9 characters).
+            The default is None.
+        number_inp : str, optional
+            DOMES number. The default is None.
+            
+        Returns
+        -------
+        None.
+        """
 
         if self.status:
             return
@@ -1074,6 +1106,25 @@ class RinexFile:
         return
 
     def mod_receiver(self, serial=None, type=None, firmware=None):
+        """
+        Modify within the RINEX header the receiver information
+        (``REC # / TYPE / VERS`` line)
+
+        Parameters
+        ----------
+        serial : str, optional
+            Receiver Serial Number. The default is None.
+        type : str, optional
+            Receiver model. The default is None.
+        firmware : str, optional
+            Firmware version. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+
 
         if self.status:
             return
@@ -1104,6 +1155,22 @@ class RinexFile:
         return
 
     def mod_antenna(self, serial=None, type=None):
+        """
+        Modify within the RINEX header the antenna information
+        (``ANT # / TYPE`` line)
+
+        Parameters
+        ----------
+        serial : str, optional
+            Antenne Serial Number. The default is None.
+        type : TYPE, optional
+            Antenna model. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1130,6 +1197,20 @@ class RinexFile:
         return
 
     def mod_interval(self, sample_rate_input=None):
+        """
+        Modify within the RINEX header the data sample rate
+        (``INTERVAL`` line)
+
+        Parameters
+        ----------
+        sample_rate_input : TYPE, optional
+            Data sample rate. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1175,6 +1256,20 @@ class RinexFile:
         return
 
     def mod_antenna_pos(self, X=None, Y=None, Z=None):
+        """
+        Modify within the RINEX header the X Y Z RINEX's approximative position.
+        (``APPROX POSITION XYZ`` line)
+
+        Parameters
+        ----------
+        X,Y,Z : float, optional
+            X Y Z position. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1211,6 +1306,22 @@ class RinexFile:
         return
 
     def mod_antenna_delta(self, H=None, E=None, N=None):
+        """
+        Modify within the RINEX header the E N U antenna's excentricity
+        (``ANTENNA: DELTA H/E/N`` line).
+
+        Parameters
+        ----------
+        Parameters
+        ----------
+        H,N,U : float, optional
+            H N U position. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1247,6 +1358,21 @@ class RinexFile:
         return
 
     def mod_agencies(self, operator=None, agency=None):
+        """
+        Modify within the RINEX header the ``OBSERVER / AGENCY`` line
+
+        Parameters
+        ----------
+        operator : str, optional
+            Operator. The default is None.
+        agency : str, optional
+            Agency. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1274,6 +1400,21 @@ class RinexFile:
         return
 
     def mod_sat_system(self, sat_system):
+        """
+        Modify within the RINEX header the *type* of the 
+        ``RINEX VERSION / TYPE`` line
+
+
+        Parameters
+        ----------
+        sat_system : 
+            Satellite system.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if self.status:
             return
@@ -1322,6 +1463,23 @@ class RinexFile:
     
     
     def mod_time_obs(self,first_obs=None,last_obs=None):
+        """
+        Modify within the RINEX header the ``TIME OF FIRST OBS`` 
+        and ``TIME OF LAST OBS``
+        
+
+        Parameters
+        ----------
+        first_obs : datetime, optional
+            epoch of first observation. The default is None.
+        last_obs : datetime, optional
+            epoch of last observation. The default is None.
+
+        Returns
+        -------
+        None
+
+        """
         
         if self.status:
             return
@@ -1370,7 +1528,8 @@ class RinexFile:
 
     def mod_sys_obs_types(self,dict_sys_obs):
         """
-        change the systems/observables from the ``SYS / # / OBS TYPES`` lines
+        Modify within the RINEX header the systems/observables 
+        of the ``SYS / # / OBS TYPES`` lines
         
         for RINEX 3/4 only
 
@@ -1426,7 +1585,11 @@ class RinexFile:
 
 
     def mod_filename_data_freq(self, data_freq_inp=None):
-
+        """
+        Modify within the RINEX filename the data freqency 
+        (``30S``, ``01S``...)
+        """
+        
         if not data_freq_inp:
             return
 
@@ -1434,6 +1597,10 @@ class RinexFile:
         return
 
     def mod_filename_file_period(self, file_period_inp=None):
+        """
+        Modify within the RINEX filename the period
+        (``01D``, ``01H``, ``15M``...)
+        """
 
         if not file_period_inp:
             return
@@ -1442,7 +1609,10 @@ class RinexFile:
         return
 
     def mod_filename_data_source(self, data_source_inp=None):
-
+        """
+        Modify within the RINEX filename the data source
+        (``R``, ``S``, ``U``)
+        """
         if not data_source_inp:
             return
 
@@ -1754,3 +1924,117 @@ def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
             rounding = (seconds + round_to / 2) // round_to * round_to
 
     return dt + timedelta(0, rounding - seconds, - dt.microsecond)
+    
+    
+def regex_pattern_rinex_filename():
+    """
+    return a dictionnary with the different REGEX patterns to describe a RIENX filename
+    """
+    pattern_dic = dict()
+    pattern_dic['shortname'] = '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))'
+    pattern_dic['longname'] =  '.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)'
+    pattern_dic['longname_gfz'] = '.{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?'
+    
+    return pattern_dic
+
+
+def dates_from_rinex_filename(rnx_inp):
+    """
+    determine the start epoch, the end epoch and the period of a RINEX
+    file based on its name only.
+    The RINEX is not readed. This function is much faster but less reliable 
+    than the RinexFile.start_date and RinexFile.end_date attribute
+    
+    return the start epoch and end epoch as datetime 
+    and the period as timedelta
+    """
+    pattern_dic = regex_pattern_rinex_filename()
+    
+    pattern_shortname = re.compile(pattern_dic['shortname'])
+    pattern_longname = re.compile(pattern_dic['longname'])
+    pattern_longname_gfz = re.compile(pattern_dic['longname_gfz'])
+
+    rinexname = os.path.basename(rnx_inp)
+    
+    def _period_to_timedelta(peri_inp):   
+        peri_val = int(peri_inp[0:2])
+        peri_unit = str(peri_inp[2])
+        
+        if peri_unit == "M":
+            unit_sec = 60
+        elif peri_unit == "H":
+            unit_sec = 3600
+        elif peri_unit == "D":
+            unit_sec = 86400
+        else:
+            logger.warn("odd RINEX period: %s, assume it as 01D",peri_inp)
+            unit_sec = 86400
+        
+        return timedelta(seconds=peri_val * unit_sec)
+            
+    
+    ##### LONG rinex name
+    if re.search(pattern_longname,rinexname):
+        date_str = rinexname.split("_")[2]
+        period_str = rinexname.split("_")[3]
+
+        yyyy = int(date_str[:4])
+        doy  = int(date_str[4:7])        
+        hh   = int(date_str[7:9])        
+        mm   = int(date_str[9:11])       
+        dt_srt = datetime(yyyy,1,1) + timedelta(days = doy - 1,seconds=hh*3600 + mm*60)
+        period = _period_to_timedelta(period_str)
+        dt_end = dt_srt + period
+
+        return dt_srt, dt_end, period
+
+    ##### LONG rinex name -- GFZ's GODC internal name
+    elif re.search(pattern_longname_gfz,rinexname): 
+        date_str = rinexname.split("_")[5]
+        time_str = rinexname.split("_")[6]
+        period_str = rinexname.split("_")[7]
+
+        yyyy = int(date_str[:4])
+        mo   = int(date_str[4:6])     
+        dd   = int(date_str[6:8])     
+        
+        hh   = int(time_str[0:2])        
+        mm   = int(time_str[2:4])       
+        ss   = int(time_str[4:6])  
+
+        dt_srt = datetime(yyyy,mo,dd,hh,mm,ss)        
+        period = _period_to_timedelta(period_str)
+        dt_end = dt_srt + period
+        
+        return dt_srt, dt_end, period
+    
+    ##### SHORT rinex name
+    elif re.search(pattern_shortname,rinexname):
+        alphabet = list(string.ascii_lowercase)
+
+        doy  = int(rinexname[4:7])
+        yy   = int(rinexname[9:11])
+    
+        if yy > 80:
+            year = yy + 1900
+        else:
+            year = yy + 2000
+    
+        if rinexname[7] in alphabet:
+            h = alphabet.index(rinexname[7])
+            period = timedelta(seconds=3600)
+        else:
+            h = 0
+            period = timedelta(seconds=86400)
+            
+        dt_srt = datetime(year,1,1) + timedelta(days = doy - 1 , seconds = h * 3600)
+        dt_end = dt_srt + period
+        return dt_srt, dt_end, period
+                    
+    else:
+        logger.error("%s has not a RINEX name well formatted",rinexname)
+        return None, None, None
+    
+    
+    
+    
