@@ -851,35 +851,8 @@ class RinexFile:
         rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
         delta = rndtup(self.end_date,60) - rndtdown(self.start_date,60)
         delta2 = rndtaver(self.end_date,60) - rndtaver(self.start_date,60)
-        hours = int(delta2.total_seconds() / 3600 )
-
-        ### first, the special case : N *full* hours
-        if delta <= timedelta(seconds=86400 - 3600) and hours > 0: ## = 23h max
-            # delta2 is a more precise delta (average)
-            file_period = str(hours).zfill(2) + 'H'
-            session = True
-        ### more regular cases : 01H, 01D, nnM, or Unknown
-        elif delta <= timedelta(seconds=3600):
-            delta_sec = (self.end_date - self.start_date).total_seconds()
-            ### Here we consider sub hourly cases
-            session = True    
-            file_period = None            
-            for m in [5,10,15,20,30]:
-                if (m*60-1) <= delta_sec and delta_sec <= (m*60+1):
-                    file_period = str(m).zfill(2) + 'M'
-            if not file_period:
-                # NB: this test is useless, it is treated by the previous test
-                file_period = '01H'
-        elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400 + 3600): ##Note1
-            file_period = '01D'
-            session = False
-        else:
-            file_period = '00U'
-            session = False
-        ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs 
-        ###        includes the epoch of the next hour/day
-        ###        and then the present delta value reach 25
-        ###        it justify also the necessity of the delta2 variable
+        
+        file_period, session = file_period_from_timedelta(delta2)
         
         if inplace_set:
             self.file_period = file_period
@@ -1310,8 +1283,6 @@ class RinexFile:
         Modify within the RINEX header the E N U antenna's excentricity
         (``ANTENNA: DELTA H/E/N`` line).
 
-        Parameters
-        ----------
         Parameters
         ----------
         H,N,U : float, optional
@@ -2034,7 +2005,54 @@ def dates_from_rinex_filename(rnx_inp):
     else:
         logger.error("%s has not a RINEX name well formatted",rinexname)
         return None, None, None
+
+
+def file_period_from_timedelta(delta):
+    """
+    return the RINEX file period (01H, 01D, 15M...) based on a timedelta
+
+    Parameters
+    ----------
+    delta : python timedelta
+        The input timedelta.
+
+    Returns
+    -------
+    file_period : str
+        DESCRIPTION.
+    session : bool
+        True if the timedelta refers to a session (<01D) 
+        False otherwise (01D).
+
+    """
+    hours = int(delta.total_seconds() / 3600 )
+    delta_sec = delta.total_seconds()
+
+    ### first, the special case : N *full* hours
+    if delta <= timedelta(seconds=86400 - 3600) and hours > 0: ## = 23h max
+        # delta2 is a more precise delta (average)
+        file_period = str(hours).zfill(2) + 'H'
+        session = True
+    ### more regular cases : 01H, 01D, nnM, or Unknown
+    elif delta <= timedelta(seconds=3600):
+        ### Here we consider sub hourly cases
+        session = True    
+        file_period = None            
+        for m in [5,10,15,20,30]:
+            if (m*60-1) <= delta_sec and delta_sec <= (m*60+1):
+                file_period = str(m).zfill(2) + 'M'
+        if not file_period:
+            # NB: this test is useless, it is treated by the previous test
+            file_period = '01H'
+    elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400 + 3600): ##Note1
+        file_period = '01D'
+        session = False
+    else:
+        file_period = '00U'
+        session = False
+    ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs 
+    ###        includes the epoch of the next hour/day
+    ###        and then the present delta value reach 25
+    ###        it justify also the necessity of the delta2 variable
     
-    
-    
-    
+    return file_period, session
