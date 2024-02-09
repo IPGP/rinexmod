@@ -846,13 +846,9 @@ class RinexFile:
 
         """
         
-        rndtup = lambda x,t: round_time(x,timedelta(minutes=t),"up")
-        rndtdown = lambda x,t: round_time(x,timedelta(minutes=t),"down")
-        rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
-        delta = rndtup(self.end_date,60) - rndtdown(self.start_date,60)
-        delta2 = rndtaver(self.end_date,60) - rndtaver(self.start_date,60)
         
-        file_period, session = file_period_from_timedelta(delta2)
+        file_period, session = file_period_from_timedelta(self.start_date,
+                                                          self.end_date)
         
         if inplace_set:
             self.file_period = file_period
@@ -2007,26 +2003,31 @@ def dates_from_rinex_filename(rnx_inp):
         return None, None, None
 
 
-def file_period_from_timedelta(delta):
+def file_period_from_timedelta(start_date, end_date):
     """
-    return the RINEX file period (01H, 01D, 15M...) based on a timedelta
+    return the RINEX file period (01H, 01D, 15M...) based on a
+    start and end date
 
     Parameters
     ----------
-    delta : python timedelta
-        The input timedelta.
 
     Returns
     -------
     file_period : str
-        DESCRIPTION.
+        file period (01H, 01D, 15M...) 
     session : bool
         True if the timedelta refers to a session (<01D) 
         False otherwise (01D).
 
     """
-    hours = int(delta.total_seconds() / 3600 )
-    delta_sec = delta.total_seconds()
+    rndtup = lambda x,t: round_time(x,timedelta(minutes=t),"up")
+    rndtdown = lambda x,t: round_time(x,timedelta(minutes=t),"down")
+    rndtaver = lambda x,t: round_time(x,timedelta(minutes=t),"average")
+    delta = rndtup(end_date,60) - rndtdown(start_date,60)
+    delta2 = rndtaver(end_date,60) - rndtaver(start_date,60)
+
+    hours = int(delta2.total_seconds() / 3600 )
+    delta_sec = (end_date - start_date).total_seconds() 
 
     ### first, the special case : N *full* hours
     if delta <= timedelta(seconds=86400 - 3600) and hours > 0: ## = 23h max
