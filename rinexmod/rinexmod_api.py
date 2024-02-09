@@ -283,7 +283,7 @@ def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
 def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
     rnx_4char = rnxobj.get_site(True,True)
     # Site name from the sitelog
-    sitelog_4char = sitelogobj.info['1.']['Four Character ID'].lower()
+    sitelog_4char = sitelogobj.raw_content['1.']['Four Character ID'].lower()
     
     if rnx_4char != sitelog_4char:
         logger.debug("RINEX and Sitelog 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",rnx_4char,sitelog_4char)
