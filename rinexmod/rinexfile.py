@@ -272,6 +272,8 @@ class RinexFile:
                 timeformat = '%Y%j%H%M'
             else:
                 timeformat = '%Y%j0000'  # Start of the day
+        elif file_period_name[-1] == "M": ### Subhourly case
+            timeformat = '%Y%j%H%M'            
         elif file_period_name == '00U': ## Unknown case: the filename deserves a full description to identify potential bug 
             timeformat = '%Y%j%H%M'
         else: ## Hourly case
