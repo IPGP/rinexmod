@@ -32,6 +32,9 @@ class RinexFileError(RinexModError):
 class SitelogError(RinexModError):
     pass
 
+class ReturnListError(RinexModError):
+    pass
+
 # *****************************************************************************
 # logger definition
 
@@ -195,7 +198,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
     
-        logger.debug('**** All sitelogs detected:')
+        logger.debug('**** All sitelogs detected: (in %s)',sitelog_filepath)
         for sl in all_sitelogs:
             logger.debug(sl)
 
@@ -219,6 +222,9 @@ def sitelog_files2objs_convert(sitelog_filepath,
         logger.debug('**** Most recent sitelogs selected:')
         for sl in sitelogs_obj_list:
             logger.debug(sl.path)
+    else:
+        logger.error("unable to handle file/directory. Does it exists?: %s",sitelog_filepath)
+        raise RinexModInputArgsError
 
     return sitelogs_obj_list
 
@@ -452,8 +458,9 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
         file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0] 
         path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0] 
     else:
-        logger.error("wrong input (must be RinexFile object or dict)")
-        raise Exception("wrong input (must be RinexFile object or dict)")
+        logger.error("Wrong Input, must be RinexFile object or dict. Input given: %s, %s",
+                rnxobj_or_dict,type(rnxobj_or_dict))
+        raise ReturnListError 
 
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
@@ -977,7 +984,11 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     results     = [e.get() for e in results_raw]
 
     for return_lists_mono in results: 
-        _return_lists_maker(return_lists_mono,return_lists)
+        try:
+            _return_lists_maker(return_lists_mono,return_lists)
+        except ReturnListError:
+            logger.warning("one file has been skipped because of an odd individual return list")
+            continue
 
     #########################################
     logger.handlers.clear()
