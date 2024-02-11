@@ -198,7 +198,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
     
-        logger.debug('**** All sitelogs detected: (in %s)',sitelog_filepath)
+        logger.info('**** %i sitelogs detected: (in %s)',len(all_sitelogs),sitelog_filepath))
         for sl in all_sitelogs:
             logger.debug(sl)
 
@@ -219,9 +219,10 @@ def sitelog_files2objs_convert(sitelog_filepath,
             # Appending to list
             sitelogs_obj_list.append(sitelogobj)
     
-        logger.debug('**** Most recent sitelogs selected:')
+        logger.info('**** %i most recent sitelogs selected:',len(sitelogs_obj_list))
         for sl in sitelogs_obj_list:
             logger.debug(sl.path)
+    ### case of no file nor folder
     else:
         logger.error("unable to handle file/directory. Does it exists?: %s",sitelog_filepath)
         raise RinexModInputArgsError
