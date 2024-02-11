@@ -13,7 +13,7 @@ for more details
 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 """
 
-import rinexmod_api as rma
+import rinexmod.rinexmod_api as rma
 
 if __name__ == '__main__':
 

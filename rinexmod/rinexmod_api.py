@@ -32,6 +32,9 @@ class RinexFileError(RinexModError):
 class SitelogError(RinexModError):
     pass
 
+class ReturnListError(RinexModError):
+    pass
+
 # *****************************************************************************
 # logger definition
 
@@ -110,13 +113,19 @@ def git_get_revision_short_hash():
     7 characters Git hash
 
     """
-    script_path = os.path.dirname(os.path.realpath(__file__))
+    script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
     cmd = ['git', '--git-dir', script_path +
            '/.git', 'rev-parse', '--short', 'HEAD']
     try:
-        return subprocess.check_output(cmd).decode('ascii').strip()[:7]
+        githash = subprocess.check_output(cmd).decode('ascii').strip()[:7]
     except:
-        return "xxxxxxx"
+        logger.warn('unable to get the git commit version')
+        githash = "xxxxxxx"
+    
+    #### 2msec to run this fuction
+
+    return githash
 
 
 # *****************************************************************************
@@ -446,8 +455,9 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
         file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0] 
         path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0] 
     else:
-        logger.error("wrong input (must be RinexFile object or dict)")
-        raise Exception("wrong input (must be RinexFile object or dict)")
+        logger.error("Wrong Input, must be RinexFile object or dict. Input given: %s, %s",
+                rnxobj_or_dict,type(rnxobj_or_dict))
+        raise ReturnListError 
 
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
@@ -971,7 +981,11 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     results     = [e.get() for e in results_raw]
 
     for return_lists_mono in results: 
-        _return_lists_maker(return_lists_mono,return_lists)
+        try:
+            _return_lists_maker(return_lists_mono,return_lists)
+        except ReturnListError:
+            logger.warning("one file has been skipped because of an odd individual return list")
+            continue
 
     #########################################
     logger.handlers.clear()
