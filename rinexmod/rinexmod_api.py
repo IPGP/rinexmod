@@ -78,7 +78,7 @@ def logger_define(level_prompt,logfile,level_logfile=None):
     return logger
 
 logfile = None
-logger = logger_define('DEBUG',logfile)
+logger = logger_define('INFO',logfile)
 
 def logger_tester():
     logger.debug("debug message")
@@ -198,7 +198,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
     
-        logger.info('**** %i sitelogs detected: (in %s)',len(all_sitelogs),sitelog_filepath))
+        logger.info('**** %i sitelogs detected: (in %s)',len(all_sitelogs),sitelog_filepath)
         for sl in all_sitelogs:
             logger.debug(sl)
 
@@ -293,7 +293,7 @@ def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
     sitelog_4char = sitelogobj.raw_content['1.']['Four Character ID'].lower()
     
     if rnx_4char != sitelog_4char:
-        logger.debug("RINEX and Sitelog 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",rnx_4char,sitelog_4char)
+        logger.warning("RINEX and Sitelog 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",rnx_4char,sitelog_4char)
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
