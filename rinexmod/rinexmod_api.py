@@ -198,7 +198,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
     
-        logger.debug('**** All sitelogs detected:')
+        logger.debug('**** All sitelogs detected: (in %s)',sitelog_filepath)
         for sl in all_sitelogs:
             logger.debug(sl)
 
@@ -222,6 +222,9 @@ def sitelog_files2objs_convert(sitelog_filepath,
         logger.debug('**** Most recent sitelogs selected:')
         for sl in sitelogs_obj_list:
             logger.debug(sl.path)
+    else:
+        logger.error("unable to handle file/directory. Does it exists?: %s",sitelog_filepath)
+        raise RinexModInputArgsError
 
     return sitelogs_obj_list
 
@@ -286,7 +289,7 @@ def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
 def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
     rnx_4char = rnxobj.get_site(True,True)
     # Site name from the sitelog
-    sitelog_4char = sitelogobj.info['1.']['Four Character ID'].lower()
+    sitelog_4char = sitelogobj.raw_content['1.']['Four Character ID'].lower()
     
     if rnx_4char != sitelog_4char:
         logger.debug("RINEX and Sitelog 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",rnx_4char,sitelog_4char)
