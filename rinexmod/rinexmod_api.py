@@ -967,7 +967,8 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
             if debug: ### set as True for debug mode
                 raise e
             else:
-                logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,rnx)
+                logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,
+                        rnxmod_kwargs_inp["rinexfile"])
             
     # number of parallel processing
     if multi_process > 1:
