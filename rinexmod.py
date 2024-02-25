@@ -48,6 +48,10 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--marker', help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
     parser.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names (e.g. from the M3G database)', type=str, default="")
+    parser.add_argument('-sti', '--station_info',
+                        help='Path of a GAMIT station.info file to obtain GNSS site metadata information (needs also -lfi option)', type=str, default="")
+    parser.add_argument('-lfi', '--lfile_apriori',
+                        help='Path of a GAMIT apriori apr/L-File to obtain GNSS site position and DOMES information (needs also -sti option)', type=str, default="")    
     parser.add_argument('-r', '--relative', help='Reconstruct files relative subfolders. You have to indicate the common parent folder, that will be replaced with the output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str,
                         help="Set file's compression (acceptables values : 'gz' (recommended to fit IGS standards), 'Z', 'none')", default='')
@@ -88,6 +92,8 @@ if __name__ == '__main__':
     modif_kw = args.modif_kw
     marker = args.marker
     ninecharfile = args.ninecharfile
+    station_info = args.station_info
+    lfile_apriori = args.lfile_apriori
     relative = args.relative
     compression = args.compression
     longname = args.longname

@@ -7,20 +7,23 @@ Created on Mon Feb  5 17:30:30 2024
 
 Low-level functions to import GAMIT metadata file as pandas DataFrame
 
-
 """
 
 import numpy as np 
 import pandas as pd
 import datetime as dt
 import re
+from  rinexmod import rinexmod_api
+
+logger = rinexmod_api.logger_define('INFO')
+
 
 from geodezyx import conv
 
 p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.ray"
 p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.sopac"
-p = "/home/psakicki/Downloads/station.info"
 p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.mit"
+p = "/home/psakicki/Downloads/station.info"
 
 
 lfile_inp = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/lfile."
@@ -186,8 +189,16 @@ def read_gamit_station_info(station_info_inp):
     'antenna sn',
     'antdaz']
     
+    bad_lines = []
+    with open(station_info_inp,encoding = 'iso8859_1') as f:
+        for il,l in enumerate(f.readlines()):
+            if l[0] != ' ':
+                bad_lines.append(il)
+                
+            
+    
     df = pd.read_fwf(station_info_inp,
-                     skiprows=10,
+                     skiprows=bad_lines,
                      widths=colsize_use,
                      encoding = 'iso8859_1')
 
@@ -195,7 +206,7 @@ def read_gamit_station_info(station_info_inp):
     
     ##### clean df
     ### remove empty rows
-    bool_empty_rows = df['site'].apply(len) < 4
+    bool_empty_rows = df['site'].apply(len) == 1
     df = df[np.logical_not(bool_empty_rows)]
     ### do a second NaN cleaning, but the previous should have cleaned everything
     df.dropna(inplace=True,how='all')
@@ -225,7 +236,112 @@ def read_gamit_station_info(station_info_inp):
     return df
 
 
+def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
+                             force_fake_coords=False):
+    """
+    read GAMIT files to get the Rinexmod internal
+    "instru" and "misc_meta" dictionnaries, necessary for the Sitelog objects
+    
+    
 
-df = read_gamit_station_info(p)
+    Parameters
+    ----------
+    site : str
+        GNSS site 4 char. code which will be extracted from the
+        station_info and apriori DataFrame.
+    stinfo_df_inp : DataFrame
+        station.info-like DataFrame.
+    apr_df_inp : DataFrame
+        lfile-like DataFrame.
 
+    Returns
+    -------
+    installations : dict
+        "installations" list i.e. list of "instru" dict.
+    mm_dic : dict 
+        "misc meta" dict.
+
+    """
+
+    #### INSTRUMENTATION PART     
+    stinfo_df_site = stinfo_df_inp[stinfo_df_inp['site'] == site]
+    installations = []
+    
+    for irow, row in stinfo_df_site.iterrows():
+        inst_dic = {}
+        
+        ##### dates
+        inst_dic['dates'] = []
+        
+        ##### receiver
+        rec_dic = {}
+        rec_dic['Receiver Type'] = row['receiver type']
+        rec_dic['Satellite System'] = 'GPS'
+        rec_dic['Serial Number'] = row['receiver sn']
+        rec_dic['Firmware Version'] = row['vers']
+        rec_dic['Elevation Cutoff Setting'] = '0'
+        rec_dic['Date Installed'] = row['start']
+        rec_dic['Date Removed'] = row['end']
+        rec_dic['Temperature Stabiliz.'] = 'none'
+        rec_dic['Additional Information'] = 'none'
+        
+        inst_dic['receiver'] = rec_dic
+        
+        ##### receiver
+        ant_dic = {}
+        ant_dic['Antenna Type'] = row['antenna type']
+        ant_dic['Serial Number'] = row['antenna sn']
+        ant_dic['Antenna Reference Point'] = 'none'
+        ant_dic['Marker->ARP Up Ecc. (m)'] = row['ant ht']
+        ant_dic['Marker->ARP North Ecc(m)'] = row['ant n']
+        ant_dic['Marker->ARP East Ecc(m)'] = row['ant e']
+        ant_dic['Alignment from True N'] = row['antdaz']
+        ant_dic['Antenna Radome Type'] = row['dome']
+        ant_dic['Radome Serial Number'] = 'none'
+        ant_dic['Antenna Cable Type'] = 'none'
+        ant_dic['Antenna Cable Length'] = '0' 
+        ant_dic['Date Installed'] = row['start']
+        ant_dic['Date Removed'] = row['end']
+        ant_dic['Additional Information'] = 'none'
+        ant_dic['metpack'] = 'none'
+        
+        inst_dic['antenna'] = ant_dic
+        
+        installations.append(inst_dic)
+        
+    verbose = True 
+    #### MISC META PART
+    apr_df_site = apr_df_inp[apr_df_inp['site'] == site]
+    if len(apr_df_site) == 0 and not force_fake_coords:
+        if verbose:
+            # quite unlikely that you meet this error, because gamit_files2objs_convert
+            # filters the sites with missing coordinates
+            logger.error("no coords in apr/lfile for %s, abort (you can force fake coords with -f)",site)
+        raise rinexmod_api.RinexModError
+        
+    elif len(apr_df_site) == 0 and force_fake_coords:
+        logger.warning("no coords in apr/lfile for %s, fake coords at (0°,0°) used",site)
+        apr_df_site = pd.Series({'x':6378137.000,
+                                 'y':0,
+                                 'z':0,
+                                 'domes':'00000X000'})
+    else:
+        apr_df_site = apr_df_site.iloc[-1]
+        apr_df_site.squeeze()
+    
+    mm_dic = {}
+    
+    mm_dic['Four Character ID'] = site
+    mm_dic['IERS DOMES Number'] = apr_df_site['domes']
+
+    mm_dic['operator'] = 'OPERATOR'
+    mm_dic['agency'] = 'AGENCY'
+
+    mm_dic['X'] = apr_df_site['x']
+    mm_dic['Y'] = apr_df_site['y']
+    mm_dic['Z'] = apr_df_site['z'] 
+    
+    mm_dic['Country'] = 'XXX'
+    
+    return installations, mm_dic
 

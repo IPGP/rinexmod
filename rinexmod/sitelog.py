@@ -9,6 +9,9 @@ import os, re
 from   datetime import datetime
 import configparser
 import json, copy
+import pandas as pd
+
+import gamit_meta
 #         import pycountry
 
 class SiteLog:
@@ -38,24 +41,77 @@ class SiteLog:
 
     def __init__(self, sitelogfile=None):
         if sitelogfile:
-            self.path = sitelogfile
-            self.filename = os.path.basename(self.path)
-            self.site4char = self.filename[:4].lower()
-            self.raw_content, self.status = self._sitelog2raw_content_dict()
-            if self.raw_content:
-                self.instrumentations = self._get_instru_dict()
-            else:
-                self.instrumentations = None
+            self.set_from_sitelogfile(sitelogfile)
         else:
             self.path = None
             self.filename = None
             self.site4char = None
             self.raw_content, self.status = None,None
-            self.instrumentations = None          
+            self.instrumentations = None    
+            self.misc_meta = None
             
     def __repr__(self):
         return "GNSS metadata for {}, from {}".format(self.site4char,
                                                       self.filename)
+    
+    def set_from_sitelogfile(self,sitelogfile):
+        """
+        initialization method for metadata import from sitelog
+        """
+        self.path = sitelogfile
+        self.filename = os.path.basename(self.path)
+        self.site4char = self.filename[:4].lower()
+        self.raw_content, self.status = self._sitelog2raw_content_dict()
+        if self.raw_content:
+            self.instrumentations = self._get_instru_dicts()
+        else:
+            self.instrumentations = None
+            
+        self.misc_meta = self._get_misc_meta() 
+            
+            
+    def set_from_gamit_meta(self,site,station_info,lfile,
+                            force_fake_coords=False):
+        """
+        initialization method for metadata import from GAMIT files
+        """
+
+        self.site4char = site[:4]
+        
+        if type(station_info) is pd.core.frame.DataFrame:
+            self.raw_content = station_info 
+            self.path = None
+            self.filename = None
+        else:
+            self.raw_content = gamit_meta.read_gamit_station_info(self.path)
+            self.path = station_info
+            self.filename = os.path.basename(self.path)
+            
+        if type(lfile) is pd.core.frame.DataFrame:            
+            self.raw_content_apr = lfile
+        else:
+            self.raw_content_apr = gamit_meta.read_gamit_apr_lfile(lfile)
+            
+        self.status = 0 
+        
+        if self.raw_content is not None:
+            conv_fct = gamit_meta.gamit_df2instru_miscmeta
+            self.instrumentations , self.misc_meta = conv_fct(self.site4char,
+                                                              self.raw_content,
+                                                              self.raw_content_apr,
+                                                              force_fake_coords=force_fake_coords)
+            
+        else:
+            self.instrumentations , self.misc_meta = None , None
+        
+ #  _____               _                __                  _   _                 
+ # |  __ \             (_)              / _|                | | (_)                
+ # | |__) |_ _ _ __ ___ _ _ __   __ _  | |_ _   _ _ __   ___| |_ _  ___  _ __  ___ 
+ # |  ___/ _` | '__/ __| | '_ \ / _` | |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+ # | |  | (_| | |  \__ \ | | | | (_| | | | | |_| | | | | (__| |_| | (_) | | | \__ \
+ # |_|   \__,_|_|  |___/_|_| |_|\__, | |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+ #                               __/ |                                             
+ #                              |___/                                              
 
     def _sitelog2raw_content_dict(self,keys_float=False):
         """
@@ -70,8 +126,8 @@ class SiteLog:
             return None, 2
 
         # Getting filename and basename for output purposes
-        filename = (os.path.splitext(os.path.basename(self.path))[0])
-        dirname = os.path.dirname(self.path)
+        #filename = (os.path.splitext(os.path.basename(self.path))[0])
+        #dirname = os.path.dirname(self.path)
 
         ####### Reading Sitelog File #########
 
@@ -201,61 +257,10 @@ class SiteLog:
                 # Removing it from the incorrect dict level
                 sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
                 
-        return sitelogdict, 0
-    
-    
-    def _get_instru_dict_from_station_info_df(stinfo_df_inp):
-    
-        #### test if df is mono site or selecte based on site4char
+        return sitelogdict, 0      
         
-        installations = []
         
-        for irow, row in stinfo_df_inp.iterrows():
-            inst_dic = {}
-            
-            ##### dates
-            inst_dic['dates'] = []
-            
-            ##### receiver
-            rec_dic = {}
-            rec_dic['Receiver Type'] = row['receiver type']
-            rec_dic['Satellite System'] = 'GPS'
-            rec_dic['Serial Number'] = row['receiver sn']
-            rec_dic['Firmware Version'] = row['vers']
-            rec_dic['Elevation Cutoff Setting'] = '0'
-            rec_dic['Date Installed'] = row['start']
-            rec_dic['Date Removed'] = row['end']
-            rec_dic['Temperature Stabiliz.'] = 'none'
-            rec_dic['Additional Information'] = 'none'
-            
-            inst_dic['receiver'] = rec_dic
-            
-            ##### receiver
-            ant_dic = {}
-            
-            ant_dic['Antenna Type'] = row['antenna type']
-            ant_dic['Serial Number'] = row['antenna sn']
-            ant_dic['Antenna Reference Point'] = 'none'
-            ant_dic['Marker->ARP Up Ecc. (m)'] = row['ant ht']
-            ant_dic['Marker->ARP North Ecc(m)'] = row['ant n']
-            ant_dic['Marker->ARP East Ecc(m)'] = row['ant e']
-            ant_dic['Alignment from True N'] = row['antdaz']
-            ant_dic['Antenna Radome Type'] = row['dome']
-            ant_dic['Radome Serial Number'] = 'none'
-            ant_dic['Antenna Cable Type'] = 'none'
-            ant_dic['Antenna Cable Length'] = '0' 
-            ant_dic['Date Installed'] = row['start']
-            ant_dic['Date Removed'] = row['end']
-            ant_dic['Additional Information'] = 'none'
-            ant_dic['metpack'] = 'none'
-            
-            inst_dic['antenna'] = ant_dic
-            
-            installations.append(inst_dic)
-        
-        return installations
-
-    def _get_instru_dict(self):
+    def _get_instru_dicts(self):
         """
         This function identifies the different complete installations from the
         antenna and receiver change dates, then returns a table with only 
@@ -392,6 +397,41 @@ class SiteLog:
         return date
 
 
+    def _get_misc_meta(self):
+        """
+        This function generates the "misc meta" dictionnary, i.e. a 
+        dictionnary containing all the useful metadata infromation which are not 
+        stored in the instrumentation dictionnary 
+        (see _get_instru_dicts )
+        """
+        
+        mm_dic = {}
+        
+        mm_dic['Four Character ID'] = self.raw_content['1.']['Four Character ID']
+        mm_dic['IERS DOMES Number'] = self.raw_content['1.']['IERS DOMES Number']
+
+        mm_dic['operator'] = self.raw_content['11.']['Preferred Abbreviation']
+        mm_dic['agency'] = self.raw_content['12.']['Preferred Abbreviation']
+
+        mm_dic['X'] = self.raw_content['2.']['X coordinate (m)']
+        mm_dic['Y'] = self.raw_content['2.']['Y coordinate (m)']
+        mm_dic['Z'] = self.raw_content['2.']['Z coordinate (m)']
+        
+        mm_dic['Country'] = self.raw_content['2.']['Country']
+        
+        return mm_dic
+    
+    
+ #  ______                         _   _   _                __                  _   _                 
+ # |  ____|                       | | | | (_)              / _|                | | (_)                
+ # | |__ ___  _ __ _ __ ___   __ _| |_| |_ _ _ __   __ _  | |_ _   _ _ __   ___| |_ _  ___  _ __  ___ 
+ # |  __/ _ \| '__| '_ ` _ \ / _` | __| __| | '_ \ / _` | |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+ # | | | (_) | |  | | | | | | (_| | |_| |_| | | | | (_| | | | | |_| | | | | (__| |_| | (_) | | | \__ \
+ # |_|  \___/|_|  |_| |_| |_|\__,_|\__|\__|_|_| |_|\__, | |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+ #                                                  __/ |                                             
+ #                                                 |___/                                              
+
+
     def find_instru(self, starttime, endtime, ignore = False):
         '''
         We get the installation corresponding to the starttime and endtime.
@@ -445,7 +485,7 @@ class SiteLog:
     
     def get_country(self,iso_code=True):
         """
-        Return the ISO country code based on the Sitelog's Country filed.
+        Return the ISO country code based on the Sitelog's Country field.
         Requires pycountry module
         """
         
@@ -454,7 +494,7 @@ class SiteLog:
         except ModuleNotFoundError:
             print("Python's module 'pycountry' is recommended to recover the Country name automatically")
 
-        full_country = self.raw_content['2.']['Country']
+        full_country = self.misc_meta['Country']
         full_country2 = full_country.split("(the)")[0].strip()
         try:
             iso_country = pycountry.countries.get(name=full_country2).alpha_3
@@ -537,13 +577,13 @@ class SiteLog:
         if not instrumentation:
             return None, ignored
 
-        fourchar_id        = self.raw_content['1.']['Four Character ID']
-        domes_id           = self.raw_content['1.']['IERS DOMES Number']
+        fourchar_id        = self.misc_meta['Four Character ID']
+        domes_id           = self.misc_meta['IERS DOMES Number']
 
         observable_type = instrumentation['receiver']['Satellite System']
 
-        agencies        = {'operator' : self.raw_content['11.']['Preferred Abbreviation'],
-                           'agency' : self.raw_content['12.']['Preferred Abbreviation']}
+        agencies        = {'operator' : self.misc_meta['Preferred Abbreviation'],
+                           'agency' : self.misc_meta['Preferred Abbreviation']}
 
         receiver        = {'serial' : instrumentation['receiver']['Serial Number'],
                            'type' : instrumentation['receiver']['Receiver Type'],
@@ -552,9 +592,9 @@ class SiteLog:
         antenna         = {'serial' : instrumentation['antenna']['Serial Number'],
                            'type' : instrumentation['antenna']['Antenna Type']}
 
-        antenna_pos     = {'X' : self.raw_content['2.']['X coordinate (m)'],
-                           'Y' : self.raw_content['2.']['Y coordinate (m)'],
-                           'Z' : self.raw_content['2.']['Z coordinate (m)']}
+        antenna_pos     = {'X' : self.misc_meta['X coordinate (m)'],
+                           'Y' : self.misc_meta['Y coordinate (m)'],
+                           'Z' : self.misc_meta['Z coordinate (m)']}
 
         antenna_delta   = {'H' : instrumentation['antenna']['Marker->ARP Up Ecc. (m)'],
                            'E' : instrumentation['antenna']['Marker->ARP East Ecc(m)'],
@@ -572,6 +612,9 @@ class SiteLog:
         return metadata_vars, ignored
     
     def rinex_full_history_lines(self):
+        """
+        Get the sting lines to have the full site history in the RIENX header
+        """
         rec_stk = []
         ant_stk = []
 
@@ -621,6 +664,7 @@ class SiteLog:
             json.dump(self.raw_content, j, default=str)
 
         return outputfilejson
+
 
 
     # def stationinfo(self, output = None):
