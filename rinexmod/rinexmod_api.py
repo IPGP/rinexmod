@@ -12,13 +12,14 @@ import re
 from datetime import datetime
 import logging
 import colorlog
-from rinexmod import sitelog
-from rinexmod import rinexfile
 import hatanaka
 import subprocess
 import multiprocessing as mp
-import gamit_meta
 import pandas as pd
+
+from rinexmod import sitelog
+from rinexmod import rinexfile
+from rinexmod import gamit_meta
 
 
 # *****************************************************************************
@@ -170,52 +171,52 @@ def sitelog_input_manage(sitelog_inp,force=False):
     
 def gamit_files2objs_convert(station_info_inp,lfile_inp,
                              force_fake_coords=False):
-        if type(station_info_inp) is pd.core.frame.DataFrame:
-            df_stinfo_raw = station_info_inp
-            stinfo_name = 'station.info'
-        else:
-            df_stinfo_raw = gamit_meta.read_gamit_station_info(station_info_inp)
-            stinfo_name = os.path.basename(station_info_inp)
-            
-        if type(lfile_inp) is pd.core.frame.DataFrame:            
-            df_apr = lfile_inp
-        else:
-            df_apr = gamit_meta.read_gamit_apr_lfile(lfile_inp)
-            
+    if type(station_info_inp) is pd.core.frame.DataFrame:
+        df_stinfo_raw = station_info_inp
+        stinfo_name = 'station.info'
+    else:
+        df_stinfo_raw = gamit_meta.read_gamit_station_info(station_info_inp)
+        stinfo_name = os.path.basename(station_info_inp)
+        
+    if type(lfile_inp) is pd.core.frame.DataFrame:            
+        df_apr = lfile_inp
+    else:
+        df_apr = gamit_meta.read_gamit_apr_lfile(lfile_inp)
+        
 
 
-        sites_isin = df_stinfo_raw['site'].isin(df_apr['site'])
-        ### for the stats only
-        sites_uniq = pd.Series(df_stinfo_raw['site'].unique())
-        sites_isin_uniq = sites_uniq.isin(df_apr['site'].unique())
-        n_sites_notin = len(sites_uniq) - sum(sites_isin_uniq)
-        
-        if n_sites_notin > 0 and not force_fake_coords:
-            logger.warning("%i/%i sites in %s are not in apr/lfile. they are skipped (you can force fake coords with -f)",
-                           n_sites_notin,len(sites_uniq),stinfo_name)
-        
-            df_stinfo = df_stinfo_raw[sites_isin]
-        else:
-            df_stinfo = df_stinfo_raw
-        
-        df_stinfo_grp = df_stinfo.groupby('site')
-        
-        sitelogobj_lis = []
+    sites_isin = df_stinfo_raw['site'].isin(df_apr['site'])
+    ### for the stats only
+    sites_uniq = pd.Series(df_stinfo_raw['site'].unique())
+    sites_isin_uniq = sites_uniq.isin(df_apr['site'].unique())
+    n_sites_notin = len(sites_uniq) - sum(sites_isin_uniq)
+    
+    if n_sites_notin > 0 and not force_fake_coords:
+        logger.warning("%i/%i sites in %s are not in apr/lfile. they are skipped (you can force fake coords with -f)",
+                       n_sites_notin,len(sites_uniq),stinfo_name)
+    
+        df_stinfo = df_stinfo_raw[sites_isin]
+    else:
+        df_stinfo = df_stinfo_raw
+    
+    df_stinfo_grp = df_stinfo.groupby('site')
+    
+    sitelogobj_lis = []
 
-        logger.info('%i sites will be extracted from %s',
-                     len(df_stinfo_grp),stinfo_name)
+    logger.info('%i sites will be extracted from %s',
+                 len(df_stinfo_grp),stinfo_name)
 
-        for site, site_info in df_stinfo_grp:
-            logger.debug('extract %s from %s',site,stinfo_name)
-            sitelogobj = sitelog.SiteLog(sitelogfile=None)
-            sitelogobj.set_from_gamit_meta(site, df_stinfo, df_apr,
-                                           force_fake_coords)
-            sitelogobj_lis.append(sitelogobj)
-            
-        logger.info('%i sites have been extracted from %s',
-                     len(sitelogobj_lis),stinfo_name)
-            
-        return sitelogobj_lis
+    for site, site_info in df_stinfo_grp:
+        logger.debug('extract %s from %s',site,stinfo_name)
+        sitelogobj = sitelog.SiteLog(sitelogfile=None)
+        sitelogobj.set_from_gamit_meta(site, df_stinfo, df_apr,
+                                       force_fake_coords)
+        sitelogobj_lis.append(sitelogobj)
+        
+    logger.info('%i sites have been extracted from %s',
+                 len(sitelogobj_lis),stinfo_name)
+        
+    return sitelogobj_lis
 
 
 

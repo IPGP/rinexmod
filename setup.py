@@ -153,6 +153,7 @@ It is available under the GNU license on the following GitHub repository: https:
                        'pycountry',
                        'matplotlib',
                        'colorlog', 
+                       'pandas',
                       ],  # Optional
 
     # List additional groups of dependencies here (e.g. development
