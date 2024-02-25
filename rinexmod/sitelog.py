@@ -202,6 +202,58 @@ class SiteLog:
                 sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
                 
         return sitelogdict, 0
+    
+    
+    def _get_instru_dict_from_station_info_df(stinfo_df_inp):
+    
+        #### test if df is mono site or selecte based on site4char
+        
+        installations = []
+        
+        for irow, row in stinfo_df_inp.iterrows():
+            inst_dic = {}
+            
+            ##### dates
+            inst_dic['dates'] = []
+            
+            ##### receiver
+            rec_dic = {}
+            rec_dic['Receiver Type'] = row['receiver type']
+            rec_dic['Satellite System'] = 'GPS'
+            rec_dic['Serial Number'] = row['receiver sn']
+            rec_dic['Firmware Version'] = row['vers']
+            rec_dic['Elevation Cutoff Setting'] = '0'
+            rec_dic['Date Installed'] = row['start']
+            rec_dic['Date Removed'] = row['end']
+            rec_dic['Temperature Stabiliz.'] = 'none'
+            rec_dic['Additional Information'] = 'none'
+            
+            inst_dic['receiver'] = rec_dic
+            
+            ##### receiver
+            ant_dic = {}
+            
+            ant_dic['Antenna Type'] = row['antenna type']
+            ant_dic['Serial Number'] = row['antenna sn']
+            ant_dic['Antenna Reference Point'] = 'none'
+            ant_dic['Marker->ARP Up Ecc. (m)'] = row['ant ht']
+            ant_dic['Marker->ARP North Ecc(m)'] = row['ant n']
+            ant_dic['Marker->ARP East Ecc(m)'] = row['ant e']
+            ant_dic['Alignment from True N'] = row['antdaz']
+            ant_dic['Antenna Radome Type'] = row['dome']
+            ant_dic['Radome Serial Number'] = 'none'
+            ant_dic['Antenna Cable Type'] = 'none'
+            ant_dic['Antenna Cable Length'] = '0' 
+            ant_dic['Date Installed'] = row['start']
+            ant_dic['Date Removed'] = row['end']
+            ant_dic['Additional Information'] = 'none'
+            ant_dic['metpack'] = 'none'
+            
+            inst_dic['antenna'] = ant_dic
+            
+            installations.append(inst_dic)
+        
+        return installations
 
     def _get_instru_dict(self):
         """
