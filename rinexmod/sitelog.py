@@ -20,31 +20,42 @@ class SiteLog:
     Will also create a tab, stored in Sitelog.instrumentations, containing all
     the different instrumentation periods, tab containing a start and an end date,
     and for each line a dict of antenna instrumentation an receiver instrumentation.
+    
+    New 20240225: Sitelog object can also be initialized as an empty one.
+    (for GAMIT's station.info/apr/L-File import)
+    thus sitelogfile can now be None
 
     4 available methods:
-    get_instrumentation takes a start and an end date and returns the instrumentation
+    * find_instru takes a start and an end date and returns the instrumentation
     corresponding to the period, if found. Option to ignore firmware version inconsistency.
-    teqcargs also takes a start and an end date and returns a string of args to
+    * teqcargs also takes a start and an end date and returns a string of args to
     pass to teqc so that it will modify a rinex file's header.
-    rinex_metadata_lines will retrun a dict with all header metadatas that is
+    * rinex_metadata_lines will retrun a dict with all header metadatas that is
     compatible with RinexFile header modifications methods.
-    write_json will write the dict of the parsed values from the sitelog to a
+    * write_json will write the dict of the parsed values from the sitelog to a
     json file.
     """
 
-    def __init__(self, sitelogfile):
-
-        self.path = sitelogfile
-        self.filename = os.path.basename(self.path)
-        self.site4char = self.filename[:4].lower()
-        self.raw_content, self.status = self._sitelog2raw_content_dict()
-        if self.raw_content:
-            self.instrumentations = self._get_instrumentations()
+    def __init__(self, sitelogfile=None):
+        if sitelogfile:
+            self.path = sitelogfile
+            self.filename = os.path.basename(self.path)
+            self.site4char = self.filename[:4].lower()
+            self.raw_content, self.status = self._sitelog2raw_content_dict()
+            if self.raw_content:
+                self.instrumentations = self._get_instru_dict()
+            else:
+                self.instrumentations = None
         else:
-            self.instrumentations = None
+            self.path = None
+            self.filename = None
+            self.site4char = None
+            self.raw_content, self.status = None,None
+            self.instrumentations = None          
             
     def __repr__(self):
-        return self.filename
+        return "GNSS metadata for {}, from {}".format(self.site4char,
+                                                      self.filename)
 
     def _sitelog2raw_content_dict(self,keys_float=False):
         """
@@ -192,8 +203,7 @@ class SiteLog:
                 
         return sitelogdict, 0
 
-
-    def _get_instrumentations(self):
+    def _get_instru_dict(self):
         """
         This function identifies the different complete installations from the
         antenna and receiver change dates, then returns a table with only 
@@ -330,7 +340,7 @@ class SiteLog:
         return date
 
 
-    def get_instrumentation(self, starttime, endtime, ignore = False):
+    def find_instru(self, starttime, endtime, ignore = False):
         '''
         We get the installation corresponding to the starttime and endtime.
         If ignore option set to True, we will force ignoring the firmware version
@@ -414,7 +424,7 @@ class SiteLog:
         modification between two periods and consider only the other parameters.
         """
 
-        instrumentation, ignored = self.get_instrumentation(starttime, endtime, ignore)
+        instrumentation, ignored = self.find_instru(starttime, endtime, ignore)
 
         if not instrumentation:
             return '', ignored
@@ -466,11 +476,11 @@ class SiteLog:
 
     def rinex_metadata_lines(self, starttime, endtime, ignore = False):
         """
-        Returns period's metadata in vars and dicts fitted for RinexFile modification
-        methods.
+        Returns period's metadata in vars and dicts 
+        fitted for RinexFile modification methods.
         """
 
-        instrumentation, ignored = self.get_instrumentation(starttime, endtime, ignore)
+        instrumentation, ignored = self.find_instru(starttime, endtime, ignore)
 
         if not instrumentation:
             return None, ignored
