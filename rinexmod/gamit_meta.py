@@ -178,8 +178,8 @@ def read_gamit_station_info(station_info_inp):
     'stop hh',
     'stop mm',
     'stop ss',
-    'htcod',
     'ant ht',
+    'htcod',
     'ant n',
     'ant e',
     #'rcvcod',
@@ -448,4 +448,4 @@ def get_type_smart(obj_in):
     else:
         return typ
     
-read_gamit_station_info(p)
+df = read_gamit_station_info(p)

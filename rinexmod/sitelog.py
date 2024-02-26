@@ -72,7 +72,8 @@ class SiteLog:
             
             
     def set_from_gamit_meta(self,site,station_info,lfile,
-                            force_fake_coords=False):
+                            force_fake_coords=False,
+                            station_info_name='station.info'):
         """
         initialization method for metadata import from GAMIT files
         """
@@ -82,7 +83,7 @@ class SiteLog:
         if type(station_info) is pd.core.frame.DataFrame:
             self.raw_content = station_info 
             self.path = None
-            self.filename = 'station.info'
+            self.filename = station_info_name
         else:
             self.raw_content = rimo_gmm.read_gamit_station_info(self.path)
             self.path = station_info

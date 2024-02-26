@@ -183,8 +183,6 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
         
-
-
     sites_isin = df_stinfo_raw['site'].isin(df_apr['site'])
     ### for the stats only
     sites_uniq = pd.Series(df_stinfo_raw['site'].unique())
@@ -213,7 +211,8 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
         logger.debug('extract %s from %s',site,stinfo_name)
         sitelogobj = rimo_slg.SiteLog(sitelogfile=None)
         sitelogobj.set_from_gamit_meta(site, df_stinfo, df_apr,
-                                       force_fake_coords)
+                                       force_fake_coords=force_fake_coords,
+                                       station_info_name=stinfo_name)
         sitelogobj_lis.append(sitelogobj)
         
     logger.info('%i sites have been extracted from %s',

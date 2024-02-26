@@ -142,7 +142,7 @@ class RinexFile:
                     break
                 
         for miss_kw in missing_metadata_lines:
-            logger.warning('%s field is missing in %s header, it will be added',
+            logger.warning('%s field is missing in %s header',
                            miss_kw,self.filename)
             metadata[miss_kw] = ''
 
@@ -552,8 +552,6 @@ class RinexFile:
 
         return src
 
-
-   
     def _get_date_patterns(self):
         """
         Internal function to get the correct epoch pattern depending 
@@ -1367,6 +1365,11 @@ class RinexFile:
         # Identify line that contains OBSERVER / AGENCY
         agencies_header_idx = search_idx_value(
             self.rinex_data, 'OBSERVER / AGENCY')
+        
+        if not agencies_header_idx: ##### THIS TEST SHOULD BE IN ALL MOD METHODS !!!!
+            logger.warning('no %s field has been found in %s, unable to mod it','OBSERVER / AGENCY',self.filename)
+            return
+        
         agencies_meta = self.rinex_data[agencies_header_idx]
         # Parse line
         operator_meta = agencies_meta[0:20]
