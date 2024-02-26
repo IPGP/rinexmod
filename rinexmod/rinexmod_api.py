@@ -120,6 +120,28 @@ def sitelog_input_manage(sitelog_inp,force=False):
     
 def gamit_files2objs_convert(station_info_inp,lfile_inp,
                              force_fake_coords=False):
+    """
+    Read a GAMIT files and convert their content to SiteLog objects
+
+    Parameters
+    ----------
+    station_info_inp : str
+        Path of a GAMIT station.info file to obtain 
+        GNSS site metadata information.
+    lfile_inp : TYPE
+        Path of a GAMIT apriori apr/L-File to obtain 
+        GNSS site position and DOMES information.
+    force_fake_coords : bool, optional
+        hen using GAMIT station.info metadata without apriori coordinates in 
+        the L-File, gives fake coordinates at (0°,0°) to the site. 
+        The default is False.
+
+    Returns
+    -------
+    sitelogobj_lis : list
+        list of SiteLog objects.
+
+    """
     if type(station_info_inp) is pd.core.frame.DataFrame:
         df_stinfo_raw = station_info_inp
         stinfo_name = 'station.info'
@@ -173,7 +195,31 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
 
 def sitelog_files2objs_convert(sitelog_filepath,
                                 force = False,
-                                return_list_even_if_single_input=True):    
+                                return_list_even_if_single_input=True):   
+    """
+    Read a set of sitelog files and convert them to SiteLog objects
+
+    Parameters
+    ----------
+    sitelog_filepath : str or list of str
+        path of a single sitelog file or a set of sitelogs (stored in a list).
+    force : bool, optional
+        force the reading of the sitelog file. The default is False.
+    return_list_even_if_single_input : bool, optional
+        if a single sitelog is given, return the corresponding SiteLog object
+        into a list (singleton). The default is True.
+
+    Raises
+    ------
+    SitelogError
+    RinexModInputArgsError
+
+    Returns
+    -------
+    sitelogs_obj_list : list
+        list of SiteLog objects.
+
+    """
     # Case of one single sitelog:
     if os.path.isfile(sitelog_filepath):
     
@@ -302,6 +348,10 @@ def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
         
 
 def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
+    """
+    apply a SiteLog object on a RinexFile object
+    to modify this RinexFile with the rights metadata
+    """
     rnx_4char = rnxobj.get_site(True,True)
     # Site name from the sitelog
     sitelog_4char = sitelogobj.misc_meta['Four Character ID'].lower()
@@ -342,6 +392,11 @@ def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
 # modification keyword dictionnary functions
 
 def _modif_kw_check(modif_kw):
+    """
+    Check if acceptable modification keywords have been provided
+
+    Raise a RinexModInputArgsError Exception if not
+    """
     acceptable_keywords = ['station',
                            'marker_name',
                            'marker_number',
@@ -374,7 +429,10 @@ def _modif_kw_check(modif_kw):
         
    
 def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
-
+    """
+    apply a modification keywords on a RinexFile object
+    to modify this RinexFile with the rights metadata
+    """
     def __keys_in_modif_kw(keys_in):
         return all([e in  modif_kw.keys() for e in keys_in])
 
@@ -424,9 +482,9 @@ def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
 
 def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
     """
-    Construct the so called ``return_lists`` (which are actually dict)
+    Construct the so called ``return_lists`` (which are actually dictionnaries)
     
-    return_list has the structure:
+    return_lists have the structure:
         
     ```
     return_lists[major_rinex_version][sample_rate_string][file_period]
