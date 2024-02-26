@@ -580,11 +580,11 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Folder where to write the modified RINEX files.
     sitelog : str, list of str, SiteLog object, list of SiteLog objects, optional
         Get the RINEX header values from a sitelog.
-        Possible inputs are 
-        * list of string (sitelog file paths),
-        * single string (single sitelog file path or directory containing the sitelogs),
-        * list of SiteLog object
-        * single SiteLog object
+        Possible inputs are: 
+         * list of string (sitelog file paths),
+         * single string (single sitelog file path or directory containing the sitelogs),
+         * list of SiteLog object
+         * single SiteLog object
         The function will search for the latest and right sitelog
         corresponding to the site.
         One can force a single sitelog with force_sitelog.
@@ -593,29 +593,29 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Modification keywords for RINEX's header fields and/or filename.
         Will override the information from the sitelog.
         Acceptable keywords for the header fields:
-        * comment
-        * marker_name
-        * marker_number
-        * station (legacy alias for marker_name)
-        * receiver_serial
-        * receiver_type
-        * receiver_fw 
-        * antenna_serial
-        * antenna_type
-        * antenna_X_pos
-        * antenna_Y_pos
-        * antenna_Z_pos
-        * antenna_H_delta 
-        * antenna_E_delta
-        * antenna_N_delta
-        * operator
-        * agency
-        * observables
-        * interval
+         * comment
+         * marker_name
+         * marker_number
+         * station (legacy alias for marker_name)
+         * receiver_serial
+         * receiver_type
+         * receiver_fw 
+         * antenna_serial
+         * antenna_type
+         * antenna_X_pos
+         * antenna_Y_pos
+         * antenna_Z_pos
+         * antenna_H_delta 
+         * antenna_E_delta
+         * antenna_N_delta
+         * operator
+         * agency
+         * observables
+         * interval
         Acceptable keywords for the header fields:
-        * filename_file_period (01H, 01D...)
-        * filename_data_freq (30S, 01S...)
-        * filename_data_source (R, S, U)
+         * filename_file_period (01H, 01D...)
+         * filename_data_freq (30S, 01S...)
+         * filename_data_source (R, S, U)
         The default is dict().
     marker : str, optional
         A four or nine character site code that will be used to rename
@@ -675,7 +675,6 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         When using GAMIT station.info metadata without apriori coordinates 
         in the L-File, gives fake coordinates at (0°,0°) to the site
 
-    
     Raises
     ------
     RinexModInputArgsError
@@ -770,12 +769,16 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         rnxobj.set_site(marker)
 
     ### load the metadata from sitelog or GAMIT files if any
-    # sitelogs
+    ## sitelogs
     if sitelog:            
         sitelogs_obj_list = sitelog_input_manage(sitelog,
                                                  force=force_sitelog)
-    # GAMIT files
-    if not sitelog and (station_info and lfile_apriori):
+    ## GAMIT files
+    # We read the GAMIT files only if no input 'sitelog' variable is given.
+    # Indeed, the GAMIT files might have been readed outside this function
+    # (most likely actually). The already readed GAMIT files are then stored 
+    # in the 'sitelog' variable as a list of SiteLog objects
+    if (station_info and lfile_apriori) and not sitelog:
         sitelogs_obj_list = gamit_files2objs_convert(station_info,
                                                      lfile_apriori,
                                                      force_fake_coords=force_fake_coords)
@@ -984,7 +987,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
         raise RinexModInputArgsError
         
     if station_info and lfile_apriori and sitelog:
-        logger.critical('both sitelogs and GAMIT files given. Managing both is not correctly implemented yet')
+        logger.critical('both sitelogs and GAMIT files given as metadata input. Managing both is not implemented yet')
         raise RinexModInputArgsError
 
     # If inputfile doesn't exists, return
@@ -1034,13 +1037,13 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     if sort:
         rinexinput.sort()
         
-    ### load the sitelogs as a list of SiteLog objects
+    ### load the sitelogs as a **list of SiteLog objects**
     # from sitelogs 
     if sitelog:
-        sitelog_use = sitelog_input_manage(sitelog, force_sitelog)
+        sitelogs_list_use = sitelog_input_manage(sitelog, force_sitelog)
     # from GAMIT files
     if station_info and lfile_apriori:
-        sitelog_use = gamit_files2objs_convert(station_info, lfile_apriori,
+        sitelogs_list_use = gamit_files2objs_convert(station_info, lfile_apriori,
                                                force_fake_coords=force_fake_coords)
         
     ### Looping in file list ###
@@ -1050,7 +1053,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     for rnx in rinexinput:    
         rnxmod_kwargs = {"rinexfile":rnx,
                          "outputfolder":outputfolder,
-                         "sitelog":sitelog_use,
+                         "sitelog":sitelogs_list_use,
                          "modif_kw":modif_kw,
                          "marker":marker,
                          "longname":longname,
