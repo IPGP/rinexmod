@@ -22,7 +22,7 @@ logger = rimo_log.logger_define('INFO')
 # p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.ray"
 # p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.sopac"
 # p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.mit"
-p = "/home/psakicki/Downloads/station.info"
+# p = "/home/psakicki/Downloads/station.info"
 # lfile_inp = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/lfile."
 
 
@@ -462,5 +462,3 @@ def get_type_smart(obj_in):
         return np.array
     else:
         return typ
-    
-df = read_gamit_station_info(p)

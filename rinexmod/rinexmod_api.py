@@ -742,6 +742,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                                        sitelogs_obj_list,
                                        force=force_sitelog)
         logger.debug("metadata used: %s",sitelogobj) 
+    else:
+        sitelogobj = None
         
 
         
@@ -751,7 +753,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ### Priority for the Country source
     # 1) the marker option if 9 char are given
     # 2) the nine_char_dict from the ninecharfile option
-    # 3) the sitelog (most useful actually,
+    # 3) the sitelog object (most useful actually,
     #    but we maintain a fallback mechanism here if the sitelog is wrong
     # Finally, set default value for the monument & country codes
     
@@ -766,7 +768,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         else:
             monum = nine_char_dict[rnx_4char].upper()[4:6]
             country = nine_char_dict[rnx_4char].upper()[6:]
-    elif sitelog:
+    elif sitelogobj:
         monum = "00"
         country = sitelogobj.get_country()
     else:
@@ -779,13 +781,13 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     rnxobj.set_site(rnx_4char,monum,country)
 
     ###########################################################################
-    ########## Apply the sitelog objects on the RinexFile object
-    if sitelog or modif_kw:        
+    ########## Remove previous comments
+    if sitelogobj or modif_kw or (station_info and lfile_apriori):        
         rnxobj.clean_rinexmod_comments(clean_history=True)
         
     ###########################################################################
-    ########## Apply the sitelog objects on the RinexFile object
-    if sitelog:        
+    ########## Apply the sitelog object on the RinexFile object
+    if sitelogobj:        
         rnxobj = sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
         modif_source_sitelog = sitelogobj.filename
@@ -821,7 +823,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     rnxobj.add_comment('RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)')
     rnxobj.add_comment('rinexmoded on {}'.format(
         datetime.strftime(now, '%Y-%m-%d %H:%M')))
-    if sitelog: 
+    if sitelogobj: 
         rnxobj.add_comment('rinexmoded with {}'.format(modif_source_sitelog))
     if modif_kw:
         rnxobj.add_comment('rinexmoded with {}'.format(modif_source_kw))
@@ -829,8 +831,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     #    rnxobj.add_comment('filename assigned from {}'.format(modif_marker))
     
     ###########################################################################
-    ########## Apply the sitelog objects on the RinexFile object
-    if sitelog and full_history:
+    ########## Write the station history in the header
+    if sitelogobj and full_history:
         title = ["- - - - - - - - - - - -","SITE FULL HISTORY"]
         rnxobj.add_comments(title + sitelogobj.rinex_full_history_lines())    
 

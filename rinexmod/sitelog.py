@@ -629,7 +629,7 @@ class SiteLog:
             lastl1, lastl2, lastl3 = None, None, None
 
             for iins,ins in enumerate(instru_stk):
-                l1 = " ".join((ins[instru_name + ' Type'],ins["Serial Number"]))
+                l1 = " ".join((instru_name,ins[instru_name + ' Type'],ins["Serial Number"]))
                 l2 = "Installed on " + str(ins['Date Installed'])
                 l3 = "Removed on " + str(ins['Date Removed'])
                                 
