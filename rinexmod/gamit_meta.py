@@ -14,8 +14,9 @@ import pandas as pd
 import re
 import datetime as dt
 from  rinexmod import rinexmod_api as rimo_api
+from  rinexmod import logger as rimo_log
 
-logger = rimo_api.logger_define('INFO')
+logger = rimo_log.logger_define('INFO')
 
 
 # p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.ray"
@@ -366,6 +367,11 @@ def doy2dt(year,days,hours=0,minutes=0,seconds=0):
     -------
     L : datetime or list/numpy.array of datetime.
         Datetime(s)
+        
+    Note
+    ----
+    extracted from the GeodeZYX toolbox
+    https://github.com/IPGP/geodezyx-toolbox
     """
     if not is_iterable(year):
         # All this because Python cant handle int with a starting with 0 (like 08)
@@ -375,7 +381,6 @@ def doy2dt(year,days,hours=0,minutes=0,seconds=0):
             logger.error('one input is NaN, abort: %s,%s,%s,%s,%s',
                          year,days,hours,minutes,seconds)
             raise Exception
-            
         
         try:
             year    = int(float(str(year)))
@@ -425,6 +430,11 @@ def is_iterable(inp,consider_str_as_iterable=False):
     -------
     out : bool
         True if inp is iterable, False either
+        
+    Note
+    ----
+    extracted from the GeodeZYX toolbox
+    https://github.com/IPGP/geodezyx-toolbox
     """
     if not consider_str_as_iterable and type(inp) is str:
         return False
@@ -441,6 +451,11 @@ def get_type_smart(obj_in):
     """
     get type of an object, to convert easily another one to this type
     for instance type(np.array(A)) doesn't return a constructor 
+    
+    Note
+    ----
+    extracted from the GeodeZYX toolbox
+    https://github.com/IPGP/geodezyx-toolbox
     """
     typ=type(obj_in)
     if typ is np.ndarray:

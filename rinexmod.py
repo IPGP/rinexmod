@@ -14,6 +14,7 @@ for more details
 """
 
 import rinexmod.rinexmod_api as rimo_api
+import rinexmod.logger as rimo_log
 
 if __name__ == '__main__':
 

@@ -18,7 +18,12 @@ import logging
 #logger = logging.getLogger(__name__)
 import string
 
-logger = logging.getLogger("rinexmod_api")
+import rinexmod.logger as rimo_log
+logger = rimo_log.logger_define('INFO')
+
+
+
+# logger = logging.getLogger("rinexmod_api")
 
 #from rinexmod import rinexmod_api as rimo_api
 #logger = rimo_api.logger_define('INFO')
