@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Class
-2021-02-07 Félix Léger - felixleger@gmail.com
+v1 - 2021-02-07 Félix Léger - felixleger@gmail.com
+v2 - 2024-02-26 Pierre Sakic - sakic@ipgp.fr
 """
 
 import os, re
@@ -11,7 +12,7 @@ import configparser
 import json, copy
 import pandas as pd
 
-import gamit_meta
+import rinexmod.gamit_meta as rimo_gmm
 #         import pycountry
 
 class SiteLog:
@@ -51,8 +52,8 @@ class SiteLog:
             self.misc_meta = None
             
     def __repr__(self):
-        return "GNSS metadata for {}, from {}".format(self.site4char,
-                                                      self.filename)
+        return "{} metadata, from {}".format(self.site4char,
+                                             self.filename)
     
     def set_from_sitelogfile(self,sitelogfile):
         """
@@ -76,26 +77,26 @@ class SiteLog:
         initialization method for metadata import from GAMIT files
         """
 
-        self.site4char = site[:4]
+        self.site4char = site[:4].lower()
         
         if type(station_info) is pd.core.frame.DataFrame:
             self.raw_content = station_info 
             self.path = None
-            self.filename = None
+            self.filename = 'station.info'
         else:
-            self.raw_content = gamit_meta.read_gamit_station_info(self.path)
+            self.raw_content = rimo_gmm.read_gamit_station_info(self.path)
             self.path = station_info
             self.filename = os.path.basename(self.path)
             
         if type(lfile) is pd.core.frame.DataFrame:            
             self.raw_content_apr = lfile
         else:
-            self.raw_content_apr = gamit_meta.read_gamit_apr_lfile(lfile)
+            self.raw_content_apr = rimo_gmm.read_gamit_apr_lfile(lfile)
             
         self.status = 0 
         
         if self.raw_content is not None:
-            conv_fct = gamit_meta.gamit_df2instru_miscmeta
+            conv_fct = rimo_gmm.gamit_df2instru_miscmeta
             self.instrumentations , self.misc_meta = conv_fct(self.site4char,
                                                               self.raw_content,
                                                               self.raw_content_apr,
@@ -582,8 +583,8 @@ class SiteLog:
 
         observable_type = instrumentation['receiver']['Satellite System']
 
-        agencies        = {'operator' : self.misc_meta['Preferred Abbreviation'],
-                           'agency' : self.misc_meta['Preferred Abbreviation']}
+        agencies        = {'operator' : self.misc_meta['operator'],
+                           'agency' : self.misc_meta['agency']}
 
         receiver        = {'serial' : instrumentation['receiver']['Serial Number'],
                            'type' : instrumentation['receiver']['Receiver Type'],

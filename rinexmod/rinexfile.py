@@ -17,7 +17,12 @@ import matplotlib.pyplot as plt
 import logging
 #logger = logging.getLogger(__name__)
 import string
+
 logger = logging.getLogger("rinexmod_api")
+
+#from rinexmod import rinexmod_api as rimo_api
+#logger = rimo_api.logger_define('INFO')
+
 
 # *****************************************************************************
 # class definition
@@ -126,14 +131,24 @@ class RinexFile:
             'TIME OF FIRST OBS'
         ]
 
+        missing_metadata_lines = []
         for kw in metadata_lines:
             for line in self.rinex_data:
                 if kw in line:
                     metadata[kw] = line
                     break
+                if 'END OF HEADER' in line:
+                    missing_metadata_lines.append(kw)
+                    break
+                
+        for miss_kw in missing_metadata_lines:
+            logger.warning('%s field is missing in %s header, it will be added',
+                           miss_kw,self.filename)
+            metadata[miss_kw] = ''
 
-        if not'MARKER NUMBER' in metadata:
-            metadata['MARKER NUMBER'] = ''
+        ### previous case with just 'MARKER NUMBER', too weak hardcoded solution    
+        #if not 'MARKER NUMBER' in metadata:
+        #    metadata['MARKER NUMBER'] = ''
 
         metadata_parsed = {
             'File': self.path,

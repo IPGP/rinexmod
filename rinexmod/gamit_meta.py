@@ -11,32 +11,30 @@ Low-level functions to import GAMIT metadata file as pandas DataFrame
 
 import numpy as np 
 import pandas as pd
-import datetime as dt
 import re
-from  rinexmod import rinexmod_api
+import datetime as dt
+from  rinexmod import rinexmod_api as rimo_api
 
-logger = rinexmod_api.logger_define('INFO')
+logger = rimo_api.logger_define('INFO')
 
 
-from geodezyx import conv
-
-p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.ray"
-p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.sopac"
-p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.mit"
+# p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.ray"
+# p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.sopac"
+# p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.mit"
 p = "/home/psakicki/Downloads/station.info"
+# lfile_inp = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/lfile."
 
 
-lfile_inp = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/lfile."
 
 def read_gamit_apr_lfile(aprfile_inp):
     """
-    read a GAMIT's apr/lfile (GNSS stations coordinates and DOMES) 
+    read a GAMIT's apr/L-File (GNSS stations coordinates and DOMES) 
     and store the data in a DataFrame    
 
     Parameters
     ----------
     aprfile_inp : str
-        path of the input apr/lfile
+        path of the input apr/L-File
 
     Returns
     -------
@@ -47,6 +45,8 @@ def read_gamit_apr_lfile(aprfile_inp):
     ----
     If no DOMES is provided in the last 'Note' column,
     a dummy DOMES 00000X000 is returned
+
+    site codes are given in lower case
     
     """
     lines_stk = []
@@ -97,6 +97,8 @@ def read_gamit_apr_lfile(aprfile_inp):
     df = pd.DataFrame(lines_stk)
     df.columns = ['site','site_full','epoch','x','y','z','domes']
     
+    df['site'] = df['site'].str.lower()
+    
     return df
 
 
@@ -116,7 +118,10 @@ def read_gamit_station_info(station_info_inp):
     -------
     df : pandas DataFrame
         the station info data
-
+        
+    Note
+    ----
+    site codes are given in lower case
     """
 
 
@@ -143,8 +148,6 @@ def read_gamit_station_info(station_info_inp):
     # c Dome          radome   a5                 IGS radome name, last 5 chars of RINEX antenna field
     # c HtCod         htcod    a5     DHARP       5-char GAMIT code for type of height measurement
     # c AntDAZ	antdaz  f5.0     0.0        Alignment from True N (deg).  TAH 2020203. 
-    
-    
     
     
     #colsize = np.array([4,16,4,4,3,3,3,4,4,3,3,3,1,7,7,7,6,20,20,5,20,6,20,15,5,5,5])
@@ -217,22 +220,24 @@ def read_gamit_station_info(station_info_inp):
     df['stop doy'].replace(999,365,inplace=True)
        
 
-    df_start = conv.doy2dt(df['start year'],
-                              df['start doy'],
-                              df['start hh'],
-                              df['start mm'],
-                              df['start ss'])
+    df_start = doy2dt(df['start year'],
+                      df['start doy'],
+                      df['start hh'],
+                      df['start mm'],
+                      df['start ss'])
 
     df['start'] = df_start
 
-    df_end = conv.doy2dt(df['stop year'],
-                         df['stop doy'],
-                         df['stop hh'],
-                         df['stop mm'],
-                         df['stop ss'])
+    df_end = doy2dt(df['stop year'],
+                    df['stop doy'],
+                    df['stop hh'],
+                    df['stop mm'],
+                    df['stop ss'])
 
     df['end'] = df_end
-
+    
+    df['site'] = df['site'].str.lower()
+    
     return df
 
 
@@ -240,9 +245,8 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
                              force_fake_coords=False):
     """
     read GAMIT files to get the Rinexmod internal
-    "instru" and "misc_meta" dictionnaries, necessary for the Sitelog objects
-    
-    
+    "instru" and "misc_meta" dictionnaries, 
+    necessary for the Sitelog objects
 
     Parameters
     ----------
@@ -262,7 +266,7 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
         "misc meta" dict.
 
     """
-
+    #########################################################
     #### INSTRUMENTATION PART     
     stinfo_df_site = stinfo_df_inp[stinfo_df_inp['site'] == site]
     installations = []
@@ -271,7 +275,7 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
         inst_dic = {}
         
         ##### dates
-        inst_dic['dates'] = []
+        inst_dic['dates'] = [row['start'],row['end']]
         
         ##### receiver
         rec_dic = {}
@@ -309,18 +313,16 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
         
         installations.append(inst_dic)
         
-    verbose = True 
+    
+    #########################################################
     #### MISC META PART
     apr_df_site = apr_df_inp[apr_df_inp['site'] == site]
     if len(apr_df_site) == 0 and not force_fake_coords:
-        if verbose:
-            # quite unlikely that you meet this error, because gamit_files2objs_convert
-            # filters the sites with missing coordinates
-            logger.error("no coords in apr/lfile for %s, abort (you can force fake coords with -f)",site)
-        raise rinexmod_api.RinexModError
+        logger.error("no coords in apr/lfile for %s, abort (you can force fake coords with -fc)",site)
+        raise rimo_api.RinexModError
         
     elif len(apr_df_site) == 0 and force_fake_coords:
-        logger.warning("no coords in apr/lfile for %s, fake coords at (0°,0°) used",site)
+        #logger.warning("no coords in apr/lfile for %s, fake coords at (0°,0°) used",site)
         apr_df_site = pd.Series({'x':6378137.000,
                                  'y':0,
                                  'z':0,
@@ -337,11 +339,113 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
     mm_dic['operator'] = 'OPERATOR'
     mm_dic['agency'] = 'AGENCY'
 
-    mm_dic['X'] = apr_df_site['x']
-    mm_dic['Y'] = apr_df_site['y']
-    mm_dic['Z'] = apr_df_site['z'] 
+    mm_dic['X coordinate (m)'] = apr_df_site['x']
+    mm_dic['Y coordinate (m)'] = apr_df_site['y']
+    mm_dic['Z coordinate (m)'] = apr_df_site['z'] 
     
     mm_dic['Country'] = 'XXX'
     
     return installations, mm_dic
 
+
+
+def doy2dt(year,days,hours=0,minutes=0,seconds=0):
+    """
+    Time representation conversion
+    
+    Day of Year Time => Python's datetime
+
+    Parameters
+    ----------
+    year, days : float or list/numpy.array of floats.
+        year, days of year
+    hours, minutes, seconds : float or list/numpy.array of floats, optional
+        hours, minutes, seconds
+
+    Returns
+    -------
+    L : datetime or list/numpy.array of datetime.
+        Datetime(s)
+    """
+    if not is_iterable(year):
+        # All this because Python cant handle int with a starting with 0 (like 08)
+        # => SyntaxError: invalid token
+        
+        if np.any(np.isnan([year,days,hours,minutes,seconds])):
+            logger.error('one input is NaN, abort: %s,%s,%s,%s,%s',
+                         year,days,hours,minutes,seconds)
+            raise Exception
+            
+        
+        try:
+            year    = int(float(str(year)))
+            days    = int(float(str(days)))
+            hours   = int(float(str(hours)))
+            minutes = int(float(str(minutes)))
+            seconds = int(float(str(seconds)))
+        except Exception as e:
+            logger.error('error with conversion of %s,%s,%s,%s,%s',
+                         year,days,hours,minutes,seconds)
+            raise e
+
+        tempsecs = seconds + 60 * minutes + 3600 * hours
+        #finalsecs     = np.floor(tempsecs)
+        finalmicrosec = int(np.round(tempsecs * 10**6))
+
+        return dt.datetime(year, 1, 1) + dt.timedelta(days - 1) + \
+        dt.timedelta(microseconds=finalmicrosec)
+
+    else:
+        if not is_iterable(hours):
+            hours   = [0] * len(year)
+        if not is_iterable(minutes):
+            minutes = [0] * len(year)
+        if  not is_iterable(seconds):
+            seconds = [0] * len(year)
+
+        outlis = []
+        typ=get_type_smart(year)
+        for y,d,h,m,s in zip(year,days,hours,minutes,seconds):
+            outlis.append(doy2dt(y,d,h,m,s))
+        return typ(outlis)
+    
+def is_iterable(inp,consider_str_as_iterable=False):
+    """
+    Test if the input is an iterable like a list or a numpy array or not
+
+    Parameters
+    ----------
+    inp : list, numpy.array, ...
+
+    consider_str_as_iterable : bool
+        string are considered as iterable by Python per default
+        This boolean will avoid True as return if you test a string
+        
+    Returns
+    -------
+    out : bool
+        True if inp is iterable, False either
+    """
+    if not consider_str_as_iterable and type(inp) is str:
+        return False
+
+    try:
+        iter(inp)
+    except TypeError:
+        out = False
+    else:
+        out = True
+    return out
+
+def get_type_smart(obj_in):
+    """
+    get type of an object, to convert easily another one to this type
+    for instance type(np.array(A)) doesn't return a constructor 
+    """
+    typ=type(obj_in)
+    if typ is np.ndarray:
+        return np.array
+    else:
+        return typ
+    
+read_gamit_station_info(p)

@@ -13,7 +13,7 @@ for more details
 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 """
 
-import rinexmod.rinexmod_api as rma
+import rinexmod.rinexmod_api as rimo_api
 
 if __name__ == '__main__':
 
@@ -58,7 +58,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     parser.add_argument(
-        '-fs', '--force_sitelog', help="Force sitelog-based header values when RINEX's header and sitelog site name do not correspond", action='store_true', default=False)
+        '-fs', '--force_sitelog', help="Force sitelog-based header values when RINEX's header and sitelog site name do not correspond. When using GAMIT station.info metadata without apriori coordinates in the L-File, gives fake coordinates to the site", action='store_true', default=False)
+    parser.add_argument(
+        '-fc', '--force_fake_coords', help="When using GAMIT station.info metadata without apriori coordinates in the L-File, gives fake coordinates at (0°,0°) to the site", action='store_true', default=False)
     parser.add_argument(
         '-fr', '--force_rnx_load', help="Force the loading of the input RINEX. Useful if its name is not standard", action='store_true', default=False)
     parser.add_argument(
@@ -92,8 +94,6 @@ if __name__ == '__main__':
     modif_kw = args.modif_kw
     marker = args.marker
     ninecharfile = args.ninecharfile
-    station_info = args.station_info
-    lfile_apriori = args.lfile_apriori
     relative = args.relative
     compression = args.compression
     longname = args.longname
@@ -109,28 +109,35 @@ if __name__ == '__main__':
     tolerant_file_period = args.tolerant_file_period 
     multi_process = args.multi_process
     debug = args.debug
+    station_info = args.station_info
+    lfile_apriori = args.lfile_apriori
+    force_fake_coords = args.force_fake_coords
     
-    rma.rinexmod_cli(rinexinput,
-                     outputfolder,
-                     sitelog=sitelog,
-                     modif_kw=modif_kw,
-                     marker=marker,
-                     longname=longname,
-                     force_sitelog=force_sitelog,
-                     force_rnx_load=force_rnx_load,
-                     ignore=ignore, 
-                     ninecharfile=ninecharfile, 
-                     compression=compression,
-                     relative=relative, 
-                     verbose=verbose, 
-                     alone=alone, 
-                     output_logs=output_logs, 
-                     write=write, 
-                     sort=sort,
-                     full_history=full_history,
-                     tolerant_file_period=tolerant_file_period,
-                     multi_process=multi_process,
-                     debug=debug) 
+    
+    rimo_api.rinexmod_cli(rinexinput,
+                          outputfolder,
+                          sitelog=sitelog,
+                          modif_kw=modif_kw,
+                          marker=marker,
+                          longname=longname,
+                          force_sitelog=force_sitelog,
+                          force_rnx_load=force_rnx_load,
+                          ignore=ignore, 
+                          ninecharfile=ninecharfile, 
+                          compression=compression,
+                          relative=relative, 
+                          verbose=verbose, 
+                          alone=alone, 
+                          output_logs=output_logs, 
+                          write=write, 
+                          sort=sort,
+                          full_history=full_history,
+                          tolerant_file_period=tolerant_file_period,
+                          multi_process=multi_process,
+                          debug=debug,
+                          station_info=station_info,
+                          lfile_apriori=lfile_apriori,
+                          force_fake_coords=force_fake_coords) 
 
     def __print_tips(values):
         print("********************************************")

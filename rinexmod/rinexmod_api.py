@@ -17,9 +17,9 @@ import subprocess
 import multiprocessing as mp
 import pandas as pd
 
-from rinexmod import sitelog
-from rinexmod import rinexfile
-from rinexmod import gamit_meta
+import rinexmod.sitelog as rimo_slg
+import rinexmod.rinexfile as rimo_rnx
+import rinexmod.gamit_meta as rimo_gmm
 
 
 # *****************************************************************************
@@ -159,9 +159,9 @@ def sitelog_input_manage(sitelog_inp,force=False):
     list of SiteLog
 
     """
-    if isinstance(sitelog_inp,sitelog.SiteLog):
+    if isinstance(sitelog_inp,rimo_slg.SiteLog):
         return [sitelog_inp]
-    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0],sitelog.SiteLog):
+    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0],rimo_slg.SiteLog):
         return sitelog_inp
     else:
         return sitelog_files2objs_convert(sitelog_inp,
@@ -175,13 +175,13 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
         df_stinfo_raw = station_info_inp
         stinfo_name = 'station.info'
     else:
-        df_stinfo_raw = gamit_meta.read_gamit_station_info(station_info_inp)
+        df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp)
         stinfo_name = os.path.basename(station_info_inp)
         
     if type(lfile_inp) is pd.core.frame.DataFrame:            
         df_apr = lfile_inp
     else:
-        df_apr = gamit_meta.read_gamit_apr_lfile(lfile_inp)
+        df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
         
 
 
@@ -190,13 +190,16 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
     sites_uniq = pd.Series(df_stinfo_raw['site'].unique())
     sites_isin_uniq = sites_uniq.isin(df_apr['site'].unique())
     n_sites_notin = len(sites_uniq) - sum(sites_isin_uniq)
-    
+        
     if n_sites_notin > 0 and not force_fake_coords:
-        logger.warning("%i/%i sites in %s are not in apr/lfile. they are skipped (you can force fake coords with -f)",
+        logger.warning("%i/%i sites in %s are not in apr/lfile. They are skipped (you can force fake coords with -fc)",
                        n_sites_notin,len(sites_uniq),stinfo_name)
-    
         df_stinfo = df_stinfo_raw[sites_isin]
-    else:
+    elif n_sites_notin > 0 and force_fake_coords:
+        logger.warning("%i/%i sites in %s are not in apr/lfile. Fake coords at (0°,0°) used",
+                       n_sites_notin,len(sites_uniq),stinfo_name)
+        df_stinfo = df_stinfo_raw
+    else: #### no missing coords, n_sites_notin == 0
         df_stinfo = df_stinfo_raw
     
     df_stinfo_grp = df_stinfo.groupby('site')
@@ -208,7 +211,7 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
 
     for site, site_info in df_stinfo_grp:
         logger.debug('extract %s from %s',site,stinfo_name)
-        sitelogobj = sitelog.SiteLog(sitelogfile=None)
+        sitelogobj = rimo_slg.SiteLog(sitelogfile=None)
         sitelogobj.set_from_gamit_meta(site, df_stinfo, df_apr,
                                        force_fake_coords)
         sitelogobj_lis.append(sitelogobj)
@@ -227,7 +230,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
     if os.path.isfile(sitelog_filepath):
     
         # Creating sitelog object
-        sitelogobj = sitelog.SiteLog(sitelog_filepath)
+        sitelogobj = rimo_slg.SiteLog(sitelog_filepath)
         # If sitelog is not parsable
         if sitelogobj.status != 0:
             logger.error('The sitelog is not parsable : ' + sitelog_filepath)
@@ -262,7 +265,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
         sitelogs_obj_list = []
         for sta_sitelog in latest_sitelogs:
             # Creating sitelog object
-            sitelogobj = sitelog.SiteLog(sta_sitelog)
+            sitelogobj = rimo_slg.SiteLog(sta_sitelog)
     
             # If sitelog is not parsable
             if sitelogobj.status != 0:
@@ -509,7 +512,7 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
 
     """
 
-    if type(rnxobj_or_dict) is rinexfile.RinexFile:
+    if type(rnxobj_or_dict) is rimo_rnx.RinexFile:
         rnxobj = rnxobj_or_dict
         major_rinex_version = rnxobj.version[0]
         sample_rate_string = rnxobj.sample_rate_string
@@ -567,7 +570,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
              ignore=False, ninecharfile=None, compression=None, relative='', 
              verbose=True, full_history=False,tolerant_file_period=False,
-             return_lists=None,station_info=None,lfile_apriori=None):
+             return_lists=None,station_info=None,lfile_apriori=None,
+             force_fake_coords=False):
     """
     Parameters
     ----------
@@ -668,8 +672,11 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     lfile_apriori: str, optional
         Path of a GAMIT apriori apr/L-File to obtain GNSS site 
         position and DOMES information (needs also station_info option)
-        
+    force_fake_coords: bool, optional
+        When using GAMIT station.info metadata without apriori coordinates 
+        in the L-File, gives fake coordinates at (0°,0°) to the site
 
+    
     Raises
     ------
     RinexModInputArgsError
@@ -725,7 +732,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     ###########################################################################
     ########## Open the rinex file as an object
-    rnxobj = rinexfile.RinexFile(rinexfile,force_rnx_load=force_rnx_load)
+    rnxobj = rimo_rnx.RinexFile(rinexfile,force_rnx_load=force_rnx_load)
 
     if rnxobj.status:
         logger.error('{:110s} - {}'.format(rnxobj.status,rinexfile))
@@ -763,18 +770,25 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         ## modif_marker = rnxobj.get_site(True,False) ### Useless...
         rnxobj.set_site(marker)
 
-    # load the sitelog if any
+    ### load the metadata from sitelog or GAMIT files if any
+    # sitelogs
     if sitelog:            
         sitelogs_obj_list = sitelog_input_manage(sitelog,
                                                  force=force_sitelog)
+    # GAMIT files
+    if not sitelog and (station_info and lfile_apriori):
+        sitelogs_obj_list = gamit_files2objs_convert(station_info,
+                                                     lfile_apriori,
+                                                     force_fake_coords=force_fake_coords)
+    
+    ### find the right SiteLog object corresponding to the RINEX
+    if sitelog or (station_info and lfile_apriori):
         sitelogobj = sitelog_find_site(rnxobj,
                                        sitelogs_obj_list,
                                        force=force_sitelog)
-        logger.debug("sitelog used: %s",sitelogobj) 
+        logger.debug("metadata used: %s",sitelogobj) 
         
-    if station_info and lfile_apriori:
-        
-        logger.debug("sitelog used: %s",sitelogobj) 
+
         
         
     ###########################################################################
@@ -927,7 +941,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
      ninecharfile=None, compression=None, relative='', verbose=True,
      alone=False, output_logs=None, write=False, sort=False, full_history=False,
      tolerant_file_period=False, multi_process=1,debug=False,station_info=None,
-     lfile_apriori=None):
+     lfile_apriori=None,force_fake_coords=False):
     
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -948,22 +962,22 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     """
 
     # If no longname, modif_kw and sitelog, return
-    if not sitelog and not modif_kw and not marker and not longname:
-        logger.critical('No action asked, provide at least one of the following args : --sitelog, --modif_kw, --marker, --longname.')
+    if not sitelog and not modif_kw and not marker and not longname and not station_info and not lfile_apriori:
+        logger.critical('No action asked, provide at least one of the following args : --sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori')
         raise RinexModInputArgsError
 
     # If force option provided, check if sitelog option too, if not, not relevant.
     if force_sitelog and not sitelog:
-        logger.critical('--force option is meaningful only when --sitelog option with a **single** sitelog is also provided')
+        logger.critical('--force option is relevant only when --sitelog option with a **single** sitelog is also provided')
         raise RinexModInputArgsError
 
     # If ignore option provided, check if sitelog option too, if not, not relevant.
     if ignore and not sitelog:
-        logger.critical('--ignore option is meaningful only when using also --sitelog option')
+        logger.critical('--ignore option is relevant only when using also --sitelog option')
         raise RinexModInputArgsError
 
     if ninecharfile and not longname:
-        logger.critical('--ninecharfile option is meaningful only when using also --longname option')
+        logger.critical('--ninecharfile option is relevant only when using also --longname option')
         raise RinexModInputArgsError
 
     if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
@@ -1025,17 +1039,14 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     # from sitelogs 
     if sitelog:
         sitelog_use = sitelog_input_manage(sitelog, force_sitelog)
-        
     # from GAMIT files
     if station_info and lfile_apriori:
-        sitelog_use = sitelog_input_manage(sitelog, force_sitelog)
-
-
+        sitelog_use = gamit_files2objs_convert(station_info, lfile_apriori,
+                                               force_fake_coords=force_fake_coords)
+        
     ### Looping in file list ###
     return_lists = dict()
     ####### Iterate over each RINEX
-    
-
     rinexmod_kwargs_list = []
     for rnx in rinexinput:    
         rnxmod_kwargs = {"rinexfile":rnx,
@@ -1055,7 +1066,9 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
                          "full_history":full_history,
                          "tolerant_file_period":tolerant_file_period,
                          "station_info":station_info,
-                         "lfile_apriori":lfile_apriori}
+                         "lfile_apriori":lfile_apriori,
+                         "force_fake_coords":force_fake_coords}
+        
         rinexmod_kwargs_list.append(rnxmod_kwargs) 
 
     global rinexmod_mp_wrapper
