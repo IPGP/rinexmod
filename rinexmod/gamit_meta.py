@@ -238,7 +238,7 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp,
                              force_fake_coords=False):
     """
     read GAMIT files to get the Rinexmod internal
-    "instru" and "misc_meta" dictionnaries, 
+    "instrus" and "misc_meta" dictionnaries,
     necessary for the Sitelog objects
 
     Parameters
@@ -254,7 +254,7 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp,
     Returns
     -------
     installations : dict
-        "installations" list i.e. list of "instru" dict.
+        "installations" list i.e. list of "instrus" dict.
     mm_dic : dict 
         "misc meta" dict.
 

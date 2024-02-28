@@ -23,7 +23,7 @@ class MetaData:
     Requires one parameter, the sitelog path.
     At instantiation, will parse the sitelog and store in a dict all parsed values.
     Dict accessible via MetaData.raw_content
-    Will also create a tab, stored in MetaData.instru, containing all
+    Will also create a tab, stored in MetaData.instrus, containing all
     the different instrumentation periods, tab containing a start and an end date,
     and for each line a dict of antenna instrumentation an receiver instrumentation.
     
@@ -50,7 +50,7 @@ class MetaData:
             self.filename = None
             self.site4char = None
             self.raw_content, self.status = None, None
-            self.instru = None
+            self.instrus = None
             self.misc_meta = None
 
     def __repr__(self):
@@ -66,9 +66,9 @@ class MetaData:
         self.site4char = self.filename[:4].lower()
         self.raw_content, self.status = self._sitelog2raw_content_dict()
         if self.raw_content:
-            self.instru = self._get_instru_dicts()
+            self.instrus = self._get_instru_dicts()
         else:
-            self.instru = None
+            self.instrus = None
 
         self.misc_meta = self._get_misc_meta()
 
@@ -99,13 +99,13 @@ class MetaData:
 
         if self.raw_content is not None:
             conv_fct = rimo_gmm.gamit_df2instru_miscmeta
-            self.instru, self.misc_meta = conv_fct(self.site4char,
-                                                   self.raw_content,
-                                                   self.raw_content_apr,
-                                                   force_fake_coords=force_fake_coords)
+            self.instrus, self.misc_meta = conv_fct(self.site4char,
+                                                    self.raw_content,
+                                                    self.raw_content_apr,
+                                                    force_fake_coords=force_fake_coords)
 
         else:
-            self.instru, self.misc_meta = None, None
+            self.instrus, self.misc_meta = None, None
 
     #  _____               _                __                  _   _
     # |  __ \             (_)              / _|                | | (_)
@@ -269,9 +269,9 @@ class MetaData:
         antenna and receiver change dates, then returns a table with only 
         instrumented periods.
         
-        It uses the raw_content attribute (dictionnary) 
+        It uses the raw_content attribute (dictionary)
         
-        This "table" a list containing one or several dictionnaries with 3 keys
+        This "table" a list containing one or several dictionaries with 3 keys
         'dates' 'receiver' 'antenna' and the following structure:
             
          {
@@ -346,7 +346,7 @@ class MetaData:
 
         receivers = [self.raw_content[key] for key in self.raw_content.keys() if key.startswith('3.')]
 
-        # Constructiong the installations list - Receivers
+        # Constructing the installations list - Receivers
         for installation in installations:
             # We get the receiver corresponding to the date interval
             for receiver in receivers:
@@ -356,7 +356,7 @@ class MetaData:
                     # Once found, we quit the loop
                     break
 
-        ##### Getting Antena info for each interval #####
+        ##### Getting Antenna info for each interval #####
 
         antennas = [self.raw_content[key] for key in self.raw_content.keys() if key.startswith('4.')]
 
@@ -441,7 +441,7 @@ class MetaData:
         thisinstall = None
         ignored = False
 
-        for installation in self.instru:
+        for installation in self.instrus:
             if installation['dates'][0] <= starttime and installation['dates'][1] >= endtime:
                 thisinstall = installation
                 break
@@ -451,13 +451,13 @@ class MetaData:
         # consider only the other parameters
         if not thisinstall and ignore:
             # We work with consecutive instrumentation periods
-            for i in range(0, len(self.instru) - 1):
-                if self.instru[i]['dates'][0] <= starttime \
-                        and self.instru[i + 1]['dates'][1] >= endtime:
+            for i in range(0, len(self.instrus) - 1):
+                if self.instrus[i]['dates'][0] <= starttime \
+                        and self.instrus[i + 1]['dates'][1] >= endtime:
 
                     # we copy the two instrumentation periods dictionnary to remove firmware info
-                    nofirmware_instrumentation_i = copy.deepcopy(self.instru[i])
-                    nofirmware_instrumentation_i1 = copy.deepcopy(self.instru[i + 1])
+                    nofirmware_instrumentation_i = copy.deepcopy(self.instrus[i])
+                    nofirmware_instrumentation_i1 = copy.deepcopy(self.instrus[i + 1])
 
                     # We remove date infos
                     nofirmware_instrumentation_i.pop('dates')
@@ -475,7 +475,7 @@ class MetaData:
                     # If, except dates and firmware version, the dicts are equls, we set
                     # instrumentation to the first one of the two.
                     if nofirmware_instrumentation_i == nofirmware_instrumentation_i1:
-                        thisinstall = self.instru[i]
+                        thisinstall = self.instrus[i]
                         ignored = True
 
         return thisinstall, ignored
@@ -612,7 +612,7 @@ class MetaData:
         rec_stk = []
         ant_stk = []
 
-        for instru in self.instru:
+        for instru in self.instrus:
             rec_stk.append(instru["receiver"])
             ant_stk.append(instru["antenna"])
 
@@ -690,7 +690,7 @@ class MetaData:
     #
     #     pattern = re.compile(r'[ 0](0+)[0-9]')
     #
-    #     for installation in self.instru:
+    #     for installation in self.instrus:
     #
     #         Session_Start = installation['dates'][0]
     #         # print(type(Session_Start))
