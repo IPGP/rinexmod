@@ -28,19 +28,23 @@ logger = rimo_log.logger_define('INFO')
 class RinexModError(Exception):
     pass
 
+
 class RinexModInputArgsError(RinexModError):
     pass
+
 
 class RinexFileError(RinexModError):
     pass
 
-class SitelogError(RinexModError):
+
+class MetaDataError(RinexModError):
     pass
+
 
 class ReturnListError(RinexModError):
     pass
 
-    
+
 # *****************************************************************************
 # misc functions
 
@@ -75,7 +79,7 @@ def git_get_revision_short_hash():
     except:
         logger.warn('unable to get the git commit version')
         githash = "xxxxxxx"
-    
+
     #### 2msec to run this fuction
 
     return githash
@@ -84,10 +88,10 @@ def git_get_revision_short_hash():
 # *****************************************************************************
 # Sitelog import
 
-def sitelog_input_manage(sitelog_inp,force=False):
+def sitelog_input_manage(sitelog_inp, force=False):
     """
     Manage the multiple types possible for a Sitelog inputs
-    Return a list of MetaData to be handeled by sitelog_find_site
+    Return a list of MetaData to be handeled by metadata_find_site
     
     Possible inputs are 
      * list of string (sitelog file paths),
@@ -114,11 +118,11 @@ def sitelog_input_manage(sitelog_inp,force=False):
         return sitelog_inp
     else:
         return sitelog_files2objs_convert(sitelog_inp,
-                                           force=force,
-                                           return_list_even_if_single_input=True)
-    
-    
-def gamit_files2objs_convert(station_info_inp,lfile_inp,
+                                          force=force,
+                                          return_list_even_if_single_input=True)
+
+
+def gamit_files2objs_convert(station_info_inp, lfile_inp,
                              force_fake_coords=False):
     """
     Read a GAMIT files and convert their content to MetaData objects
@@ -138,7 +142,7 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
 
     Returns
     -------
-    sitelogobj_lis : list
+    metadataobj_lis : list
         list of MetaData objects.
 
     """
@@ -148,54 +152,53 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
     else:
         df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp)
         stinfo_name = os.path.basename(station_info_inp)
-        
-    if type(lfile_inp) is pd.core.frame.DataFrame:            
+
+    if type(lfile_inp) is pd.core.frame.DataFrame:
         df_apr = lfile_inp
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
-        
+
     sites_isin = df_stinfo_raw['site'].isin(df_apr['site'])
     ### for the stats only
     sites_uniq = pd.Series(df_stinfo_raw['site'].unique())
     sites_isin_uniq = sites_uniq.isin(df_apr['site'].unique())
     n_sites_notin = len(sites_uniq) - sum(sites_isin_uniq)
-        
+
     if n_sites_notin > 0 and not force_fake_coords:
         logger.warning("%i/%i sites in %s are not in apr/lfile. They are skipped (you can force fake coords with -fc)",
-                       n_sites_notin,len(sites_uniq),stinfo_name)
+                       n_sites_notin, len(sites_uniq), stinfo_name)
         df_stinfo = df_stinfo_raw[sites_isin]
     elif n_sites_notin > 0 and force_fake_coords:
         logger.warning("%i/%i sites in %s are not in apr/lfile. Fake coords at (0°,0°) used",
-                       n_sites_notin,len(sites_uniq),stinfo_name)
+                       n_sites_notin, len(sites_uniq), stinfo_name)
         df_stinfo = df_stinfo_raw
-    else: #### no missing coords, n_sites_notin == 0
+    else:  #### no missing coords, n_sites_notin == 0
         df_stinfo = df_stinfo_raw
-    
+
     df_stinfo_grp = df_stinfo.groupby('site')
-    
-    sitelogobj_lis = []
+
+    metadataobj_lis = []
 
     logger.info('%i sites will be extracted from %s',
-                 len(df_stinfo_grp),stinfo_name)
+                len(df_stinfo_grp), stinfo_name)
 
     for site, site_info in df_stinfo_grp:
-        logger.debug('extract %s from %s',site,stinfo_name)
-        sitelogobj = rimo_slg.MetaData(sitelogfile=None)
-        sitelogobj.set_from_gamit_meta(site, df_stinfo, df_apr,
-                                       force_fake_coords=force_fake_coords,
-                                       station_info_name=stinfo_name)
-        sitelogobj_lis.append(sitelogobj)
-        
-    logger.info('%i sites have been extracted from %s',
-                 len(sitelogobj_lis),stinfo_name)
-        
-    return sitelogobj_lis
+        logger.debug('extract %s from %s', site, stinfo_name)
+        metadataobj = rimo_slg.MetaData(sitelogfile=None)
+        metadataobj.set_from_gamit_meta(site, df_stinfo, df_apr,
+                                        force_fake_coords=force_fake_coords,
+                                        station_info_name=stinfo_name)
+        metadataobj_lis.append(metadataobj)
 
+    logger.info('%i sites have been extracted from %s',
+                len(metadataobj_lis), stinfo_name)
+
+    return metadataobj_lis
 
 
 def sitelog_files2objs_convert(sitelog_filepath,
-                                force = False,
-                                return_list_even_if_single_input=True):   
+                               force=False,
+                               return_list_even_if_single_input=True):
     """
     Read a set of sitelog files and convert them to MetaData objects
 
@@ -211,71 +214,72 @@ def sitelog_files2objs_convert(sitelog_filepath,
 
     Raises
     ------
-    SitelogError
+    MetaDataError
     RinexModInputArgsError
 
     Returns
     -------
-    sitelogs_obj_list : list
+    metadata_obj_list : list
         list of MetaData objects.
 
     """
     # Case of one single sitelog:
     if os.path.isfile(sitelog_filepath):
-    
+
         # Creating sitelog object
         sitelogobj = rimo_slg.MetaData(sitelog_filepath)
         # If sitelog is not parsable
         if sitelogobj.status != 0:
             logger.error('The sitelog is not parsable : ' + sitelog_filepath)
-            raise SitelogError
-            
+            raise MetaDataError
+
         if return_list_even_if_single_input:
             sitelogs_obj_list = [sitelogobj]
         else:
             sitelogs_obj_list = sitelogobj
-    
+
     # Case of a folder
     elif os.path.isdir(sitelog_filepath):
-    
+
         if force:
-            logger.error('--force option is meaningful only when providing a single sitelog (and not a folder contaning several sitelogs)')
-            raise SitelogError
-    
+            logger.error(
+                '--force option is meaningful only when providing a single sitelog (and not a folder contaning several sitelogs)')
+            raise MetaDataError
+
         sitelog_extension = '.log'
         all_sitelogs = listfiles(sitelog_filepath, sitelog_extension)
-    
+
         sitelog_pattern = re.compile('\w{4,9}_\d{8}.log')
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
-    
-        logger.info('**** %i sitelogs detected: (in %s)',len(all_sitelogs),sitelog_filepath)
+
+        logger.info('**** %i sitelogs detected: (in %s)', len(all_sitelogs), sitelog_filepath)
         for sl in all_sitelogs:
             logger.debug(sl)
 
         # Get last version of sitelogs if multiple available
         latest_sitelogs = _sitelog_find_latest_files(all_sitelogs)
-        
+
         sitelogs_obj_list = []
         for sta_sitelog in latest_sitelogs:
             # Creating sitelog object
             sitelogobj = rimo_slg.MetaData(sta_sitelog)
-    
+
             # If sitelog is not parsable
             if sitelogobj.status != 0:
                 logger.error('The sitelog is not parsable: ' +
-                      sitelogobj.path)
-                raise SitelogError
-    
+                             sitelogobj.path)
+                raise MetaDataError
+
             # Appending to list
             sitelogs_obj_list.append(sitelogobj)
-    
-        logger.info('**** %i most recent sitelogs selected:',len(sitelogs_obj_list))
+
+        logger.info('**** %i most recent sitelogs selected:', len(sitelogs_obj_list))
         for sl in sitelogs_obj_list:
             logger.debug(sl.path)
     ### case of no file nor folder
     else:
-        logger.error("unable to handle file/directory. Does it exists?: %s",sitelog_filepath)
+        logger.error("unable to handle file/directory. Does it exists?: %s", sitelog_filepath)
         raise RinexModInputArgsError
 
     return sitelogs_obj_list
@@ -290,13 +294,13 @@ def _sitelog_find_latest_files(all_sitelogs_filepaths):
     sitelogsta = [os.path.basename(sl)[0:4] for sl in all_sitelogs_filepaths]
     # set the output latest sitelog list
     latest_sitelogs_filepaths = []
-    
+
     for sta in sitelogsta:
         # Grouping by site
         sta_sitelogs = [sl for sl in all_sitelogs_filepaths if os.path.basename(sl)[0:4] == sta]
         # Getting dates from basename
         sitelogs_dates = [os.path.splitext(os.path.basename(sitelog))[
-            0][-8:] for sitelog in sta_sitelogs]
+                              0][-8:] for sitelog in sta_sitelogs]
         # Parsing 'em
         sitelogs_dates = [datetime.strptime(
             sitelogs_date, '%Y%m%d') for sitelogs_date in sitelogs_dates]
@@ -305,16 +309,16 @@ def _sitelog_find_latest_files(all_sitelogs_filepaths):
         # We filter the list with the max date string, and get a one entry list, then transform it to string
         sta_sitelog = [sitelog for sitelog in sta_sitelogs if maxdate in os.path.splitext(
             os.path.basename(sitelog))[0][-8:]][0]
-        
-        latest_sitelogs_filepaths.append(sta_sitelog)
-    
-    return latest_sitelogs_filepaths
-    
 
-def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
+        latest_sitelogs_filepaths.append(sta_sitelog)
+
+    return latest_sitelogs_filepaths
+
+
+def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
     """
-    Finding the right sitelog
-    
+    Finding the right MetaData object
+
     If is list, can not use force.
     If no sitelog found, do not process.
     """
@@ -322,56 +326,61 @@ def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
         rnx_4char = rnxobj_or_site4char[:4]
         err_label = rnxobj_or_site4char
     else:
-        rnx_4char = rnxobj_or_site4char.get_site(True,True)
+        rnx_4char = rnxobj_or_site4char.get_site(True, True)
         err_label = rnxobj_or_site4char.filename
-        
+
     logger.debug('Searching corresponding metadata for site : ' + rnx_4char)
 
-    if rnx_4char not in [sl.site4char for sl in sitelogs_obj_list]:
-        if len(sitelogs_obj_list) == 1:
+    if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
+        if len(metadata_obj_list) == 1:
             if not force:
                 logger.error('{:110s} - {}'.format(
-                    '33 - RINEX name\'s site does not correspond to provided sitelog - use -f option to force', err_label))
+                    '33 - RINEX name\'s site does not correspond to provided sitelog - use -f option to force',
+                    err_label))
                 raise RinexModInputArgsError
             else:
                 logger.warning('{:110s} - {}'.format(
-                    '34 - RINEX name\'s site does not correspond to provided sitelog, forced processing anyway', err_label))
+                    '34 - RINEX name\'s site does not correspond to provided sitelog, forced processing anyway',
+                    err_label))
         else:
             logger.error(
                 '{:110s} - {}'.format('33 - No sitelog found for this RINEX', err_label))
             raise RinexModInputArgsError
     else:
-        sitelogobj = [sl for sl in sitelogs_obj_list if sl.site4char == rnx_4char][0] 
+        metadataobj = [md for md in metadata_obj_list if md.site4char == rnx_4char][0]
         ## we assume the latest sitelog has been found in sitelog_files2objs_convert
-        
-    return sitelogobj
-        
 
-def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
+    return metadataobj
+
+
+def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
     """
-    rnx_4char = rnxobj.get_site(True,True)
+    rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    sitelog_4char = sitelogobj.misc_meta['Four Character ID'].lower()
-    
-    if rnx_4char != sitelog_4char:
-        logger.warning("RINEX and metadata 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",rnx_4char,sitelog_4char)
+    metadata_4char = metadataobj.misc_meta['Four Character ID'].lower()
+
+    if rnx_4char != metadata_4char:
+        logger.warning(
+            "RINEX and metadata 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",
+            rnx_4char, metadata_4char)
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    metadata_vars, ignored = sitelogobj.rinex_metadata_lines(
+    metadata_vars, ignored = metadataobj.rinex_metadata_lines(
         rnxobj.start_date, rnxobj.end_date, ignore)
 
     if not metadata_vars:
         logger.error('{:110s} - {}'.format(
             '35 - No instrumentation corresponding to the RINEX epoch', rnxobj.filename))
-        raise SitelogError
+        raise MetaDataError
 
     if ignored:
         logger.warning('{:110s} - {}'.format(
-            '36 - Instrumentation cames from merged metadata periods with different firmwares, processing anyway', rnxobj.filename))
+            '36 - Instrumentation cames from merged metadata periods with different firmwares, processing anyway',
+            rnxobj.filename))
 
     (fourchar_id, domes_id, observable_type, agencies, receiver,
      antenna, antenna_pos, antenna_delta) = metadata_vars
@@ -385,11 +394,12 @@ def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
     rnxobj.mod_antenna_delta(**antenna_delta)
     rnxobj.mod_agencies(**agencies)
     rnxobj.mod_sat_system(observable_type)
-    
+
     return rnxobj
 
+
 # *****************************************************************************
-# modification keyword dictionnary functions
+# modification keyword dictionary functions
 
 def _modif_kw_check(modif_kw):
     """
@@ -424,17 +434,18 @@ def _modif_kw_check(modif_kw):
         if kw not in acceptable_keywords:
             logger.error('{}\' is not an acceptable keyword for header modification.'.format(kw))
             return RinexModInputArgsError
-        
+
     return None
-        
-   
-def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
+
+
+def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
     """
     apply a modification keywords on a RinexFile object
     to modify this RinexFile with the rights metadata
     """
+
     def __keys_in_modif_kw(keys_in):
-        return all([e in  modif_kw.keys() for e in keys_in])
+        return all([e in modif_kw.keys() for e in keys_in])
 
     rinexfileobj.mod_marker(modif_kw.get('marker_name'),
                             modif_kw.get('marker_number'))
@@ -468,42 +479,43 @@ def modif_kw_apply_on_rnxobj(rinexfileobj,modif_kw):
     rinexfileobj.mod_filename_file_period(
         modif_kw.get('filename_file_period'))
     rinexfileobj.mod_filename_data_freq(
-        modif_kw.get('filename_data_freq')) 
+        modif_kw.get('filename_data_freq'))
     rinexfileobj.mod_filename_data_source(
-        modif_kw.get('filename_data_source')) 
+        modif_kw.get('filename_data_source'))
 
     # comment
     rinexfileobj.add_comment(modif_kw.get('comment'))
-    
+
     return rinexfileobj
+
 
 # *****************************************************************************
 # dictionnary as output for gnss_delivery workflow
 
-def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
+def _return_lists_maker(rnxobj_or_dict, return_lists=dict()):
     """
     Construct the so called ``return_lists`` (which are actually dictionnaries)
-    
+
     return_lists have the structure:
-        
+
     ```
     return_lists[major_rinex_version][sample_rate_string][file_period]
     ```
-    
-    the input ``return_lists`` is populated with the content of the input 
+
+    the input ``return_lists`` is populated with the content of the input
     ``rnxobj_or_dict``
 
     Parameters
     ----------
     rnxobj_or_dict : RinexFile object or dict
-    
+
         The input new information which will populate the return_lists
-        
-        if a dict is provided, we assume it is a singleton with a standard 
+
+        if a dict is provided, we assume it is a singleton with a standard
         return_lists structure to be merged in a bigger return_lists
 
     return_lists : dict, optional
-        A potential pre-exisiting return_lists. 
+        A potential pre-exisiting return_lists.
         Per default it is a brand new return_lists for scratch.
         The default is dict().
 
@@ -511,7 +523,7 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
     -------
     return_lists : dict
         The input return_lists populated with the input rnxobj_or_dict.
-        
+
     Note
     ----
     Specific usage for the IPGP's gnss_delivery workflow
@@ -522,18 +534,18 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
         rnxobj = rnxobj_or_dict
         major_rinex_version = rnxobj.version[0]
         sample_rate_string = rnxobj.sample_rate_string
-        file_period=rnxobj.file_period
-        path_output=rnxobj.path_output
+        file_period = rnxobj.file_period
+        path_output = rnxobj.path_output
     elif type(rnxobj_or_dict) is dict:
         rtrnlst = rnxobj_or_dict
-        major_rinex_version = list(rtrnlst.keys())[0] 
-        sample_rate_string = list(rtrnlst[major_rinex_version].keys())[0] 
-        file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0] 
-        path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0] 
+        major_rinex_version = list(rtrnlst.keys())[0]
+        sample_rate_string = list(rtrnlst[major_rinex_version].keys())[0]
+        file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0]
+        path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0]
     else:
         logger.error("Wrong Input, must be RinexFile object or dict. Input given: %s, %s",
-                rnxobj_or_dict,type(rnxobj_or_dict))
-        raise ReturnListError 
+                     rnxobj_or_dict, type(rnxobj_or_dict))
+        raise ReturnListError
 
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
@@ -544,21 +556,21 @@ def _return_lists_maker(rnxobj_or_dict,return_lists=dict()):
         return_lists[major_rinex_version][sample_rate_string][file_period] = []
 
     return_lists[major_rinex_version][sample_rate_string][file_period].append(path_output)
-    
+
     return return_lists
 
 
-def _return_lists_write(return_lists,logfolder,now_dt=None):
+def _return_lists_write(return_lists, logfolder, now_dt=None):
     # Writing an output file for each RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD lists
     if not now_dt:
         now_dt = datetime.now()
-        
+
     for rinex_version in return_lists:
         for sample_rate in return_lists[rinex_version]:
             for file_period in return_lists[rinex_version][sample_rate]:
-
                 this_outputfile = '_'.join(
-                    ['RINEX' + rinex_version, sample_rate, file_period, datetime.strftime(now_dt, '%Y%m%d%H%M'), 'delivery.lst'])
+                    ['RINEX' + rinex_version, sample_rate, file_period, datetime.strftime(now_dt, '%Y%m%d%H%M'),
+                     'delivery.lst'])
                 this_outputfile = os.path.join(logfolder, this_outputfile)
 
                 # Writting output to temporary file and copying it them to target files
@@ -567,16 +579,16 @@ def _return_lists_write(return_lists,logfolder,now_dt=None):
                         line) for line in return_lists[rinex_version][sample_rate][file_period])
                     logger.debug('Output rinex list written to ' + this_outputfile)
     return this_outputfile
-                        
-            
+
+
 # *****************************************************************************
-# Main function            
-            
+# Main function
+
 def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              longname=False, force_rnx_load=False, force_sitelog=False,
-             ignore=False, ninecharfile=None, compression=None, relative='', 
-             verbose=True, full_history=False,tolerant_file_period=False,
-             return_lists=None,station_info=None,lfile_apriori=None,
+             ignore=False, ninecharfile=None, compression=None, relative='',
+             verbose=True, full_history=False, tolerant_file_period=False,
+             return_lists=None, station_info=None, lfile_apriori=None,
              force_fake_coords=False):
     """
     Parameters
@@ -587,7 +599,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Folder where to write the modified RINEX files.
     sitelog : str, list of str, MetaData object, list of MetaData objects, optional
         Get the RINEX header values from a sitelog.
-        Possible inputs are: 
+        Possible inputs are:
          * list of string (sitelog file paths),
          * single string (single sitelog file path or directory containing the sitelogs),
          * list of MetaData object
@@ -606,13 +618,13 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
          * station (legacy alias for marker_name)
          * receiver_serial
          * receiver_type
-         * receiver_fw 
+         * receiver_fw
          * antenna_serial
          * antenna_type
          * antenna_X_pos
          * antenna_Y_pos
          * antenna_Z_pos
-         * antenna_H_delta 
+         * antenna_H_delta
          * antenna_E_delta
          * antenna_N_delta
          * operator
@@ -627,8 +639,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     marker : str, optional
         A four or nine character site code that will be used to rename
         input files.
-        Apply also to the header's MARKER NAME, 
-        but a custom modification kewyord marker_name='XXXX' overrides it 
+        Apply also to the header's MARKER NAME,
+        but a custom modification kewyord marker_name='XXXX' overrides it
         (modif_kw argument below)
         The default is ''.
     longname : bool, optional
@@ -641,25 +653,25 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Force sitelog-based header values when RINEX's header
         and sitelog site name do not correspond. The default is False.
     ignore : bool, optional
-        Ignore firmware changes between instrumentation periods 
+        Ignore firmware changes between instrumentation periods
         when getting header values info from sitelogs. The default is False.
     ninecharfile : str, optional
         Path of a file that contains 9-char. site names from the M3G database.
         The default is None.
     compression : str, optional
-        Set RINEX compression 
-        acceptables values : gz (recommended to fit IGS standards), 'Z', None. 
+        Set RINEX compression
+        acceptables values : gz (recommended to fit IGS standards), 'Z', None.
         The default is None.
     relative : str, optional
-        Reconstruct files relative subfolders. 
-        You have to indicate the common parent folder, 
+        Reconstruct files relative subfolders.
+        You have to indicate the common parent folder,
         that will be replaced with the output folder. The default is ''.
     verbose : bool, optional
-        set the level of verbosity 
+        set the level of verbosity
         (False for the INFO level, True for the DEBUG level).
         The default is True.
     full_history : bool, optional
-        Add the full history of the station in 
+        Add the full history of the station in
         the RINEX's header as comment.
     tolerant_file_period : bool, optional
         If True, the RINEX file period is tolerant and stick to
@@ -673,13 +685,13 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         to activates it, give a dict as input (an empty one - dict() works)
         The default is None.
     station_info: str, optional
-        Path of a GAMIT station.info file to obtain GNSS site 
+        Path of a GAMIT station.info file to obtain GNSS site
         metadata information (needs also lfile_apriori option)
     lfile_apriori: str, optional
-        Path of a GAMIT apriori apr/L-File to obtain GNSS site 
+        Path of a GAMIT apriori apr/L-File to obtain GNSS site
         position and DOMES information (needs also station_info option)
     force_fake_coords: bool, optional
-        When using GAMIT station.info metadata without apriori coordinates 
+        When using GAMIT station.info metadata without apriori coordinates
         in the L-File, gives fake coordinates at (0°,0°) to the site
 
     Raises
@@ -692,19 +704,19 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     Returns
     -------
     outputfile : str
-        the path of the rinexmoded RINEX    
+        the path of the rinexmoded RINEX
 
     OR
 
     return_lists : dict
         a dictionary of rinexmoded RINEXs for GLASS distribution.
     """
-    
+
     now = datetime.now()
 
     if verbose:
-        logger = rimo_log.logger_define('DEBUG', 
-                                        logfile=None, 
+        logger = rimo_log.logger_define('DEBUG',
+                                        logfile=None,
                                         level_logfile='DEBUG')
     else:
         logger = rimo_log.logger_define('INFO',
@@ -734,19 +746,19 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         logger.error(
             '{:110s} - {}'.format('30 - Input and output folders are the same !', rinexfile))
         raise RinexFileError
-        
+
     if not os.path.exists(outputfolder):
-        logger.warning("the output folder does not exists")        
+        logger.warning("the output folder does not exists")
         os.makedirs(outputfolder)
 
     ###########################################################################
     ########## Open the rinex file as an object
-    rnxobj = rimo_rnx.RinexFile(rinexfile,force_rnx_load=force_rnx_load)
+    rnxobj = rimo_rnx.RinexFile(rinexfile, force_rnx_load=force_rnx_load)
 
     if rnxobj.status:
-        logger.error('{:110s} - {}'.format(rnxobj.status,rinexfile))
+        logger.error('{:110s} - {}'.format(rnxobj.status, rinexfile))
         raise RinexFileError
-        
+
     logger.debug('RINEX Origin Metadata :\n' + rnxobj.get_metadata()[0])
 
     # apply tolerant / strict (per default) file period
@@ -757,7 +769,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     if marker and (len(marker) != 4 and len(marker) != 9):
         logger.error('The site name provided is not 4 or 9-char valid : ' + marker)
         raise RinexModInputArgsError
-    
+
     # Get the 4 char > 9 char dictionnary from the input list
     nine_char_dict = dict()  # in any case, nine_char_dict is initialized
     if ninecharfile:
@@ -770,7 +782,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
         for site_key in nine_char_list:
             nine_char_dict[site_key[:4].lower()] = site_key.strip()
-            
+
     # set the marker as Rinex site, if any
     # This preliminary set_site is for th research of the right sitelog
     # a second set_site will take place a just after
@@ -781,31 +793,28 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     ### load the metadata from sitelog or GAMIT files if any
     ## sitelogs
-    if sitelog:            
+    if sitelog:
         sitelogs_obj_list = sitelog_input_manage(sitelog,
                                                  force=force_sitelog)
     ## GAMIT files
     # We read the GAMIT files only if no input 'sitelog' variable is given.
     # Indeed, the GAMIT files might have been readed outside this function
-    # (most likely actually). The already readed GAMIT files are then stored 
+    # (most likely actually). The already readed GAMIT files are then stored
     # in the 'sitelog' variable as a list of MetaData objects
     if (station_info and lfile_apriori) and not sitelog:
         sitelogs_obj_list = gamit_files2objs_convert(station_info,
                                                      lfile_apriori,
                                                      force_fake_coords=force_fake_coords)
-    
+
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
-        sitelogobj = sitelog_find_site(rnxobj,
-                                       sitelogs_obj_list,
-                                       force=force_sitelog)
-        logger.debug("metadata used: %s",sitelogobj) 
+        metadataobj = metadata_find_site(rnxobj,
+                                         sitelogs_obj_list,
+                                         force=force_sitelog)
+        logger.debug("metadata used: %s", metadataobj)
     else:
-        sitelogobj = None
-        
+        metadataobj = None
 
-        
-        
     ###########################################################################
     ########## Handle the similar options to set the site code
     ### Priority for the Country source
@@ -814,42 +823,42 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # 3) the sitelog object (most useful actually,
     #    but we maintain a fallback mechanism here if the sitelog is wrong
     # Finally, set default value for the monument & country codes
-    
-    rnx_4char = rnxobj.get_site(True,True)
+
+    rnx_4char = rnxobj.get_site(True, True)
 
     if marker and len(marker) == 9:
         monum = marker[4:6]
-        country = marker[6:]  
+        country = marker[6:]
     elif ninecharfile:
         if not rnx_4char in nine_char_dict:
             logger.warning('32 - Site\'s missing in the input 9-char. file: %s', rinexfile)
         else:
             monum = nine_char_dict[rnx_4char].upper()[4:6]
             country = nine_char_dict[rnx_4char].upper()[6:]
-    elif sitelogobj:
+    elif metadataobj:
         monum = "00"
-        country = sitelogobj.get_country()
+        country = metadataobj.get_country()
     else:
         monum = "00"
         country = "XXX"
-        
+
     if country == "XXX":
         logger.warning('32 - Site\'s country not retrevied, will not be properly renamed: %s', rinexfile)
 
-    rnxobj.set_site(rnx_4char,monum,country)
+    rnxobj.set_site(rnx_4char, monum, country)
 
     ###########################################################################
     ########## Remove previous comments
-    if sitelogobj or modif_kw or (station_info and lfile_apriori):        
+    if metadataobj or modif_kw or (station_info and lfile_apriori):
         rnxobj.clean_rinexmod_comments(clean_history=True)
-        
+
     ###########################################################################
     ########## Apply the sitelog object on the RinexFile object
-    if sitelogobj:        
-        rnxobj = sitelogobj_apply_on_rnxobj(rnxobj, sitelogobj,ignore=ignore)
+    if metadataobj:
+        rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=ignore)
         logger.debug('RINEX Sitelog-Modified Metadata :\n' + rnxobj.get_metadata()[0])
-        modif_source_sitelog = sitelogobj.filename
-        
+        modif_source_metadata = metadataobj.filename
+
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
     if modif_kw:
@@ -857,42 +866,41 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         _modif_kw_check(modif_kw)
 
         modif_source_kw = 'keywords:' + " ".join(modif_kw.keys())
-        rnxobj = modif_kw_apply_on_rnxobj(rnxobj,modif_kw)
+        rnxobj = modif_kw_apply_on_rnxobj(rnxobj, modif_kw)
         logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
-        
+
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
-    # Must be after sitelogobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
+    # Must be after metadataobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
-    if "marker_name" not in modif_kw.keys(): 
-        rnxobj.mod_marker(rnxobj.get_site(False,False,True))    
-
+    if "marker_name" not in modif_kw.keys():
+        rnxobj.mod_marker(rnxobj.get_site(False, False, True))
 
     ###########################################################################
     ########## Correct the first and last time obs
-    rnxobj.mod_time_obs(rnxobj.start_date,rnxobj.end_date)
+    rnxobj.mod_time_obs(rnxobj.start_date, rnxobj.end_date)
 
     ###########################################################################
     ########## Add comment in the header
     vers_num = git_get_revision_short_hash()
-    #rnxobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
-    rnxobj.add_comment(("RinexMod "+vers_num, "METADATA UPDATE"),
+    # rnxobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
+    rnxobj.add_comment(("RinexMod " + vers_num, "METADATA UPDATE"),
                        add_pgm_cmt=True)
     rnxobj.add_comment('RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)')
     rnxobj.add_comment('rinexmoded on {}'.format(
         datetime.strftime(now, '%Y-%m-%d %H:%M')))
-    if sitelogobj: 
-        rnxobj.add_comment('rinexmoded with {}'.format(modif_source_sitelog))
+    if metadataobj:
+        rnxobj.add_comment('rinexmoded with {}'.format(modif_source_metadata))
     if modif_kw:
         rnxobj.add_comment('rinexmoded with {}'.format(modif_source_kw))
-    #if marker: ##### Useless...
+    # if marker: ##### Useless...
     #    rnxobj.add_comment('filename assigned from {}'.format(modif_marker))
-    
+
     ###########################################################################
     ########## Write the station history in the header
-    if sitelogobj and full_history:
-        title = ["- - - - - - - - - - - -","SITE FULL HISTORY"]
-        rnxobj.add_comments(title + sitelogobj.rinex_full_history_lines())    
+    if metadataobj and full_history:
+        title = ["- - - - - - - - - - - -", "SITE FULL HISTORY"]
+        rnxobj.add_comments(title + metadataobj.rinex_full_history_lines())
 
     ###########################################################################
     ########## Sort the header
@@ -938,26 +946,25 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ########## Construct return dict by adding key if doesn't exists
     ########## and appending file to corresponding list
     if type(return_lists) is dict:
-        return_lists = _return_lists_maker(rnxobj,return_lists)
+        return_lists = _return_lists_maker(rnxobj, return_lists)
         final_return = return_lists
     else:
         ###########################################################################
         ###### if no return dict  given, return simply the path of the outputfile
         final_return = outputfile
-        
+
     return final_return
-    
+
 
 # *****************************************************************************
 # Upper level rinexmod for a Console run
 
-def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
-     longname=False, force_sitelog=False, force_rnx_load=False, ignore=False, 
-     ninecharfile=None, compression=None, relative='', verbose=True,
-     alone=False, output_logs=None, write=False, sort=False, full_history=False,
-     tolerant_file_period=False, multi_process=1,debug=False,station_info=None,
-     lfile_apriori=None,force_fake_coords=False):
-    
+def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker='',
+                 longname=False, force_sitelog=False, force_rnx_load=False, ignore=False,
+                 ninecharfile=None, compression=None, relative='', verbose=True,
+                 alone=False, output_logs=None, write=False, sort=False, full_history=False,
+                 tolerant_file_period=False, multi_process=1, debug=False, station_info=None,
+                 lfile_apriori=None, force_fake_coords=False):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -978,12 +985,14 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
 
     # If no longname, modif_kw and sitelog, return
     if not sitelog and not modif_kw and not marker and not longname and not station_info and not lfile_apriori:
-        logger.critical('No action asked, provide at least one of the following args : --sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori')
+        logger.critical(
+            'No action asked, provide at least one of the following args : --sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori')
         raise RinexModInputArgsError
 
     # If force option provided, check if sitelog option too, if not, not relevant.
     if force_sitelog and not sitelog:
-        logger.critical('--force option is relevant only when --sitelog option with a **single** sitelog is also provided')
+        logger.critical(
+            '--force option is relevant only when --sitelog option with a **single** sitelog is also provided')
         raise RinexModInputArgsError
 
     # If ignore option provided, check if sitelog option too, if not, not relevant.
@@ -998,7 +1007,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
         logger.critical('--station_info and --lfile_apriori must be provided together')
         raise RinexModInputArgsError
-        
+
     if station_info and lfile_apriori and sitelog:
         logger.critical('both sitelogs and GAMIT files given as metadata input. Managing both is not implemented yet')
         raise RinexModInputArgsError
@@ -1022,7 +1031,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     # Creating log file
     now = datetime.now()
     nowstr = datetime.strftime(now, '%Y%m%d%H%M%S')
-    
+
     if output_logs:
         logfolder = output_logs
     else:
@@ -1049,7 +1058,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     # sort the RINEX list
     if sort:
         rinexinput.sort()
-        
+
     ### load the sitelogs as a **list of MetaData objects**
     # from sitelogs 
     if sitelog:
@@ -1057,57 +1066,58 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     # from GAMIT files
     if station_info and lfile_apriori:
         sitelogs_list_use = gamit_files2objs_convert(station_info, lfile_apriori,
-                                               force_fake_coords=force_fake_coords)
-        
+                                                     force_fake_coords=force_fake_coords)
+
     ### Looping in file list ###
     return_lists = dict()
     ####### Iterate over each RINEX
     rinexmod_kwargs_list = []
-    for rnx in rinexinput:    
-        rnxmod_kwargs = {"rinexfile":rnx,
-                         "outputfolder":outputfolder,
-                         "sitelog":sitelogs_list_use,
-                         "modif_kw":modif_kw,
-                         "marker":marker,
-                         "longname":longname,
-                         "force_rnx_load":force_rnx_load,
-                         "force_sitelog":force_sitelog,
-                         "ignore":ignore,
-                         "ninecharfile":ninecharfile,
-                         "compression":compression,
-                         "relative":relative, 
-                         "verbose":verbose,
-                         "return_lists":return_lists,
-                         "full_history":full_history,
-                         "tolerant_file_period":tolerant_file_period,
-                         "station_info":station_info,
-                         "lfile_apriori":lfile_apriori,
-                         "force_fake_coords":force_fake_coords}
-        
-        rinexmod_kwargs_list.append(rnxmod_kwargs) 
+    for rnx in rinexinput:
+        rnxmod_kwargs = {"rinexfile": rnx,
+                         "outputfolder": outputfolder,
+                         "sitelog": sitelogs_list_use,
+                         "modif_kw": modif_kw,
+                         "marker": marker,
+                         "longname": longname,
+                         "force_rnx_load": force_rnx_load,
+                         "force_sitelog": force_sitelog,
+                         "ignore": ignore,
+                         "ninecharfile": ninecharfile,
+                         "compression": compression,
+                         "relative": relative,
+                         "verbose": verbose,
+                         "return_lists": return_lists,
+                         "full_history": full_history,
+                         "tolerant_file_period": tolerant_file_period,
+                         "station_info": station_info,
+                         "lfile_apriori": lfile_apriori,
+                         "force_fake_coords": force_fake_coords}
+
+        rinexmod_kwargs_list.append(rnxmod_kwargs)
 
     global rinexmod_mp_wrapper
+
     def rinexmod_mp_wrapper(rnxmod_kwargs_inp):
         try:
             return_lists_out = rinexmod(**rnxmod_kwargs_inp)
-            return return_lists_out 
+            return return_lists_out
         except Exception as e:
-            if debug: ### set as True for debug mode
+            if debug:  ### set as True for debug mode
                 raise e
             else:
-                logger.error("%s raised, RINEX is skiped: %s",type(e).__name__,
-                        rnxmod_kwargs_inp["rinexfile"])
-            
+                logger.error("%s raised, RINEX is skiped: %s", type(e).__name__,
+                             rnxmod_kwargs_inp["rinexfile"])
+
     # number of parallel processing
     if multi_process > 1:
-        logger.info("multiprocessing: %d cores used",multi_process)
+        logger.info("multiprocessing: %d cores used", multi_process)
     Pool = mp.Pool(processes=multi_process)
     results_raw = [Pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list]
-    results     = [e.get() for e in results_raw]
+    results = [e.get() for e in results_raw]
 
-    for return_lists_mono in results: 
+    for return_lists_mono in results:
         try:
-            _return_lists_maker(return_lists_mono,return_lists)
+            _return_lists_maker(return_lists_mono, return_lists)
         except ReturnListError:
             logger.warning("one file has been skipped because of an odd individual return list")
             continue
@@ -1116,7 +1126,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     logger.handlers.clear()
 
     if write:
-        _return_lists_write(return_lists,logfolder,now)
+        _return_lists_write(return_lists, logfolder, now)
 
     return return_lists
 
