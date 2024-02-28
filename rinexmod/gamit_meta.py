@@ -9,12 +9,12 @@ Low-level functions to import GAMIT metadata file as pandas DataFrame
 
 """
 
-import numpy as np 
+import numpy as np
 import pandas as pd
 import re
 import datetime as dt
-from  rinexmod import rinexmod_api as rimo_api
-from  rinexmod import logger as rimo_log
+from rinexmod import rinexmod_api as rimo_api
+from rinexmod import logger as rimo_log
 
 logger = rimo_log.logger_define('INFO')
 
@@ -24,7 +24,6 @@ logger = rimo_log.logger_define('INFO')
 # p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.mit"
 # p = "/home/psakicki/Downloads/station.info"
 # lfile_inp = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/lfile."
-
 
 
 def read_gamit_apr_lfile(aprfile_inp):
@@ -51,33 +50,32 @@ def read_gamit_apr_lfile(aprfile_inp):
     
     """
     lines_stk = []
-    
+
     for l in open(aprfile_inp):
-    
+
         if not l[0] == ' ':
             continue
-        
-        x, y, z  = np.nan,np.nan,np.nan
-        #vx,vy,vz = 0.,0.,0.
+
+        x, y, z = np.nan, np.nan, np.nan
+        # vx,vy,vz = 0.,0.,0.
         t = pd.NaT
-    
+
         f = l[1:].split()
-    
+
         site = l[1:5]
         site_full = f[0]
-    
-    
-        x  = float(f[1])
-        y  = float(f[2])
-        z  = float(f[3])
+
+        x = float(f[1])
+        y = float(f[2])
+        z = float(f[3])
         ttmp = float(f[7])
-    
+
         # if np.isclose(ttmp , 0.):
         #     t = conv.year_decimal2dt(2000.)
         # else:
         #     t = conv.year_decimal2dt(ttmp)
         t = ttmp
-    
+
         # if len(l) > 225: # if velocities are given (125 is arbitrary)
         #     vX = float(f[8])
         #     vY = float(f[9])
@@ -86,20 +84,20 @@ def read_gamit_apr_lfile(aprfile_inp):
         #     vX = 0.
         #     vY = 0.
         #     vZ = 0.
-        
-        domes_re = re.search('[0-9]{5}[A-Z][0-9]{3}',l)
+
+        domes_re = re.search('[0-9]{5}[A-Z][0-9]{3}', l)
         if domes_re:
             domes = domes_re.group()
         else:
             domes = '00000X000'
-            
-        lines_stk.append((site,site_full,t,x,y,z,domes))
-        
+
+        lines_stk.append((site, site_full, t, x, y, z, domes))
+
     df = pd.DataFrame(lines_stk)
-    df.columns = ['site','site_full','epoch','x','y','z','domes']
-    
+    df.columns = ['site', 'site_full', 'epoch', 'x', 'y', 'z', 'domes']
+
     df['site'] = df['site'].str.lower()
-    
+
     return df
 
 
@@ -125,7 +123,6 @@ def read_gamit_station_info(station_info_inp):
     site codes are given in lower case
     """
 
-
     ### from gamit/lib/rstnfo.f
     #
     # c Label         Token  Format   Default      Description
@@ -149,77 +146,72 @@ def read_gamit_station_info(station_info_inp):
     # c Dome          radome   a5                 IGS radome name, last 5 chars of RINEX antenna field
     # c HtCod         htcod    a5     DHARP       5-char GAMIT code for type of height measurement
     # c AntDAZ	antdaz  f5.0     0.0        Alignment from True N (deg).  TAH 2020203. 
-    
-    
-    #colsize = np.array([4,16,4,4,3,3,3,4,4,3,3,3,1,7,7,7,6,20,20,5,20,6,20,15,5,5,5])
-    colsize = np.array([5,20,
-                        4+1,3+1,2+1,2+1,2+1, # start
-                        4+1,3+1,2+1,2+1,2+1, # end
-                        7+2,7+2,7+2,6+2, # antenna high
-                        20+2,20+2,5+2, # rec (2 version fields ...)
-                        20+2, # rec SN
-                        15+2,5+2, 20+2,1, # Antenna
+
+    # colsize = np.array([4,16,4,4,3,3,3,4,4,3,3,3,1,7,7,7,6,20,20,5,20,6,20,15,5,5,5])
+    colsize = np.array([5, 20,
+                        4 + 1, 3 + 1, 2 + 1, 2 + 1, 2 + 1,  # start
+                        4 + 1, 3 + 1, 2 + 1, 2 + 1, 2 + 1,  # end
+                        7 + 2, 7 + 2, 7 + 2, 6 + 2,  # antenna high
+                        20 + 2, 20 + 2, 5 + 2,  # rec (2 version fields ...)
+                        20 + 2,  # rec SN
+                        15 + 2, 5 + 2, 20 + 2, 1,  # Antenna
                         ])
-    
-    
-    #colsize_use = colsize+1
+
+    # colsize_use = colsize+1
     colsize_use = colsize
-    #colsize = [e+1  for e in colsize]
-    #colsize_use = colsize+2
-    
+    # colsize = [e+1  for e in colsize]
+    # colsize_use = colsize+2
+
     col = ['site',
-    'station name',
-    'start year',
-    'start doy',
-    'start hh',
-    'start mm',
-    'start ss',
-    'stop year',
-    'stop doy',
-    'stop hh',
-    'stop mm',
-    'stop ss',
-    'ant ht',
-    'htcod',
-    'ant n',
-    'ant e',
-    #'rcvcod',
-    'receiver type',
-    'vers',
-    'swver',
-    'receiver sn',
-    'antenna type',
-    'dome',
-    'antenna sn',
-    'antdaz']
-    
+           'station name',
+           'start year',
+           'start doy',
+           'start hh',
+           'start mm',
+           'start ss',
+           'stop year',
+           'stop doy',
+           'stop hh',
+           'stop mm',
+           'stop ss',
+           'ant ht',
+           'htcod',
+           'ant n',
+           'ant e',
+           # 'rcvcod',
+           'receiver type',
+           'vers',
+           'swver',
+           'receiver sn',
+           'antenna type',
+           'dome',
+           'antenna sn',
+           'antdaz']
+
     bad_lines = []
-    with open(station_info_inp,encoding = 'iso8859_1') as f:
-        for il,l in enumerate(f.readlines()):
+    with open(station_info_inp, encoding='iso8859_1') as f:
+        for il, l in enumerate(f.readlines()):
             if l[0] != ' ':
                 bad_lines.append(il)
-                
-            
-    
+
     df = pd.read_fwf(station_info_inp,
                      skiprows=bad_lines,
                      widths=colsize_use,
-                     encoding = 'iso8859_1')
+                     encoding='iso8859_1')
 
-    df.columns = col 
-    
+    df.columns = col
+
     ##### clean df
     ### remove empty rows
     bool_empty_rows = df['site'].apply(len) == 1
     df = df[np.logical_not(bool_empty_rows)]
     ### do a second NaN cleaning, but the previous should have cleaned everything
-    df.dropna(inplace=True,how='all')
-    df.reset_index(inplace=True,drop=True)
-    
+    df.dropna(inplace=True, how='all')
+    df.reset_index(inplace=True, drop=True)
+
     ##### create datetime start/end columns
-    df['start doy'].replace(999,365,inplace=True)
-    df['stop doy'].replace(999,365,inplace=True)
-       
+    df['start doy'].replace(999, 365, inplace=True)
+    df['stop doy'].replace(999, 365, inplace=True)
 
     df_start = doy2dt(df['start year'],
                       df['start doy'],
@@ -236,13 +228,13 @@ def read_gamit_station_info(station_info_inp):
                     df['stop ss'])
 
     df['end'] = df_end
-    
+
     df['site'] = df['site'].str.lower()
-    
+
     return df
 
 
-def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
+def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp,
                              force_fake_coords=False):
     """
     read GAMIT files to get the Rinexmod internal
@@ -271,13 +263,13 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
     #### INSTRUMENTATION PART     
     stinfo_df_site = stinfo_df_inp[stinfo_df_inp['site'] == site]
     installations = []
-    
+
     for irow, row in stinfo_df_site.iterrows():
         inst_dic = {}
-        
+
         ##### dates
-        inst_dic['dates'] = [row['start'],row['end']]
-        
+        inst_dic['dates'] = [row['start'], row['end']]
+
         ##### receiver
         rec_dic = {}
         rec_dic['Receiver Type'] = row['receiver type']
@@ -289,9 +281,9 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
         rec_dic['Date Removed'] = row['end']
         rec_dic['Temperature Stabiliz.'] = 'none'
         rec_dic['Additional Information'] = 'none'
-        
+
         inst_dic['receiver'] = rec_dic
-        
+
         ##### receiver
         ant_dic = {}
         ant_dic['Antenna Type'] = row['antenna type']
@@ -304,36 +296,35 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
         ant_dic['Antenna Radome Type'] = row['dome']
         ant_dic['Radome Serial Number'] = 'none'
         ant_dic['Antenna Cable Type'] = 'none'
-        ant_dic['Antenna Cable Length'] = '0' 
+        ant_dic['Antenna Cable Length'] = '0'
         ant_dic['Date Installed'] = row['start']
         ant_dic['Date Removed'] = row['end']
         ant_dic['Additional Information'] = 'none'
         ant_dic['metpack'] = 'none'
-        
+
         inst_dic['antenna'] = ant_dic
-        
+
         installations.append(inst_dic)
-        
-    
+
     #########################################################
     #### MISC META PART
     apr_df_site = apr_df_inp[apr_df_inp['site'] == site]
     if len(apr_df_site) == 0 and not force_fake_coords:
-        logger.error("no coords in apr/lfile for %s, abort (you can force fake coords with -fc)",site)
+        logger.error("no coords in apr/lfile for %s, abort (you can force fake coords with -fc)", site)
         raise rimo_api.RinexModError
-        
+
     elif len(apr_df_site) == 0 and force_fake_coords:
-        #logger.warning("no coords in apr/lfile for %s, fake coords at (0°,0°) used",site)
-        apr_df_site = pd.Series({'x':6378137.000,
-                                 'y':0,
-                                 'z':0,
-                                 'domes':'00000X000'})
+        # logger.warning("no coords in apr/lfile for %s, fake coords at (0°,0°) used",site)
+        apr_df_site = pd.Series({'x': 6378137.000,
+                                 'y': 0,
+                                 'z': 0,
+                                 'domes': '00000X000'})
     else:
         apr_df_site = apr_df_site.iloc[-1]
         apr_df_site.squeeze()
-    
+
     mm_dic = {}
-    
+
     mm_dic['Four Character ID'] = site
     mm_dic['IERS DOMES Number'] = apr_df_site['domes']
 
@@ -342,15 +333,14 @@ def gamit_df2instru_miscmeta(site,stinfo_df_inp,apr_df_inp,
 
     mm_dic['X coordinate (m)'] = apr_df_site['x']
     mm_dic['Y coordinate (m)'] = apr_df_site['y']
-    mm_dic['Z coordinate (m)'] = apr_df_site['z'] 
-    
+    mm_dic['Z coordinate (m)'] = apr_df_site['z']
+
     mm_dic['Country'] = 'XXX'
-    
+
     return installations, mm_dic
 
 
-
-def doy2dt(year,days,hours=0,minutes=0,seconds=0):
+def doy2dt(year, days, hours=0, minutes=0, seconds=0):
     """
     Time representation conversion
     
@@ -376,45 +366,46 @@ def doy2dt(year,days,hours=0,minutes=0,seconds=0):
     if not is_iterable(year):
         # All this because Python cant handle int with a starting with 0 (like 08)
         # => SyntaxError: invalid token
-        
-        if np.any(np.isnan([year,days,hours,minutes,seconds])):
+
+        if np.any(np.isnan([year, days, hours, minutes, seconds])):
             logger.error('one input is NaN, abort: %s,%s,%s,%s,%s',
-                         year,days,hours,minutes,seconds)
+                         year, days, hours, minutes, seconds)
             raise Exception
-        
+
         try:
-            year    = int(float(str(year)))
-            days    = int(float(str(days)))
-            hours   = int(float(str(hours)))
+            year = int(float(str(year)))
+            days = int(float(str(days)))
+            hours = int(float(str(hours)))
             minutes = int(float(str(minutes)))
             seconds = int(float(str(seconds)))
         except Exception as e:
             logger.error('error with conversion of %s,%s,%s,%s,%s',
-                         year,days,hours,minutes,seconds)
+                         year, days, hours, minutes, seconds)
             raise e
 
         tempsecs = seconds + 60 * minutes + 3600 * hours
-        #finalsecs     = np.floor(tempsecs)
-        finalmicrosec = int(np.round(tempsecs * 10**6))
+        # finalsecs     = np.floor(tempsecs)
+        finalmicrosec = int(np.round(tempsecs * 10 ** 6))
 
         return dt.datetime(year, 1, 1) + dt.timedelta(days - 1) + \
-        dt.timedelta(microseconds=finalmicrosec)
+            dt.timedelta(microseconds=finalmicrosec)
 
     else:
         if not is_iterable(hours):
-            hours   = [0] * len(year)
+            hours = [0] * len(year)
         if not is_iterable(minutes):
             minutes = [0] * len(year)
-        if  not is_iterable(seconds):
+        if not is_iterable(seconds):
             seconds = [0] * len(year)
 
         outlis = []
-        typ=get_type_smart(year)
-        for y,d,h,m,s in zip(year,days,hours,minutes,seconds):
-            outlis.append(doy2dt(y,d,h,m,s))
+        typ = get_type_smart(year)
+        for y, d, h, m, s in zip(year, days, hours, minutes, seconds):
+            outlis.append(doy2dt(y, d, h, m, s))
         return typ(outlis)
-    
-def is_iterable(inp,consider_str_as_iterable=False):
+
+
+def is_iterable(inp, consider_str_as_iterable=False):
     """
     Test if the input is an iterable like a list or a numpy array or not
 
@@ -447,6 +438,7 @@ def is_iterable(inp,consider_str_as_iterable=False):
         out = True
     return out
 
+
 def get_type_smart(obj_in):
     """
     get type of an object, to convert easily another one to this type
@@ -457,7 +449,7 @@ def get_type_smart(obj_in):
     extracted from the GeodeZYX toolbox
     https://github.com/IPGP/geodezyx-toolbox
     """
-    typ=type(obj_in)
+    typ = type(obj_in)
     if typ is np.ndarray:
         return np.array
     else:
