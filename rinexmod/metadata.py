@@ -607,7 +607,7 @@ class MetaData:
 
     def rinex_full_history_lines(self):
         """
-        Get the sting lines to have the full site history in the RIENX header
+        Get the sting lines to have the full site history in the RINEX header
         """
         rec_stk = []
         ant_stk = []

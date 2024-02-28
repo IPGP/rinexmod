@@ -15,7 +15,7 @@ import subprocess
 import multiprocessing as mp
 import pandas as pd
 
-import rinexmod.metadata as rimo_slg
+import rinexmod.metadata as rimo_mda
 import rinexmod.rinexfile as rimo_rnx
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
@@ -112,9 +112,9 @@ def sitelog_input_manage(sitelog_inp, force=False):
     list of MetaData
 
     """
-    if isinstance(sitelog_inp, rimo_slg.MetaData):
+    if isinstance(sitelog_inp, rimo_mda.MetaData):
         return [sitelog_inp]
-    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0], rimo_slg.MetaData):
+    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0], rimo_mda.MetaData):
         return sitelog_inp
     else:
         return sitelog_files2objs_convert(sitelog_inp,
@@ -184,7 +184,7 @@ def gamit_files2objs_convert(station_info_inp, lfile_inp,
 
     for site, site_info in df_stinfo_grp:
         logger.debug('extract %s from %s', site, stinfo_name)
-        metadataobj = rimo_slg.MetaData(sitelogfile=None)
+        metadataobj = rimo_mda.MetaData(sitelogfile=None)
         metadataobj.set_from_gamit_meta(site, df_stinfo, df_apr,
                                         force_fake_coords=force_fake_coords,
                                         station_info_name=stinfo_name)
@@ -227,7 +227,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
     if os.path.isfile(sitelog_filepath):
 
         # Creating MetaData object
-        metadataobj = rimo_slg.MetaData(sitelog_filepath)
+        metadataobj = rimo_mda.MetaData(sitelog_filepath)
         # If sitelog is not parsable
         if metadataobj.status != 0:
             logger.error('The sitelog is not parsable : ' + sitelog_filepath)
@@ -263,7 +263,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
         metadata_obj_list = []
         for sta_sitelog in latest_sitelogs:
             # Creating sitelog object
-            metadataobj = rimo_slg.MetaData(sta_sitelog)
+            metadataobj = rimo_mda.MetaData(sta_sitelog)
 
             # If sitelog is not parsable
             if metadataobj.status != 0:
