@@ -9,12 +9,12 @@ for more details
 (https://github.com/IPGP/rinexmod/blob/master/README.md)
 
 # Credits:
-2021-02-07 Félix Léger - leger@ipgp.fr
-2023-03-23 Pierre Sakic - sakic@ipgp.fr
+v1 - 2021-02-07 Félix Léger - leger@ipgp.fr
+v2 - 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 """
 
 import rinexmod.rinexmod_api as rimo_api
-import rinexmod.logger as rimo_log
+#import rinexmod.logger as rimo_log
 
 if __name__ == '__main__':
 
