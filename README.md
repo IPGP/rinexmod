@@ -248,13 +248,13 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
         Input RINEX file to process.
     outputfolder : str
         Folder where to write the modified RINEX files.
-    sitelog : str, list of str, SiteLog object, list of SiteLog objects, optional
+    sitelog : str, list of str, MetaData object, list of MetaData objects, optional
         Get the RINEX header values from a sitelog.
         Possible inputs are: 
          * list of string (sitelog file paths),
          * single string (single sitelog file path or directory containing the sitelogs),
-         * list of SiteLog object
-         * single SiteLog object
+         * list of MetaData object
+         * single MetaData object
         The function will search for the latest and right sitelog
         corresponding to the site.
         One can force a single sitelog with force_sitelog.

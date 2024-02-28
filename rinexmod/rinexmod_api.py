@@ -15,7 +15,7 @@ import subprocess
 import multiprocessing as mp
 import pandas as pd
 
-import rinexmod.sitelog as rimo_slg
+import rinexmod.metadata as rimo_slg
 import rinexmod.rinexfile as rimo_rnx
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
@@ -87,30 +87,30 @@ def git_get_revision_short_hash():
 def sitelog_input_manage(sitelog_inp,force=False):
     """
     Manage the multiple types possible for a Sitelog inputs
-    Return a list of SiteLog to be handeled by sitelog_find_site
+    Return a list of MetaData to be handeled by sitelog_find_site
     
     Possible inputs are 
      * list of string (sitelog file paths),
      * single string (single sitelog file path or directory containing the sitelogs),
-     * list of SiteLog object
-     * single SiteLog object
+     * list of MetaData object
+     * single MetaData object
     
 
     Parameters
     ----------
-    sitelog_inp : list of str, str, list of SiteLog. single SiteLog
+    sitelog_inp : list of str, str, list of MetaData. single MetaData
         Various Input sitelogs.
     force : bool
         Force a single sitelog file path.
 
     Returns
     -------
-    list of SiteLog
+    list of MetaData
 
     """
-    if isinstance(sitelog_inp,rimo_slg.SiteLog):
+    if isinstance(sitelog_inp, rimo_slg.MetaData):
         return [sitelog_inp]
-    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0],rimo_slg.SiteLog):
+    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0], rimo_slg.MetaData):
         return sitelog_inp
     else:
         return sitelog_files2objs_convert(sitelog_inp,
@@ -121,7 +121,7 @@ def sitelog_input_manage(sitelog_inp,force=False):
 def gamit_files2objs_convert(station_info_inp,lfile_inp,
                              force_fake_coords=False):
     """
-    Read a GAMIT files and convert their content to SiteLog objects
+    Read a GAMIT files and convert their content to MetaData objects
 
     Parameters
     ----------
@@ -139,7 +139,7 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
     Returns
     -------
     sitelogobj_lis : list
-        list of SiteLog objects.
+        list of MetaData objects.
 
     """
     if type(station_info_inp) is pd.core.frame.DataFrame:
@@ -180,7 +180,7 @@ def gamit_files2objs_convert(station_info_inp,lfile_inp,
 
     for site, site_info in df_stinfo_grp:
         logger.debug('extract %s from %s',site,stinfo_name)
-        sitelogobj = rimo_slg.SiteLog(sitelogfile=None)
+        sitelogobj = rimo_slg.MetaData(sitelogfile=None)
         sitelogobj.set_from_gamit_meta(site, df_stinfo, df_apr,
                                        force_fake_coords=force_fake_coords,
                                        station_info_name=stinfo_name)
@@ -197,7 +197,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
                                 force = False,
                                 return_list_even_if_single_input=True):   
     """
-    Read a set of sitelog files and convert them to SiteLog objects
+    Read a set of sitelog files and convert them to MetaData objects
 
     Parameters
     ----------
@@ -206,7 +206,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
     force : bool, optional
         force the reading of the sitelog file. The default is False.
     return_list_even_if_single_input : bool, optional
-        if a single sitelog is given, return the corresponding SiteLog object
+        if a single sitelog is given, return the corresponding MetaData object
         into a list (singleton). The default is True.
 
     Raises
@@ -217,14 +217,14 @@ def sitelog_files2objs_convert(sitelog_filepath,
     Returns
     -------
     sitelogs_obj_list : list
-        list of SiteLog objects.
+        list of MetaData objects.
 
     """
     # Case of one single sitelog:
     if os.path.isfile(sitelog_filepath):
     
         # Creating sitelog object
-        sitelogobj = rimo_slg.SiteLog(sitelog_filepath)
+        sitelogobj = rimo_slg.MetaData(sitelog_filepath)
         # If sitelog is not parsable
         if sitelogobj.status != 0:
             logger.error('The sitelog is not parsable : ' + sitelog_filepath)
@@ -259,7 +259,7 @@ def sitelog_files2objs_convert(sitelog_filepath,
         sitelogs_obj_list = []
         for sta_sitelog in latest_sitelogs:
             # Creating sitelog object
-            sitelogobj = rimo_slg.SiteLog(sta_sitelog)
+            sitelogobj = rimo_slg.MetaData(sta_sitelog)
     
             # If sitelog is not parsable
             if sitelogobj.status != 0:
@@ -349,7 +349,7 @@ def sitelog_find_site(rnxobj_or_site4char,sitelogs_obj_list,force):
 
 def sitelogobj_apply_on_rnxobj(rnxobj,sitelogobj,ignore=False):
     """
-    apply a SiteLog object on a RinexFile object
+    apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
     """
     rnx_4char = rnxobj.get_site(True,True)
@@ -585,13 +585,13 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Input RINEX file to process.
     outputfolder : str
         Folder where to write the modified RINEX files.
-    sitelog : str, list of str, SiteLog object, list of SiteLog objects, optional
+    sitelog : str, list of str, MetaData object, list of MetaData objects, optional
         Get the RINEX header values from a sitelog.
         Possible inputs are: 
          * list of string (sitelog file paths),
          * single string (single sitelog file path or directory containing the sitelogs),
-         * list of SiteLog object
-         * single SiteLog object
+         * list of MetaData object
+         * single MetaData object
         The function will search for the latest and right sitelog
         corresponding to the site.
         One can force a single sitelog with force_sitelog.
@@ -788,13 +788,13 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # We read the GAMIT files only if no input 'sitelog' variable is given.
     # Indeed, the GAMIT files might have been readed outside this function
     # (most likely actually). The already readed GAMIT files are then stored 
-    # in the 'sitelog' variable as a list of SiteLog objects
+    # in the 'sitelog' variable as a list of MetaData objects
     if (station_info and lfile_apriori) and not sitelog:
         sitelogs_obj_list = gamit_files2objs_convert(station_info,
                                                      lfile_apriori,
                                                      force_fake_coords=force_fake_coords)
     
-    ### find the right SiteLog object corresponding to the RINEX
+    ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
         sitelogobj = sitelog_find_site(rnxobj,
                                        sitelogs_obj_list,
@@ -1050,7 +1050,7 @@ def rinexmod_cli(rinexinput,outputfolder,sitelog=None,modif_kw=dict(),marker='',
     if sort:
         rinexinput.sort()
         
-    ### load the sitelogs as a **list of SiteLog objects**
+    ### load the sitelogs as a **list of MetaData objects**
     # from sitelogs 
     if sitelog:
         sitelogs_list_use = sitelog_input_manage(sitelog, force_sitelog)
