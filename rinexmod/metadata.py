@@ -432,7 +432,7 @@ class MetaData:
 
     def find_instru(self, starttime, endtime, ignore=False):
         '''
-        We get the installation corresponding to the starttime and endtime.
+        We get the instrumentation corresponding to the starttime and endtime.
         If ignore option set to True, we will force ignoring the firmware version
         modification between two periods and consider only the other parameters.
         '''
@@ -519,15 +519,7 @@ class MetaData:
         ########### GNSS one-letter codes ###########
 
         # From https://www.unavco.org/software/data-processing/teqc/tutorial/tutorial.html
-        gnss_codes = {
-            'GPS': 'G',
-            'GLO': '­R',
-            'GAL': '­E',
-            'BDS': '­C',
-            'QZSS': '­J',
-            'IRNSS': 'I',
-            'SBAS': 'S'
-        }
+        gnss_codes = dict(GPS='G', GLO='­R', GAL='­E', BDS='­C', QZSS='­J', IRNSS='I', SBAS='S')
 
         # GNSS system. M if multiple, else, one letter code from gnss_codes dict.
         o_system = instrumentation['receiver']['Satellite System']
