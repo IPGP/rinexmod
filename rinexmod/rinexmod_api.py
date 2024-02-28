@@ -798,8 +798,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                                                  force=force_sitelog)
     ## GAMIT files
     # We read the GAMIT files only if no input 'sitelog' variable is given.
-    # Indeed, the GAMIT files might have been readed outside this function
-    # (most likely actually). The already readed GAMIT files are then stored
+    # Indeed, the GAMIT files might have been read outside this function
+    # (most likely actually). The already read GAMIT files are then stored
     # in the 'sitelog' variable as a list of MetaData objects
     if (station_info and lfile_apriori) and not sitelog:
         metadata_obj_list = gamit_files2metadata_objs(station_info,

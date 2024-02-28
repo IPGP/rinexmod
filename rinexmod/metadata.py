@@ -399,9 +399,9 @@ class MetaData:
 
     def _get_misc_meta(self):
         """
-        This function generates the "misc meta" dictionnary, i.e. a 
-        dictionnary containing all the useful metadata infromation which are not 
-        stored in the instrumentation dictionnary 
+        This function generates the "misc meta" dictionary, i.e. a
+        dictionary containing all the useful metadata information which are not
+        stored in the instrumentation dictionary
         (see _get_instru_dicts )
         """
 
@@ -413,9 +413,9 @@ class MetaData:
         mm_dic['operator'] = self.raw_content['11.']['Preferred Abbreviation']
         mm_dic['agency'] = self.raw_content['12.']['Preferred Abbreviation']
 
-        mm_dic['X'] = self.raw_content['2.']['X coordinate (m)']
-        mm_dic['Y'] = self.raw_content['2.']['Y coordinate (m)']
-        mm_dic['Z'] = self.raw_content['2.']['Z coordinate (m)']
+        mm_dic['X coordinate (m)'] = self.raw_content['2.']['X coordinate (m)']
+        mm_dic['Y coordinate (m)'] = self.raw_content['2.']['Y coordinate (m)']
+        mm_dic['Z coordinate (m)'] = self.raw_content['2.']['Z coordinate (m)']
 
         mm_dic['Country'] = self.raw_content['2.']['Country']
 
