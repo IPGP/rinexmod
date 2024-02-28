@@ -96,7 +96,7 @@ def sitelog_input_manage(sitelog_inp, force=False):
     Possible inputs are 
      * list of string (sitelog file paths),
      * single string (single sitelog file path or directory containing the sitelogs),
-     * list of MetaData object
+     * list of MetaData objects
      * single MetaData object
     
 
@@ -117,13 +117,13 @@ def sitelog_input_manage(sitelog_inp, force=False):
     elif type(sitelog_inp) is list and isinstance(sitelog_inp[0], rimo_mda.MetaData):
         return sitelog_inp
     else:
-        return sitelog_files2objs_convert(sitelog_inp,
-                                          force=force,
-                                          return_list_even_if_single_input=True)
+        return sitelog_files2metadata_objs(sitelog_inp,
+                                           force=force,
+                                           return_list_even_if_single_input=True)
 
 
-def gamit_files2objs_convert(station_info_inp, lfile_inp,
-                             force_fake_coords=False):
+def gamit_files2metadata_objs(station_info_inp, lfile_inp,
+                              force_fake_coords=False):
     """
     Read a GAMIT files and convert their content to MetaData objects
 
@@ -196,9 +196,9 @@ def gamit_files2objs_convert(station_info_inp, lfile_inp,
     return metadataobj_lis
 
 
-def sitelog_files2objs_convert(sitelog_filepath,
-                               force=False,
-                               return_list_even_if_single_input=True):
+def sitelog_files2metadata_objs(sitelog_filepath,
+                                force=False,
+                                return_list_even_if_single_input=True):
     """
     Read a set of sitelog files and convert them to MetaData objects
 
@@ -348,7 +348,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
             raise RinexModInputArgsError
     else:
         metadataobj = [md for md in metadata_obj_list if md.site4char == rnx_4char][0]
-        ## we assume the latest sitelog has been found in sitelog_files2objs_convert
+        ## we assume the latest sitelog has been found in sitelog_files2metadata_objs
 
     return metadataobj
 
@@ -794,7 +794,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ### load the metadata from sitelog or GAMIT files if any
     ## sitelogs
     if sitelog:
-        sitelogs_obj_list = sitelog_input_manage(sitelog,
+        metadata_obj_list = sitelog_input_manage(sitelog,
                                                  force=force_sitelog)
     ## GAMIT files
     # We read the GAMIT files only if no input 'sitelog' variable is given.
@@ -802,14 +802,14 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # (most likely actually). The already readed GAMIT files are then stored
     # in the 'sitelog' variable as a list of MetaData objects
     if (station_info and lfile_apriori) and not sitelog:
-        sitelogs_obj_list = gamit_files2objs_convert(station_info,
-                                                     lfile_apriori,
-                                                     force_fake_coords=force_fake_coords)
+        metadata_obj_list = gamit_files2metadata_objs(station_info,
+                                                      lfile_apriori,
+                                                      force_fake_coords=force_fake_coords)
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
         metadataobj = metadata_find_site(rnxobj,
-                                         sitelogs_obj_list,
+                                         metadata_obj_list,
                                          force=force_sitelog)
         logger.debug("metadata used: %s", metadataobj)
     else:
@@ -1059,14 +1059,14 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
     if sort:
         rinexinput.sort()
 
-    ### load the sitelogs as a **list of MetaData objects**
+    ### load the sitelogs/GAMIT-files as a **list of MetaData objects**
     # from sitelogs 
     if sitelog:
         sitelogs_list_use = sitelog_input_manage(sitelog, force_sitelog)
     # from GAMIT files
     if station_info and lfile_apriori:
-        sitelogs_list_use = gamit_files2objs_convert(station_info, lfile_apriori,
-                                                     force_fake_coords=force_fake_coords)
+        sitelogs_list_use = gamit_files2metadata_objs(station_info, lfile_apriori,
+                                                      force_fake_coords=force_fake_coords)
 
     ### Looping in file list ###
     return_lists = dict()
