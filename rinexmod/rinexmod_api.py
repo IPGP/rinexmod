@@ -226,17 +226,17 @@ def sitelog_files2objs_convert(sitelog_filepath,
     # Case of one single sitelog:
     if os.path.isfile(sitelog_filepath):
 
-        # Creating sitelog object
-        sitelogobj = rimo_slg.MetaData(sitelog_filepath)
+        # Creating MetaData object
+        metadataobj = rimo_slg.MetaData(sitelog_filepath)
         # If sitelog is not parsable
-        if sitelogobj.status != 0:
+        if metadataobj.status != 0:
             logger.error('The sitelog is not parsable : ' + sitelog_filepath)
             raise MetaDataError
 
         if return_list_even_if_single_input:
-            sitelogs_obj_list = [sitelogobj]
+            metadata_obj_list = [metadataobj]
         else:
-            sitelogs_obj_list = sitelogobj
+            metadata_obj_list = metadataobj
 
     # Case of a folder
     elif os.path.isdir(sitelog_filepath):
@@ -260,29 +260,29 @@ def sitelog_files2objs_convert(sitelog_filepath,
         # Get last version of sitelogs if multiple available
         latest_sitelogs = _sitelog_find_latest_files(all_sitelogs)
 
-        sitelogs_obj_list = []
+        metadata_obj_list = []
         for sta_sitelog in latest_sitelogs:
             # Creating sitelog object
-            sitelogobj = rimo_slg.MetaData(sta_sitelog)
+            metadataobj = rimo_slg.MetaData(sta_sitelog)
 
             # If sitelog is not parsable
-            if sitelogobj.status != 0:
+            if metadataobj.status != 0:
                 logger.error('The sitelog is not parsable: ' +
-                             sitelogobj.path)
+                             metadataobj.path)
                 raise MetaDataError
 
             # Appending to list
-            sitelogs_obj_list.append(sitelogobj)
+            metadata_obj_list.append(metadataobj)
 
-        logger.info('**** %i most recent sitelogs selected:', len(sitelogs_obj_list))
-        for sl in sitelogs_obj_list:
+        logger.info('**** %i most recent sitelogs selected:', len(metadata_obj_list))
+        for sl in metadata_obj_list:
             logger.debug(sl.path)
     ### case of no file nor folder
     else:
         logger.error("unable to handle file/directory. Does it exists?: %s", sitelog_filepath)
         raise RinexModInputArgsError
 
-    return sitelogs_obj_list
+    return metadata_obj_list
 
 
 def _sitelog_find_latest_files(all_sitelogs_filepaths):
@@ -320,7 +320,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
     Finding the right MetaData object
 
     If is list, can not use force.
-    If no sitelog found, do not process.
+    If no metadata found, do not process.
     """
     if type(rnxobj_or_site4char) is str:
         rnx_4char = rnxobj_or_site4char[:4]
@@ -335,16 +335,16 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
         if len(metadata_obj_list) == 1:
             if not force:
                 logger.error('{:110s} - {}'.format(
-                    '33 - RINEX name\'s site does not correspond to provided sitelog - use -f option to force',
+                    '33 - RINEX name\'s site does not correspond to provided metadata - use -f option to force',
                     err_label))
                 raise RinexModInputArgsError
             else:
                 logger.warning('{:110s} - {}'.format(
-                    '34 - RINEX name\'s site does not correspond to provided sitelog, forced processing anyway',
+                    '34 - RINEX name\'s site does not correspond to provided metadata, forced processing anyway',
                     err_label))
         else:
             logger.error(
-                '{:110s} - {}'.format('33 - No sitelog found for this RINEX', err_label))
+                '{:110s} - {}'.format('33 - No metadata found for this RINEX', err_label))
             raise RinexModInputArgsError
     else:
         metadataobj = [md for md in metadata_obj_list if md.site4char == rnx_4char][0]
@@ -379,7 +379,7 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
 
     if ignored:
         logger.warning('{:110s} - {}'.format(
-            '36 - Instrumentation cames from merged metadata periods with different firmwares, processing anyway',
+            '36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway',
             rnxobj.filename))
 
     (fourchar_id, domes_id, observable_type, agencies, receiver,
