@@ -3,7 +3,7 @@
 <img src="./logo_rinexmod.png" width="300">
 
 RinexMod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
-It supports Hatakana-compressed and non-compressed files, RINEX versions 2 and 3, and short and long naming conventions.  
+It supports Hatanaka-compressed and non-compressed files, RINEX versions 2 and 3, and short and long naming conventions.  
 It is developed in python3, and can be run from the command line or directly in API mode by calling a python function.  
 The required input metadata can come from a sitelogs file, or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
@@ -17,8 +17,8 @@ Last version: v2.2.1 - 2024-01-13
 
 This project is composed of 3 programs:
 
-* `rinexmod.py` takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loops the rinex files list to modify the file's headers. It then write them back to Hanakata
+* `rinexmod.py` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
+loops the rinex files list to modify the file's headers. It then write them back to Hatanaka
 compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
@@ -397,8 +397,8 @@ EXAMPLE:
 
 ## RinexMod error messages
 
-RinexMod will prompt errors when arguments are wrong. Appart from this, it will prompt and save to file errors and waring
-occuring on specific files from the rinex list. Here are the error codes :
+RinexMod will prompt errors when arguments are wrong. Apart from this, it will prompt and save to file errors and waring
+occurring on specific files from the rinex list. Here are the error codes :
 
 `01 - The specified file does not exists`
 
@@ -406,7 +406,7 @@ That means that the input file containing list of rinex files is wrong and refer
 
 `02 - Not an observation Rinex file`
 
-The file name does not correspond to the classic pattern (it doesn't match the regular expression for new and old convention namming model ). Most of time, it's because it is not a d rinex file (for example, navigation file).
+The file name does not correspond to the classic pattern (it doesn't match the regular expression for new and old convention naming model ). Most of time, it's because it is not a d rinex file (for example, navigation file).
 
 `03 - Invalid  or empty Zip file`
 
@@ -418,7 +418,7 @@ The CRX Hatanaka file is corrupted.
 
 `05 - Less than two epochs in the file, reject`
 
-Not enought data in the file to extract a sample rate, and data not relevant because insuficient. Reject the file.
+Not enought data in the file to extract a sample rate, and data not relevant because insufficient. Reject the file.
 
 `30 - Input and output folders are the same !`
 
@@ -450,4 +450,4 @@ There is no continuous instrumentation period in the sitelog taht corresponds to
 
 `36 - Instrumentation cames from merged periods of sitelog with different firmwares, processing anyway`
 
-We provided the --ignore option, so the consecutive periods of instrumentation for witch only the firmave version of the receiver has changed have been merged. We used this period to fill this file's header.
+We provided the --ignore option, so the consecutive periods of instrumentation for witch only the firmware version of the receiver has changed have been merged. We used this period to fill this file's header.
