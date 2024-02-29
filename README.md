@@ -4,21 +4,21 @@
 
 RinexMod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
 It supports Hatanaka-compressed and non-compressed files, RINEX versions 2 and 3, and short and long naming conventions.  
-It is developed in python3, and can be run from the command line or directly in API mode by calling a python function.  
-The required input metadata can come from a sitelogs file, or be manually entered as arguments to the command line or the called function.  
+It is developed in Python 3, and can be run from the command line or directly in API mode by calling a python function.  
+The required input metadata can come from a sitelog file, or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
 v2 - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
 v1 - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-Last version: v2.2.1 - 2024-01-13
+Last version: v3.0.0 - 2024-03-xx
 
 ## Tools overview
 
 This project is composed of 3 programs:
 
 * `rinexmod.py` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
-loops the rinex files list to modify the file's headers. It then write them back to Hatanaka
+loops the rinex files list to modify the file's headers. It then writes them back to Hatanaka
 compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
@@ -60,7 +60,7 @@ You need _pandas_ to for internal low-level data management:
 ### rinexmod.py
 
 This is the main frontend function. It takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the RINEX files list to modify the file's header. It then write them back to Hatanaka
+loop the RINEX files list to modify the file's header. It then writes them back to Hatanaka
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another site code. It can write
 those files with the long name naming convention with the --longname option.
@@ -119,7 +119,7 @@ Two ways of passing parameters to modify headers are possible: `sitelog` and `mo
 
 You can not provide both `--modification_kw` and `--sitelog` options.
 
-rinexmod will add two comment lines, one indicating the source of the modification
+RinexMod will add two comment lines, one indicating the source of the modification
 (sitelog or arguments) and the other the timestamp of the modification.
 
 
