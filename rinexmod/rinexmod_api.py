@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-API function of rinexmod
+API functions of RinexMod
 
 Created on Wed Mar  8 12:14:54 2023
 

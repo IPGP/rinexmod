@@ -2,7 +2,7 @@
 
 <img src="./logo_rinexmod.png" width="300">
 
-rinexmod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
+RinexMod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
 It supports Hatakana-compressed and non-compressed files, RINEX versions 2 and 3, and short and long naming conventions.  
 It is developed in python3, and can be run from the command line or directly in API mode by calling a python function.  
 The required input metadata can come from a sitelogs file, or be manually entered as arguments to the command line or the called function.  
@@ -59,13 +59,13 @@ You need _pandas_ to for internal low-level data management:
 
 ### rinexmod.py
 
-This is the main frontend function. It takes a list of RINEX Hanakata compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the RINEX files list to modifiy the file's header. It then write them back to Hanakata
+This is the main frontend function. It takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
+loop the RINEX files list to modify the file's header. It then write them back to Hatanaka
 compressed format in an output folder. It permits also to rename the files changing
 the four first characters of the file name with another site code. It can write
 those files with the long name naming convention with the --longname option.
 
-Two ways of passing parameters to modifiy headers are possible: `sitelog` and `modification_kw`.
+Two ways of passing parameters to modify headers are possible: `sitelog` and `modification_kw`.
 
 
 * ```
@@ -220,7 +220,7 @@ options:
                         False)
 ```
 
-### Exemples
+### Examples
 
 
 ```
@@ -230,9 +230,9 @@ options:
 ./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 ```
 
-## rinexmod in API mode
+## RinexMod in API mode
 
-rinexmod can be launched directly as a Python function:
+RinexMod can be launched directly as a Python function:
 
 ```
 import rinexmod.rinexmod_api as rimo_api
@@ -395,9 +395,9 @@ EXAMPLE:
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 ```
 
-## rinexmod error messages
+## RinexMod error messages
 
-Rinexmod will prompt errors when arguments are wrong. Appart from this, it will prompt and save to file errors and waring
+RinexMod will prompt errors when arguments are wrong. Appart from this, it will prompt and save to file errors and waring
 occuring on specific files from the rinex list. Here are the error codes :
 
 `01 - The specified file does not exists`
@@ -431,7 +431,7 @@ The script tries to find the 'reconstruct' subfolder in the file's path to repla
 `32 - Station's country not retrevied, will not be properly renamed`
 
 When using --name option, that will rename file with rinex long name convention, it needs to retrieve the file's country.
-It tries to do so using an externa file of list of 9 char ids. the concerned rinex file's station seems to be absent
+It tries to do so using an external file of list of 9 char ids. the concerned rinex file's station seems to be absent
 from this station list file.
 
 `33 - File\'s station does not correspond to provided sitelog - use -f option to force`
