@@ -13,6 +13,9 @@ import json, copy
 import pandas as pd
 
 import rinexmod.gamit_meta as rimo_gmm
+import rinexmod.logger as rimo_log
+
+logger = rimo_log.logger_define('INFO')
 
 
 #         import pycountry
@@ -257,7 +260,7 @@ class MetaData:
             if sitelogdict[key]['Secondary Contact']['Additional Information']:
                 # Putting the 'Additional Information' in the lower level dict
                 sitelogdict[key]['Additional Information'] = sitelogdict[key]['Secondary Contact'][
-                    'Additional Information']
+'Additional Information']
                 # Removing it from the incorrect dict level
                 sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
 
@@ -489,7 +492,7 @@ class MetaData:
         try:
             import pycountry
         except ModuleNotFoundError:
-            print("Python's module 'pycountry' is recommended to recover the Country name automatically")
+            logger.warning("Python's module 'pycountry' is recommended to recover the Country name automatically")
 
         full_country = self.misc_meta['Country']
         full_country2 = full_country.split("(the)")[0].strip()
@@ -506,7 +509,7 @@ class MetaData:
     def teqcargs(self, starttime, endtime, ignore=False):
         """
         Will return a string of teqc args containing all infos from the sitelog,
-        incuding instrumetnation infos taking into account a start and an end date.
+        including instrumentation infos taking into account a start and an end date.
         If ignore option set to True, we will force ignoring the firmware version
         modification between two periods and consider only the other parameters.
         """
@@ -642,7 +645,7 @@ class MetaData:
         if not output:
             output = os.path.dirname(self.path)
         elif not os.path.isdir(output):
-            print("error, output folder incorrect " + output)
+            logger.error("error, output folder incorrect " + output)
             return None
 
         outputfilejson = os.path.join(output, filename + '.json')

@@ -237,8 +237,8 @@ def read_gamit_station_info(station_info_inp):
 def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp,
                              force_fake_coords=False):
     """
-    read GAMIT files to get the Rinexmod internal
-    "instrus" and "misc_meta" dictionnaries,
+    read GAMIT files to get the RinexMod internal
+    "instrus" and "misc_meta" dictionaries,
     necessary for the Sitelog objects
 
     Parameters
