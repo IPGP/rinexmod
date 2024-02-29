@@ -723,7 +723,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                                         logfile=None,
                                         level_logfile='INFO')
 
-    logger.info('# File : ' + rinexfile)
+    logger.info('# File : %s', rinexfile)
 
     if relative:
         if not relative in rinexfile:
@@ -820,11 +820,14 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ### Priority for the Country source
     # 1) the marker option if 9 char are given
     # 2) the nine_char_dict from the ninecharfile option
-    # 3) the MetaData object (most useful actually,
+    # 3) the MetaData object (most useful actually),
     #    but we maintain a fallback mechanism here if the sitelog is wrong
+    # 4) last chance: test if the country code we get from the input 9-char
+    #    code is not XXX. If so, we keep it
     # Finally, set default value for the monument & country codes
 
     rnx_4char = rnxobj.get_site(True, True)
+    rnx_9char = rnxobj.get_site(False, False)
 
     if marker and len(marker) == 9:
         monum = marker[4:6]
@@ -838,6 +841,9 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     elif metadataobj:
         monum = "00"
         country = metadataobj.get_country()
+    elif rnx_9char[6:] != 'XXX':
+        monum = rnx_9char[4:6]
+        country = rnx_9char[6:]
     else:
         monum = "00"
         country = "XXX"

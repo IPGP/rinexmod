@@ -18,8 +18,6 @@ import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define('INFO')
 
 
-#         import pycountry
-
 class MetaData:
     """
     Parses and store in a dict informations from an IGS sitelog or GAMIT-like files.
@@ -181,7 +179,7 @@ class MetaData:
             return None, 2
 
         # We loop into those blocs, after a test that permits keeping only blocs
-        # beggining with patterns like '6.'. This permits removing the title bloc.
+        # beginning with patterns like '6.'. This permits removing the title bloc.
         for bloc in [bloc for bloc in blocs if re.match(r'\d.', bloc[:2])]:
 
             # We search for '4.3', '4.3.', '4.2.3' patterns for subbloc detection
@@ -260,7 +258,7 @@ class MetaData:
             if sitelogdict[key]['Secondary Contact']['Additional Information']:
                 # Putting the 'Additional Information' in the lower level dict
                 sitelogdict[key]['Additional Information'] = sitelogdict[key]['Secondary Contact'][
-'Additional Information']
+                    'Additional Information']
                 # Removing it from the incorrect dict level
                 sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
 
@@ -335,7 +333,7 @@ class MetaData:
         # List of installations. An installation is a date interval, a receiver and an antena
         installations = []
 
-        # Constructiong the installations list - date intervals
+        # Constructing the installations list - date intervals
         for i in range(0, len(listdates) - 1):
             # Construct interval from listdates
             dates = [listdates[i], listdates[i + 1]]
@@ -373,7 +371,7 @@ class MetaData:
                     # Once found, we quit the loop
                     break
 
-        ##### Removing from installation list periods without antenna or receiver #####
+        ##### Removing from installation list periods without antenna or receiver
 
         installations = [i for i in installations if i['receiver'] and i['antenna']]
 
