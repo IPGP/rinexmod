@@ -23,14 +23,17 @@ compressed format in an output folder. It also permits to rename the files, chan
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
 
-* `get_m3g_sitelogs.py` will get the last version of site logs from the M3G repository and write them in an observatory-dependent subfolder.
+* `get_m3g_sitelogs.py` will get the last version of site logs from the M3G repository
+and write them in an observatory-dependent subfolder.
 
-* `crzmeta.py` will extract RINEX file's header information and prompt the result. This permits to quickly access the header information without uncompressing the file manually. It's a teqc-free equivalent of teqc +meta.
+* `crzmeta.py` will extract RINEX file's header information and prompt the result. 
+This permits to quickly access the header information without uncompressing the file manually. 
+It's a teqc-free equivalent of teqc +meta.
 
 ## Installation
 
 ### Assisted installation 
-The tool is in Python 3, you must have it installed on your machine.
+The tool is designed in Python 3, you must have it installed on your machine.
 
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
