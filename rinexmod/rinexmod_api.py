@@ -93,9 +93,10 @@ def sitelog_input_manage(sitelog_inp, force=False):
     Manage the multiple types possible for a Sitelog inputs
     Return a list of MetaData to be handeled by metadata_find_site
     
-    Possible inputs are 
+    Possible inputs are: 
      * list of string (sitelog file paths),
-     * single string (single sitelog file path or directory containing the sitelogs),
+     * single string (single sitelog file path)
+     * single string (directory containing the sitelogs)
      * list of MetaData objects
      * single MetaData object
     
@@ -252,7 +253,7 @@ def sitelogs2metadata_objs(sitelog_filepath,
     elif os.path.isdir(sitelog_filepath):
         if force:
             logger.error(
-                '--force option is meaningful only when providing a single sitelog (and not a folder contaning several sitelogs)')
+                '--force option is relevant only when providing a single sitelog (and not a folder contaning several sitelogs)')
             raise MetaDataError
 
         sitelog_extension = '.log'
