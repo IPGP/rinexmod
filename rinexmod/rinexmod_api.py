@@ -223,15 +223,25 @@ def sitelogs2metadata_objs(sitelog_filepath,
         list of MetaData objects.
 
     """
-    # Case of one single sitelog:
-    if os.path.isfile(sitelog_filepath):
-
+        
+    def _load_sitelog(sitelog_filepath):
         # Creating MetaData object
         metadataobj = rimo_mda.MetaData(sitelog_filepath)
         # If sitelog is not parsable
         if metadataobj.status != 0:
             logger.error('The sitelog is not parsable : ' + sitelog_filepath)
             raise MetaDataError
+        return metadataobj
+    
+    # Case of a list of sitelogs
+    if type(sitelog_filepath) is list:
+        all_sitelogs = sitelog_filepath
+        sitelog_filepath = 'input sitelog list'
+    
+    # Case of one single sitelog
+    elif os.path.isfile(sitelog_filepath):
+        all_sitelogs = []
+        metadataobj = _load_sitelog(sitelog_filepath)
 
         if return_list_even_if_single_input:
             metadata_obj_list = [metadataobj]
@@ -240,7 +250,6 @@ def sitelogs2metadata_objs(sitelog_filepath,
 
     # Case of a folder
     elif os.path.isdir(sitelog_filepath):
-
         if force:
             logger.error(
                 '--force option is meaningful only when providing a single sitelog (and not a folder contaning several sitelogs)')
@@ -253,34 +262,28 @@ def sitelogs2metadata_objs(sitelog_filepath,
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
 
+    ### case of no file nor folder
+    else:
+        logger.error("unable to handle file/directory. Does it exists?: %s", sitelog_filepath)
+        raise RinexModInputArgsError
+      
+    # process the multiple sitelogs case
+    if all_sitelogs:
         logger.info('**** %i sitelogs detected: (in %s)', len(all_sitelogs), sitelog_filepath)
         for sl in all_sitelogs:
             logger.debug(sl)
-
         # Get last version of sitelogs if multiple available
         latest_sitelogs = _sitelog_find_latest_files(all_sitelogs)
 
         metadata_obj_list = []
         for sta_sitelog in latest_sitelogs:
-            # Creating MetaData object
-            metadataobj = rimo_mda.MetaData(sta_sitelog)
-
-            # If sitelog is not parsable
-            if metadataobj.status != 0:
-                logger.error('The sitelog is not parsable: ' +
-                             metadataobj.path)
-                raise MetaDataError
-
+            metadataobj = _load_sitelog(sitelog_filepath)
             # Appending to list
             metadata_obj_list.append(metadataobj)
 
         logger.info('**** %i most recent sitelogs selected:', len(metadata_obj_list))
         for sl in metadata_obj_list:
             logger.debug(sl.path)
-    ### case of no file nor folder
-    else:
-        logger.error("unable to handle file/directory. Does it exists?: %s", sitelog_filepath)
-        raise RinexModInputArgsError
 
     return metadata_obj_list
 
