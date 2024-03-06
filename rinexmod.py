@@ -58,7 +58,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     parser.add_argument(
-        '-fs', '--force_sitelog', help="Force sitelog-based header values when RINEX's header and sitelog site name do not correspond.", action='store_true', default=False)
+        '-fs', '--force_sitelog', help="If a single sitelog is provided, force sitelog-based header values when RINEX's header and sitelog site name do not correspond. \n If several sitelogs are provided, skip badly-formated sitelogs.", action='store_true', default=False)
     parser.add_argument(
         '-fc', '--force_fake_coords', help="When using GAMIT station.info metadata without apriori coordinates in the L-File, gives fake coordinates at (0°,0°) to the site", action='store_true', default=False)
     parser.add_argument(

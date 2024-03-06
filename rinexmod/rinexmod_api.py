@@ -28,22 +28,17 @@ logger = rimo_log.logger_define('INFO')
 class RinexModError(Exception):
     pass
 
-
 class RinexModInputArgsError(RinexModError):
     pass
-
 
 class RinexFileError(RinexModError):
     pass
 
-
 class MetaDataError(RinexModError):
     pass
 
-
 class ReturnListError(RinexModError):
     pass
-
 
 # *****************************************************************************
 # misc functions
@@ -208,7 +203,8 @@ def sitelogs2metadata_objs(sitelog_filepath,
     sitelog_filepath : str or list of str
         path of a single sitelog file or a set of sitelogs (stored in a list).
     force : bool, optional
-        force the reading of the sitelog file. The default is False.
+        if it is not possible to read a sitelog (bad format), we skip it. 
+        The default is False.
     return_list_even_if_single_input : bool, optional
         if a single sitelog is given, return the corresponding MetaData object
         into a list (singleton). The default is True.
@@ -225,66 +221,73 @@ def sitelogs2metadata_objs(sitelog_filepath,
 
     """
         
-    def _load_sitelog(sitelog_filepath):
+    def _load_sitelog(sitelog_filepath,force):
         # Creating MetaData object
-        metadataobj = rimo_mda.MetaData(sitelog_filepath)
-        # If sitelog is not parsable
-        if metadataobj.status != 0:
-            logger.error('The sitelog is not parsable : ' + sitelog_filepath)
-            raise MetaDataError
+        try:
+            metadataobj = rimo_mda.MetaData(sitelog_filepath)
+        except Exception as e:    
+            # If sitelog is not parsable
+            logger.error('The sitelog is not parsable: %s (%s)',
+                         os.path.basename(sitelog_filepath), str(e))
+            if not force:
+                raise MetaDataError
+            else:
+                metadataobj = None
+
         return metadataobj
     
+    #### differenciating cases
     # Case of a list of sitelogs
     if type(sitelog_filepath) is list:
         all_sitelogs = sitelog_filepath
         sitelog_filepath = 'input sitelog list'
-    
     # Case of one single sitelog
     elif os.path.isfile(sitelog_filepath):
-        all_sitelogs = []
-        metadataobj = _load_sitelog(sitelog_filepath)
-
-        if return_list_even_if_single_input:
-            metadata_obj_list = [metadataobj]
-        else:
-            metadata_obj_list = metadataobj
-
+        all_sitelogs = [sitelog_filepath]
     # Case of a folder
     elif os.path.isdir(sitelog_filepath):
-        if force:
-            logger.error(
-                '--force option is relevant only when providing a single sitelog (and not a folder contaning several sitelogs)')
-            raise MetaDataError
-
         sitelog_extension = '.log'
         all_sitelogs = listfiles(sitelog_filepath, sitelog_extension)
 
         sitelog_pattern = re.compile('\w{4,9}_\d{8}.log')
         all_sitelogs = [file for file in all_sitelogs if sitelog_pattern.match(
             os.path.basename(file))]
-
     ### case of no file nor folder
     else:
-        logger.error("unable to handle file/directory. Does it exists?: %s", sitelog_filepath)
+        logger.error("unable to handle file/directory. Does it exists?: %s", 
+                     sitelog_filepath)
         raise RinexModInputArgsError
-      
-    # process the multiple sitelogs case
-    if all_sitelogs:
-        logger.info('**** %i sitelogs detected: (in %s)', len(all_sitelogs), sitelog_filepath)
-        for sl in all_sitelogs:
-            logger.debug(sl)
-        # Get last version of sitelogs if multiple available
-        latest_sitelogs = _sitelog_find_latest_files(all_sitelogs)
+    
+    #### Read the sitelogs
+    logger.info('**** %i sitelogs detected: (in %s)', len(all_sitelogs),
+                sitelog_filepath)
+    for sl in all_sitelogs:
+        logger.debug(sl)
+    # Get last version of sitelogs if multiple available
+    latest_sitelogs = _sitelog_find_latest_files(all_sitelogs)
 
-        metadata_obj_list = []
-        for sta_sitelog in latest_sitelogs:
-            metadataobj = _load_sitelog(sitelog_filepath)
-            # Appending to list
+    metadata_obj_list = []
+    bad_sitelogs_list = []
+    for sta_sitelog in latest_sitelogs:
+        metadataobj = _load_sitelog(sta_sitelog,force)
+        # Appending to list
+        if metadataobj:
             metadata_obj_list.append(metadataobj)
+        else:
+            bad_sitelogs_list.append(sta_sitelog) 
 
-        logger.info('**** %i most recent sitelogs selected:', len(metadata_obj_list))
-        for sl in metadata_obj_list:
-            logger.debug(sl.path)
+    logger.info('**** %i most recent sitelogs selected:',
+                len(metadata_obj_list))
+    
+    for sl in metadata_obj_list:
+        logger.debug(sl.path)
+    
+    if len(bad_sitelogs_list) > 0:
+        logger.warning('**** %i badly-parsed & ignored sitelogs',
+                       len(bad_sitelogs_list))   
+            
+    if len(metadata_obj_list) <= 1 and not return_list_even_if_single_input:
+        metadata_obj_list = metadata_obj_list[0]
 
     return metadata_obj_list
 
@@ -295,24 +298,32 @@ def _sitelog_find_latest_files(all_sitelogs_filepaths):
     mainly for time consumption reduction
     """
     # We list the available sites to group sitelogs
-    sitelogsta = [os.path.basename(sl)[0:4] for sl in all_sitelogs_filepaths]
+    bnm = os.path.basename
+    sl_bnm = [bnm(sl) for sl in all_sitelogs_filepaths]
+    sl_sta = [sl[0:4] for sl in sl_bnm]
+
     # set the output latest sitelog list
     latest_sitelogs_filepaths = []
 
-    for sta in sitelogsta:
+    for sta in sl_sta:
         # Grouping by site
-        sta_sitelogs = [sl for sl in all_sitelogs_filepaths if os.path.basename(sl)[0:4] == sta]
+        sta_sitelogs = [slp for (slp,sln) in zip(all_sitelogs_filepaths,
+                                                 sl_bnm) if sln[0:4] == sta]
         # Getting dates from basename
-        sitelogs_dates = [os.path.splitext(os.path.basename(sitelog))[
-                              0][-8:] for sitelog in sta_sitelogs]
-        # Parsing 'em
-        sitelogs_dates = [datetime.strptime(
-            sitelogs_date, '%Y%m%d') for sitelogs_date in sitelogs_dates]
+        #sitelogs_dates0 = [os.path.splitext(bnm(sl))[0][-8:] for sl in sta_sitelogs]
+        # Getting dates from basename and parsing 'em
+        sitelogs_dates = []
+        for sl in sta_sitelogs:
+            try:
+                d = datetime.strptime(os.path.splitext(bnm(sl))[0][-8:], '%Y%m%d')
+                sitelogs_dates.append(d)
+            except ValueError as e:
+                logger.error("bad date in sitelog's filename: %s",sl)
+                raise e                
         # We get the max date and put it back to string format.
         maxdate = max(sitelogs_dates).strftime('%Y%m%d')
         # We filter the list with the max date string, and get a one entry list, then transform it to string
-        sta_sitelog = [sitelog for sitelog in sta_sitelogs if maxdate in os.path.splitext(
-            os.path.basename(sitelog))[0][-8:]][0]
+        sta_sitelog = [sl for sl in sta_sitelogs if maxdate in os.path.splitext(bnm(sl))[0][-8:]][0]
 
         latest_sitelogs_filepaths.append(sta_sitelog)
 
@@ -654,8 +665,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Force the loading of the input RINEX. Useful if its name is not standard.
         The default is False.
     force_sitelog : bool, optional
-        Force sitelog-based header values when RINEX's header
-        and sitelog site name do not correspond. The default is False.
+        If a single sitelog is provided, force sitelog-based header 
+        values when RINEX's header and sitelog site name do not correspond.
+        If several sitelogs are provided, skip badly-formated sitelogs.
+        The default is False.
     ignore : bool, optional
         Ignore firmware changes between instrumentation periods
         when getting header values info from sitelogs. The default is False.

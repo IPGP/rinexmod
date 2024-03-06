@@ -50,7 +50,7 @@ class MetaData:
             self.path = None
             self.filename = None
             self.site4char = None
-            self.raw_content, self.status = None, None
+            self.raw_content = None
             self.instrus = None
             self.misc_meta = None
 
@@ -65,7 +65,7 @@ class MetaData:
         self.path = sitelogfile
         self.filename = os.path.basename(self.path)
         self.site4char = self.filename[:4].lower()
-        self.raw_content, self.status = self._sitelog2raw_content_dict()
+        self.raw_content = self._sitelog2raw_content_dict()
         if self.raw_content:
             self.instrus = self._get_instru_dicts()
         else:
@@ -95,8 +95,6 @@ class MetaData:
             self.raw_content_apr = lfile
         else:
             self.raw_content_apr = rimo_gmm.read_gamit_apr_lfile(lfile)
-
-        self.status = 0
 
         if self.raw_content is not None:
             conv_fct = rimo_gmm.gamit_df2instru_miscmeta
@@ -176,7 +174,7 @@ class MetaData:
 
         if len(blocs) == 0:
             # print('The provided Sitelog is not correct : ' + self.path)
-            return None, 2
+            return None
 
         # We loop into those blocs, after a test that permits keeping only blocs
         # beginning with patterns like '6.'. This permits removing the title bloc.
@@ -262,7 +260,7 @@ class MetaData:
                 # Removing it from the incorrect dict level
                 sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
 
-        return sitelogdict, 0
+        return sitelogdict
 
     def _get_instru_dicts(self):
         """
