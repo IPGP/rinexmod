@@ -397,7 +397,7 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
             '36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway',
             rnxobj.filename))
 
-    (fourchar_id, domes_id, observable_type, agencies, receiver,
+    (fourchar_id, domes_id, sat_system, agencies, receiver,
      antenna, antenna_pos, antenna_delta) = metadata_vars
 
     # # Apply the modifications to the RinexFile object
@@ -408,7 +408,8 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     rnxobj.mod_antenna_pos(**antenna_pos)
     rnxobj.mod_antenna_delta(**antenna_delta)
     rnxobj.mod_agencies(**agencies)
-    rnxobj.mod_sat_system(observable_type)
+    rnxobj.mod_sat_system(sat_system)
+    rnxobj.sat_system = sat_system # the rnxobj attribute must be updated too
 
     return rnxobj
 
@@ -444,7 +445,6 @@ def _modif_kw_check(modif_kw):
                            'filename_data_freq',
                            'filename_file_period',
                            'filename_data_source',
-                           'filename_data_type',
                            'comment']
 
     for kw in modif_kw:
@@ -489,8 +489,12 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
                               modif_kw.get('agency'))
 
     rinexfileobj.mod_sat_system(modif_kw.get('sat_system'))
+    if modif_kw.get('sat_system'):
+        rinexfileobj.sat_system = modif_kw.get('sat_system')
     # legacy keyword, 'sat_system' should be used instead
     rinexfileobj.mod_sat_system(modif_kw.get('observables'))
+    if modif_kw.get('observables'):
+        rinexfileobj.sat_system = modif_kw.get('observables')
 
     rinexfileobj.mod_interval(modif_kw.get('interval'))
 
@@ -501,8 +505,6 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
         modif_kw.get('filename_data_freq'))
     rinexfileobj.mod_filename_data_source(
         modif_kw.get('filename_data_source'))
-    rinexfileobj.mod_filename_data_type(
-        modif_kw.get('filename_data_type'))
 
     # comment
     rinexfileobj.add_comment(modif_kw.get('comment'))
@@ -1094,9 +1096,12 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
     if sitelog:
         sitelogs_list_use = sitelog_input_manage(sitelog, force_sitelog)
     # from GAMIT files
-    if station_info and lfile_apriori:
+    elif station_info and lfile_apriori:
         sitelogs_list_use = gamit2metadata_objs(station_info, lfile_apriori,
                                                 force_fake_coords=force_fake_coords)
+    else:
+        sitelogs_list_use = None
+
 
     ### Looping in file list ###
     return_lists = dict()
