@@ -161,9 +161,10 @@ options:
                         receiver_fw, antenna_serial, antenna_type,
                         antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
                         antenna_H_delta, antenna_E_delta, antenna_N_delta,
-                        operator, agency, observables, interval,
-                        filename_file_period (01H, 01D...), filename_data_freq
-                        (30S, 01S...), filename_data_source (R, S, U)
+                        operator, agency, sat_system, observables (legacy alias for
+                        sat_system), interval, filename_file_period (01H, 01D...), 
+                        filename_data_freq (30S, 01S...), 
+                        filename_data_source (R, S, U),
   -m MARKER, --marker MARKER
                         A four or nine character site code that will be used
                         to rename input files. (apply also to the header's
@@ -283,9 +284,10 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
          * antenna_N_delta
          * operator
          * agency
-         * observables
+         * sat_system (M, G, R, E, C...)
+         * observables (legacy alias for sat_system)
          * interval
-        Acceptable keywords for the header fields:
+        Acceptable keywords for the filename:
          * filename_file_period (01H, 01D...)
          * filename_data_freq (30S, 01S...)
          * filename_data_source (R, S, U)

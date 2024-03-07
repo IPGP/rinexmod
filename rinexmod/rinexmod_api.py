@@ -438,11 +438,13 @@ def _modif_kw_check(modif_kw):
                            'antenna_N_delta',
                            'operator',
                            'agency',
+                           'sat_system',
                            'observables',
                            'interval',
                            'filename_data_freq',
                            'filename_file_period',
                            'filename_data_source',
+                           'filename_data_type',
                            'comment']
 
     for kw in modif_kw:
@@ -486,6 +488,8 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
     rinexfileobj.mod_agencies(modif_kw.get('operator'),
                               modif_kw.get('agency'))
 
+    rinexfileobj.mod_sat_system(modif_kw.get('sat_system'))
+    # legacy keyword, 'sat_system' should be used instead
     rinexfileobj.mod_sat_system(modif_kw.get('observables'))
 
     rinexfileobj.mod_interval(modif_kw.get('interval'))
@@ -497,6 +501,8 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
         modif_kw.get('filename_data_freq'))
     rinexfileobj.mod_filename_data_source(
         modif_kw.get('filename_data_source'))
+    rinexfileobj.mod_filename_data_type(
+        modif_kw.get('filename_data_type'))
 
     # comment
     rinexfileobj.add_comment(modif_kw.get('comment'))
@@ -644,9 +650,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
          * antenna_N_delta
          * operator
          * agency
-         * observables
+         * sat_system (M, G, R, E, C...)
+         * observables (legacy alias for sat_system)
          * interval
-        Acceptable keywords for the header fields:
+        Acceptable keywords for the filename:
          * filename_file_period (01H, 01D...)
          * filename_data_freq (30S, 01S...)
          * filename_data_source (R, S, U)
@@ -655,7 +662,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         A four or nine character site code that will be used to rename
         input files.
         Apply also to the header's MARKER NAME,
-        but a custom modification kewyord marker_name='XXXX' overrides it
+        but a custom modification keyword marker_name='XXXX' overrides it
         (modif_kw argument below)
         The default is ''.
     longname : bool, optional
@@ -677,7 +684,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         The default is None.
     compression : str, optional
         Set RINEX compression
-        acceptables values : gz (recommended to fit IGS standards), 'Z', None.
+        acceptable values : gz (recommended to fit IGS standards), 'Z', None.
         The default is None.
     relative : str, optional
         Reconstruct files relative subfolders.

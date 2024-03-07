@@ -42,7 +42,7 @@ if __name__ == '__main__':
                                                     Format : -k keyword_1='value' keyword2='value'. Acceptable keywords:\n
                                                     comment, marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                     antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
-                                                    operator, agency, observables, interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)
+                                                    operator, agency, sat_system, observables (legacy alias for sat_system), interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)
                                                     """, nargs='*', action=ParseKwargs, default=None)
         
     parser.add_argument('-m', '--marker', help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
@@ -54,7 +54,7 @@ if __name__ == '__main__':
                         help='Path of a GAMIT apriori apr/L-File to obtain GNSS site position and DOMES information (needs also -sti option)', type=str, default="")    
     parser.add_argument('-r', '--relative', help='Reconstruct files relative subfolders. You have to indicate the common parent folder, that will be replaced with the output folder', type=str, default=0)
     parser.add_argument('-c', '--compression', type=str,
-                        help="Set file's compression (acceptables values : 'gz' (recommended to fit IGS standards), 'Z', 'none')", default='')
+                        help="Set file's compression (acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')", default='')
     parser.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     parser.add_argument(
