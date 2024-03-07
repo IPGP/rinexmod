@@ -33,7 +33,7 @@ if __name__ == '__main__':
                         print("      -k keyword_1='value' keyword2='value' ")
                         print("TIP2: don't use -k as last option, it will  ")
                         print("      enroll rinexinput & outputfolder args ")
-                        print("      use for instance -t to en the -k part ")        
+                        print("      use for instance -t to end -k part    ")        
                         print("********************************************")
                         print(values)
                         return None
