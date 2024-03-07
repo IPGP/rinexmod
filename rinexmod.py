@@ -27,7 +27,17 @@ if __name__ == '__main__':
                     key, value = value.split('=')
                     getattr(namespace, self.dest)[key] = value
                 except Exception as e:
-                    __print_tips(values)
+                    def _print_tips(values):
+                        print("********************************************")
+                        print("TIP1: be sure you have respected the syntax:")
+                        print("      -k keyword_1='value' keyword2='value' ")
+                        print("TIP2: don't use -k as last option, it will  ")
+                        print("      enroll rinexinput & outputfolder args ")
+                        print("      use for instance -t to en the -k part ")        
+                        print("********************************************")
+                        print(values)
+                        return None
+                    _print_tips(values)
                     raise e
 
     ##### Parsing Args
@@ -139,14 +149,4 @@ if __name__ == '__main__':
                           lfile_apriori=lfile_apriori,
                           force_fake_coords=force_fake_coords) 
 
-    def __print_tips(values):
-        print("********************************************")
-        print("TIP1: be sure you have respected the syntax:")
-        print("      -k keyword_1='value' keyword2='value' ")
-        print("TIP2: don't use -k as last option, it will  ")
-        print("      enroll rinexinput & outputfolder args ")
-        print("********************************************")
-        print(values)
 
-        return None
- 
