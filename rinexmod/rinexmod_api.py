@@ -7,6 +7,8 @@ Created on Wed Mar  8 12:14:54 2023
 
 @author: psakic
 """
+
+import argparse
 import os
 import re
 from datetime import datetime
@@ -445,11 +447,13 @@ def _modif_kw_check(modif_kw):
                            'filename_data_freq',
                            'filename_file_period',
                            'filename_data_source',
-                           'comment']
+                           'comment_[0-9]+'] 
+                            ### comment is a regex, bc several comments are possible
+                            # suffix _N is added by ParseKwargs
 
     for kw in modif_kw:
-        if kw not in acceptable_keywords:
-            logger.error('{}\' is not an acceptable keyword for header modification.'.format(kw))
+        if not any([re.match(akw, kw) for akw in acceptable_keywords]):
+            logger.error("'{}' is not an acceptable keyword for header modification.".format(kw))
             return RinexModInputArgsError
 
     return None
@@ -504,11 +508,11 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
     rinexfileobj.mod_filename_data_source(modif_kw.get('filename_data_source'))
 
     # comment
-    # special case: several keys comment1, comment2, commentN are possible
+    # special case: several keys comment_1, comment_2, comment_N are possible
     # number are added automatically by ParseKwargs
     comment_keys = [k for k in modif_kw.keys() if 'comment' in k]
     for ck in comment_keys:
-        rinexfileobj.add_comment(modif_kw.get(ck))
+        rinexfileobj.add_comment(modif_kw.get(ck).split('_')[0])
 
     return rinexfileobj
 
@@ -1164,5 +1168,39 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
         _return_lists_write(return_lists, logfolder, now)
 
     return return_lists
+
+
+##### Class for --modif_kw
+class ParseKwargs(argparse.Action):
+    # source: 
+    # https://sumit-ghosh.com/posts/parsing-dictionary-key-value-pairs-kwargs-argparse-python/
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, dict())
+        for value in values:
+            try:
+                icmt=0
+                key, value = value.split('=')
+
+                if key=='comment':
+                    getattr(namespace, self.dest)[key+'_'+str(icmt)] = value
+                    icmt += 1
+                else:
+                    getattr(namespace, self.dest)[key] = value
+                    
+            except Exception as e:
+                def _print_tips(values):
+                    logger.critical("********************************************")
+                    logger.critical("TIP1: be sure you have respected the syntax:")
+                    logger.critical("      -k keyword_1='value' keyword2='value' ")
+                    logger.critical("TIP2: don't use -k/--modif_kw as the final  ") 
+                    logger.critical("      option, it will enroll rinexinput &   ")
+                    logger.critical("      outputfolder arguments                ")
+                    logger.critical("      use -e/--end_kw to end -k/--modif_kw  ") 
+                    logger.critical("      sequence                              ")
+                    logger.critical("********************************************")
+                    logger.critical(values)
+                    return None
+                _print_tips(values)
+                raise e
 
 # *****************************************************************************
