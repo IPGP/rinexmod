@@ -1117,9 +1117,9 @@ class RinexFile:
         label = receiver_meta[60:]
         # Edit line
         if serial:
-            serial_meta = serial[:20].ljust(20)
+            serial_meta = str(serial)[:20].ljust(20)
         if type:
-            type_meta = type[:20].ljust(20)
+            type_meta = str(type[:20]).ljust(20)
         if firmware:
             firmware_meta = str(firmware)[:20].ljust(20)
         new_line = serial_meta + type_meta + firmware_meta + label
