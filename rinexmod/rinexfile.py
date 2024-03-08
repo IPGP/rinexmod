@@ -1161,9 +1161,9 @@ class RinexFile:
         label = antenna_meta[60:]
         # Edit line
         if serial:
-            serial_meta = str(serial[:20]).ljust(20)
+            serial_meta = str(serial)[:20].ljust(20)
         if type:
-            type_meta = str(type[:20]).ljust(20)
+            type_meta = str(type)[:20].ljust(20)
         new_line = serial_meta + type_meta + ' ' * 20 + label
         # Set line
         self.rinex_data[antenna_header_idx] = new_line
