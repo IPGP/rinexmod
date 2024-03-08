@@ -1176,9 +1176,9 @@ class ParseKwargs(argparse.Action):
     # https://sumit-ghosh.com/posts/parsing-dictionary-key-value-pairs-kwargs-argparse-python/
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, dict())
+        icmt=0        
         for value in values:
             try:
-                icmt=0
                 key, value = value.split('=')
 
                 if key=='comment':
@@ -1188,7 +1188,7 @@ class ParseKwargs(argparse.Action):
                     getattr(namespace, self.dest)[key] = value
                     
             except Exception as e:
-                def _print_tips(values):
+                def _print_kw_tips(values):
                     logger.critical("********************************************")
                     logger.critical("TIP1: be sure you have respected the syntax:")
                     logger.critical("      -k keyword_1='value' keyword2='value' ")
@@ -1200,7 +1200,7 @@ class ParseKwargs(argparse.Action):
                     logger.critical("********************************************")
                     logger.critical(values)
                     return None
-                _print_tips(values)
+                _print_kw_tips(values)
                 raise e
 
 # *****************************************************************************
