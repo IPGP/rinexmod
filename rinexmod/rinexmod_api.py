@@ -487,7 +487,7 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
 
     rinexfileobj.mod_agencies(modif_kw.get('operator'),
                               modif_kw.get('agency'))
-
+    
     rinexfileobj.mod_sat_system(modif_kw.get('sat_system'))
     if modif_kw.get('sat_system'):
         rinexfileobj.sat_system = modif_kw.get('sat_system')
@@ -499,15 +499,16 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
     rinexfileobj.mod_interval(modif_kw.get('interval'))
 
     # for the filename
-    rinexfileobj.mod_filename_file_period(
-        modif_kw.get('filename_file_period'))
-    rinexfileobj.mod_filename_data_freq(
-        modif_kw.get('filename_data_freq'))
-    rinexfileobj.mod_filename_data_source(
-        modif_kw.get('filename_data_source'))
+    rinexfileobj.mod_filename_file_period(modif_kw.get('filename_file_period'))
+    rinexfileobj.mod_filename_data_freq(modif_kw.get('filename_data_freq'))
+    rinexfileobj.mod_filename_data_source(modif_kw.get('filename_data_source'))
 
     # comment
-    rinexfileobj.add_comment(modif_kw.get('comment'))
+    # special case: several keys comment1, comment2, commentN are possible
+    # number are added automatically by ParseKwargs
+    comment_keys = [k for k in modif_kw.keys() if 'comment' in k]
+    for ck in comment_keys:
+        rinexfileobj.add_comment(modif_kw.get(ck))
 
     return rinexfileobj
 

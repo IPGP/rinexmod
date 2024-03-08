@@ -24,8 +24,15 @@ if __name__ == '__main__':
             setattr(namespace, self.dest, dict())
             for value in values:
                 try:
+                    icmt=0
                     key, value = value.split('=')
-                    getattr(namespace, self.dest)[key] = value
+
+                    if key=='comment':
+                        getattr(namespace, self.dest)[key + str(icmt)] = value
+                        icmt += 1
+                    else:
+                        getattr(namespace, self.dest)[key] = value
+                        
                 except Exception as e:
                     def _print_tips(values):
                         print("********************************************")
