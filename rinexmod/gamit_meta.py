@@ -211,7 +211,14 @@ def read_gamit_station_info(station_info_inp):
 
     ##### create datetime start/end columns
     df['start doy'].replace(999, 365, inplace=True)
+    df['start hh'].replace(99, 00, inplace=True)
+    df['start mm'].replace(99, 00, inplace=True)
+    df['start ss'].replace(99, 00, inplace=True)
+
     df['stop doy'].replace(999, 365, inplace=True)
+    df['stop hh'].replace(99, 00, inplace=True)
+    df['stop mm'].replace(99, 00, inplace=True)
+    df['stop ss'].replace(99, 00, inplace=True)
 
     df_start = doy2dt(df['start year'],
                       df['start doy'],
