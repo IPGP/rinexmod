@@ -1121,7 +1121,7 @@ class RinexFile:
         if type:
             type_meta = type[:20].ljust(20)
         if firmware:
-            firmware_meta = firmware[:20].ljust(20)
+            firmware_meta = str(firmware)[:20].ljust(20)
         new_line = serial_meta + type_meta + firmware_meta + label
         # Set line
         self.rinex_data[receiver_header_idx] = new_line
