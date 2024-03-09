@@ -1191,12 +1191,12 @@ class ParseKwargs(argparse.Action):
                 def _print_kw_tips(values):
                     logger.critical("********************************************")
                     logger.critical("TIP1: be sure you have respected the syntax:")
-                    logger.critical("     -k keyword1='value' keyword2='value' -e")
-                    logger.critical("TIP2: don't use -k/--modif_kw as the final  ") 
-                    logger.critical("      option, it will enroll rinexinput &   ")
-                    logger.critical("      outputfolder arguments                ")
-                    logger.critical("      use -e/--end_kw to end -k/--modif_kw  ") 
-                    logger.critical("      sequence                              ")
+                    logger.critical("      -k keyword1='value' keyword2='value'  ")
+                    #logger.critical("TIP2: don't use -k/--modif_kw as the final  ") 
+                    #logger.critical("      option, it will enroll rinexinput &   ")
+                    #logger.critical("      outputfolder arguments                ")
+                    #logger.critical("      use -e/--end_kw to end -k/--modif_kw  ") 
+                    #logger.critical("      sequence                              ")
                     logger.critical("********************************************")
                     logger.critical(values)
                     return None

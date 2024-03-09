@@ -23,7 +23,7 @@ if __name__ == '__main__':
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
     
-    required.add_argument('-i','--rinexinput', type=str, required=True, nargs='+',
+    required.add_argument('-i','--rinexinput', type=str, required=True, nargs=1,
                           help="Input RINEX file(s). list file of the RINEX paths to process (generated with a find or ls command for instance) OR a single RINEX file's path (see -a/--alone for a single input file)")
     required.add_argument('-o','--outputfolder', type=str, required=True, nargs=1,
                           help='Output folder for modified RINEX files')
@@ -73,9 +73,9 @@ if __name__ == '__main__':
     optional.add_argument(
             '-tol', '--tolerant_file_period', help="the RINEX file period is tolerant and stick to the actual data content, but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), being compatible with the IGS conventions", action='store_true', default=False)
     optional.add_argument(
-            '-mp', '--multi_process', help="number of parallel multiprocesing (default: %(default)s, no parallelization)", type=int, default=1)
+            '-mp', '--multi_process', help="Mumber of parallel multiprocesing (default: %(default)s, no parallelization)", type=int, default=1)
     optional.add_argument(
-            '-d', '--debug', help="debug mode, stops if something goes wrong (default: %(default)s)", action='store_true', default=False)
+            '-d', '--debug', help="Debug mode, stops if something goes wrong (default: %(default)s)", action='store_true', default=False)
     
     
     
