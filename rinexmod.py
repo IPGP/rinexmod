@@ -34,9 +34,9 @@ if __name__ == '__main__':
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
     
-    required.add_argument('-i','--rinexinput', type=str, required=True, nargs=1,
-                          help="Input RINEX file(s). list file of the RINEX paths to process (generated with a find or ls command for instance) OR a single RINEX file's path (see -a/--alone for a single input file)")
-    required.add_argument('-o','--outputfolder', type=str, required=True, nargs=1,
+    required.add_argument('-i','--rinexinput', type=str, required=True, nargs='+',
+                          help="Input RINEX file(s). it can be 1) a list file of the RINEX paths to process (generated with a find or ls command for instance) 2) several RINEX files paths 3) a single RINEX file path (see -a/--alone for a single input file)")
+    required.add_argument('-o','--outputfolder', type=str, required=True,
                           help='Output folder for modified RINEX files')
     optional.add_argument(
         '-s', '--sitelog', help="Get the RINEX header values from file's site's sitelog. Provide a single sitelog path or a folder contaning sitelogs.", type=str, default="")
@@ -47,7 +47,10 @@ if __name__ == '__main__':
                                                        antenna_E_delta, antenna_N_delta, operator, agency, sat_system, observables (legacy alias for sat_system), interval, 
                                                        filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U).
                                                     """), nargs='+', metavar="KEY=VALUE", action=rimo_api.ParseKwargs, default=None) 
-    optional.add_argument('-m', '--marker', help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
+    optional.add_argument('-m', '--marker', 
+                        help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
+    optional.add_argument('-co', '--country',
+                        help='A three character string corresponding to the ISO 3166 Country code that will be used to rename input files. It overrides other country code sources (sitelog, --marker...). List of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', type=str, default="")
     optional.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names (e.g. from the M3G database)', type=str, default="")
     optional.add_argument('-sti', '--station_info',
@@ -93,6 +96,7 @@ if __name__ == '__main__':
     sitelog = args.sitelog
     modif_kw = args.modif_kw
     marker = args.marker
+    country = args.country
     ninecharfile = args.ninecharfile
     relative = args.relative
     compression = args.compression
@@ -118,6 +122,7 @@ if __name__ == '__main__':
                           sitelog=sitelog,
                           modif_kw=modif_kw,
                           marker=marker,
+                          country=country,
                           longname=longname,
                           force_sitelog=force_sitelog,
                           force_rnx_load=force_rnx_load,
