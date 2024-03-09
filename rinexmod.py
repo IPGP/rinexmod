@@ -14,12 +14,21 @@ v2 - 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 """
 
 import rinexmod.rinexmod_api as rimo_api
-import argparse
+import argparse, textwrap
+from argparse import RawTextHelpFormatter
 
 if __name__ == '__main__':
+    
+    class SmartFormatter(argparse.HelpFormatter):
+        # source: https://stackoverflow.com/a/22157136/3464212
+        def _split_lines(self, text, width):
+            if text.startswith('R|'):
+                return text[2:].splitlines()  
+            # this is the RawTextHelpFormatter._split_lines
+            return argparse.HelpFormatter._split_lines(self, text, width)
 
     ##### Parsing Args
-    parser = argparse.ArgumentParser(description='This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory')
+    parser = argparse.ArgumentParser(description='This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory',formatter_class=SmartFormatter)
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
     
@@ -29,13 +38,33 @@ if __name__ == '__main__':
                           help='Output folder for modified RINEX files')
     optional.add_argument(
         '-s', '--sitelog', help="Get the RINEX header values from file's site's sitelog. Provide a single sitelog path or a folder contaning sitelogs.", type=str, default="")
-    optional.add_argument('-k', '--modif_kw', help="""Modification keywords for RINEX's header fields and/or filename. Will override the information from the sitelog. 
-                                                    Format : -k keyword_1='value' keyword2='value'.
+    optional.add_argument('-k', '--modif_kw', help=("""Modification keywords for RINEX's header fields and/or filename. Format: -k keyword_1='value1' keyword2='value2'.  
+                                                    Will override the information from the sitelog.
                                                     Acceptable keywords:
-                                                    comment, marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
-                                                    antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
-                                                    operator, agency, sat_system, observables (legacy alias for sat_system), interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U).
-                                                    """, nargs='+', metavar="KEY=VALUE", action=rimo_api.ParseKwargs, default=None) 
+    comment,
+    marker_name,
+    marker_number,
+    station (legacy alias for marker_name), 
+    receiver_serial,
+    receiver_type, 
+    receiver_fw,
+    antenna_serial,
+    antenna_type,
+    antenna_X_pos, 
+    antenna_Y_pos,
+    antenna_Z_pos,
+    antenna_H_delta,
+    antenna_E_delta, 
+    antenna_N_delta,
+    operator, 
+    agency,
+    sat_system, 
+    observables (legacy alias for sat_system), 
+    interval, 
+    filename_file_period (01H, 01D...), 
+    filename_data_freq (30S, 01S...), 
+    filename_data_source (R, S, U).
+                                                    """), nargs='+', metavar="KEY=VALUE", action=rimo_api.ParseKwargs, default=None) 
     optional.add_argument('-m', '--marker', help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
     optional.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names (e.g. from the M3G database)', type=str, default="")
@@ -74,8 +103,6 @@ if __name__ == '__main__':
             '-mp', '--multi_process', help="Mumber of parallel multiprocesing (default: %(default)s, no parallelization)", type=int, default=1)
     optional.add_argument(
             '-d', '--debug', help="Debug mode, stops if something goes wrong (default: %(default)s)", action='store_true', default=False)
-    
-    
     
     args = parser.parse_args()
 
