@@ -35,9 +35,7 @@ if __name__ == '__main__':
                                                     comment, marker_name, marker_number, station (legacy alias for marker_name), receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type,
                                                     antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, antenna_E_delta, antenna_N_delta,
                                                     operator, agency, sat_system, observables (legacy alias for sat_system), interval, filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U).
-                                                    Modification keywords sequence must be ended with -e/--end_kw if no other argument follows
                                                     """, nargs='+', metavar="KEY=VALUE", action=rimo_api.ParseKwargs, default=None) 
-    optional.add_argument('-e', '--end_kw', help="Argument to end a Modification keywords sequence if no other argument follows. Exemple -k keyword_1='value' keyword2='value' -e" , action='store_true', default=False)        
     optional.add_argument('-m', '--marker', help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
     optional.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names (e.g. from the M3G database)', type=str, default="")
@@ -85,7 +83,6 @@ if __name__ == '__main__':
     outputfolder = args.outputfolder
     sitelog = args.sitelog
     modif_kw = args.modif_kw
-    end_kw = args.end_kw
     marker = args.marker
     ninecharfile = args.ninecharfile
     relative = args.relative
