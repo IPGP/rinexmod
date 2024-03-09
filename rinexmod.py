@@ -15,7 +15,6 @@ v2 - 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 
 import rinexmod.rinexmod_api as rimo_api
 import argparse, textwrap
-from argparse import RawTextHelpFormatter
 
 if __name__ == '__main__':
     
@@ -28,7 +27,9 @@ if __name__ == '__main__':
             return argparse.HelpFormatter._split_lines(self, text, width)
 
     ##### Parsing Args
-    parser = argparse.ArgumentParser(description='This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory',formatter_class=SmartFormatter)
+    parser = argparse.ArgumentParser(description='This program takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory',
+                                     formatter_class=SmartFormatter,
+                                     epilog=textwrap.dedent('RinexMod - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS - https://github.com/IPGP/rinexmod'))
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
     
