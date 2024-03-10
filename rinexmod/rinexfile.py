@@ -81,7 +81,6 @@ class RinexFile:
         self.file_period, self.session = self.get_file_period_from_data(tolerant_file_period=True,
                                                                         inplace_set=False)
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
-        self.sat_system = self.get_sat_system()
 
     def __str__(self):
         """
@@ -300,7 +299,7 @@ class RinexFile:
                              self.start_date.strftime(timeformat),
                              file_period_name,
                              self.sample_rate_string,
-                             self.sat_system + obs_type + ext + compression))
+                             self.get_sat_system() + obs_type + ext + compression))
 
         if inplace_set:
             self.filename = longname

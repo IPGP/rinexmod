@@ -399,8 +399,8 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
             '36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway',
             rnxobj.filename))
 
-    (fourchar_id, domes_id, sat_system, agencies, receiver,
-     antenna, antenna_pos, antenna_delta) = metadata_vars
+    (fourchar_id, domes_id, sat_system_long_fmt, agencies,
+     receiver, antenna, antenna_pos, antenna_delta) = metadata_vars
 
     # # Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
@@ -410,8 +410,7 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     rnxobj.mod_antenna_pos(**antenna_pos)
     rnxobj.mod_antenna_delta(**antenna_delta)
     rnxobj.mod_agencies(**agencies)
-    rnxobj.mod_sat_system(sat_system)
-    rnxobj.sat_system = sat_system # the rnxobj attribute must be updated too
+    rnxobj.mod_sat_system(sat_system_long_fmt)
 
     return rnxobj
 
@@ -493,12 +492,8 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
                               modif_kw.get('agency'))
     
     rinexfileobj.mod_sat_system(modif_kw.get('sat_system'))
-    if modif_kw.get('sat_system'):
-        rinexfileobj.sat_system = modif_kw.get('sat_system')
     # legacy keyword, 'sat_system' should be used instead
     rinexfileobj.mod_sat_system(modif_kw.get('observables'))
-    if modif_kw.get('observables'):
-        rinexfileobj.sat_system = modif_kw.get('observables')
 
     rinexfileobj.mod_interval(modif_kw.get('interval'))
 
