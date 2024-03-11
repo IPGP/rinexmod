@@ -114,7 +114,8 @@ Two ways of passing parameters to modify headers are possible: `sitelog` and `mo
                               antenna_N_delta,
                               operator,
                               agency,
-                              observables,
+                              sat_system, 
+                              observables (legacy alias for sat_system),
                               interval,
                               filename_file_period (01H, 01D...),
                               filename_data_freq (30S, 01S...),
@@ -143,7 +144,7 @@ options:
 
 required arguments:
   -i RINEXINPUT [RINEXINPUT ...], --rinexinput RINEXINPUT [RINEXINPUT ...]
-                        Input RINEX file(s). it can be 1) a list file of the RINEX
+                        Input RINEX file(s). It can be 1) a list file of the RINEX
                         paths to process (generated with a find or ls command for
                         instance) 2) several RINEX files paths 3) a single RINEX
                         file path (see -a/--alone for a single input file)
