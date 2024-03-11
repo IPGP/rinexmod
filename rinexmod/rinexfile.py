@@ -81,7 +81,6 @@ class RinexFile:
         self.file_period, self.session = self.get_file_period_from_data(tolerant_file_period=True,
                                                                         inplace_set=False)
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
-        self.sat_system = self.get_sat_system()
 
     def __str__(self):
         """
@@ -300,7 +299,7 @@ class RinexFile:
                              self.start_date.strftime(timeformat),
                              file_period_name,
                              self.sample_rate_string,
-                             self.sat_system + obs_type + ext + compression))
+                             self.get_sat_system() + obs_type + ext + compression))
 
         if inplace_set:
             self.filename = longname
@@ -1080,7 +1079,7 @@ class RinexFile:
 
         return
 
-    def mod_receiver(self, serial=None, type_=None, firmware=None):
+    def mod_receiver(self, serial=None, type=None, firmware=None):
         """
         Modify within the RINEX header the receiver information
         (``REC # / TYPE / VERS`` line)
@@ -1089,7 +1088,7 @@ class RinexFile:
         ----------
         serial : str, optional
             Receiver Serial Number. The default is None.
-        type_ : str, optional
+        type : str, optional
             Receiver model. The default is None.
         firmware : str, optional
             Firmware version. The default is None.
@@ -1118,8 +1117,8 @@ class RinexFile:
         # Edit line
         if serial:
             serial_meta = str(serial)[:20].ljust(20)
-        if type_:
-            type_meta = str(type_)[:20].ljust(20)
+        if type:
+            type_meta = str(type)[:20].ljust(20)
         if firmware:
             firmware_meta = str(firmware)[:20].ljust(20)
         new_line = serial_meta + type_meta + firmware_meta + label
@@ -1128,7 +1127,7 @@ class RinexFile:
 
         return
 
-    def mod_antenna(self, serial=None, type_=None):
+    def mod_antenna(self, serial=None, type=None):
         """
         Modify within the RINEX header the antenna information
         (``ANT # / TYPE`` line)
@@ -1137,7 +1136,7 @@ class RinexFile:
         ----------
         serial : str, optional
             Antenne Serial Number. The default is None.
-        type_ : str, optional
+        type : str, optional
             Antenna model. The default is None.
 
         Returns
@@ -1162,8 +1161,8 @@ class RinexFile:
         # Edit line
         if serial:
             serial_meta = str(serial)[:20].ljust(20)
-        if type_:
-            type_meta = str(type_)[:20].ljust(20)
+        if type:
+            type_meta = str(type)[:20].ljust(20)
         new_line = serial_meta + type_meta + ' ' * 20 + label
         # Set line
         self.rinex_data[antenna_header_idx] = new_line
