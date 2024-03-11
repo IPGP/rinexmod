@@ -227,7 +227,7 @@ optional arguments:
                         strict file period is applied per default (01H or 01D),
                         being compatible with the IGS conventions
   -mp MULTI_PROCESS, --multi_process MULTI_PROCESS
-                        Mumber of parallel multiprocesing (default: 1, no
+                        Number of parallel multiprocesing (default: 1, no
                         parallelization)
   -d, --debug           Debug mode, stops if something goes wrong (default: False)
 
