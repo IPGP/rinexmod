@@ -1024,8 +1024,8 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
     
     Parameters
     ----------
-    rinexinput : list or str
-        a filepath of a textfile containing a RINEX paths list 
+    rinexinput : list
+        a filepath of a textfile containing a RINEX paths list (1-element list)
         or directly a Python list of RINEX paths
     """
 

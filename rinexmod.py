@@ -35,7 +35,7 @@ if __name__ == '__main__':
     optional = parser.add_argument_group('optional arguments')
     
     required.add_argument('-i','--rinexinput', type=str, required=True, nargs='+',
-                          help="Input RINEX file(s). it can be 1) a list file of the RINEX paths to process (generated with a find or ls command for instance) 2) several RINEX files paths 3) a single RINEX file path (see -a/--alone for a single input file)")
+                          help="Input RINEX file(s). It can be 1) a list file of the RINEX paths to process (generated with find or ls command for instance) 2) several RINEX files paths 3) a single RINEX file path (see -a/--alone for a single input file)")
     required.add_argument('-o','--outputfolder', type=str, required=True,
                           help='Output folder for modified RINEX files')
     optional.add_argument(
