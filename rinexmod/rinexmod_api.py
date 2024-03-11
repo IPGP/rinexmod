@@ -346,7 +346,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
         rnx_4char = rnxobj_or_site4char.get_site(True, True)
         err_label = rnxobj_or_site4char.filename
 
-    logger.debug('Searching corresponding metadata for site : ' + rnx_4char)
+    logger.debug('Searching corresponding metadata for site: ' + rnx_4char)
 
     if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
         if len(metadata_obj_list) == 1:
@@ -755,7 +755,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                                         logfile=None,
                                         level_logfile='INFO')
 
-    logger.info('# File : %s', rinexfile)
+    logger.info('# Input file: %s', rinexfile)
 
     if relative:
         if not relative in rinexfile:
@@ -776,7 +776,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     if os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder:
         logger.error(
-            '{:110s} - {}'.format('30 - Input and output folders are the same !', rinexfile))
+            '{:110s} - {}'.format('30 - Input and output folders are the same!', rinexfile))
         raise RinexFileError
 
     if not os.path.exists(outputfolder):
@@ -799,14 +799,14 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
-        logger.error('The site name provided is not 4 or 9-char valid : ' + marker)
+        logger.error('The site name provided is not 4 or 9-char valid: ' + marker)
         raise RinexModInputArgsError
 
     # Get the 4 char > 9 char dictionnary from the input list
     nine_char_dict = dict()  # in any case, nine_char_dict is initialized
     if ninecharfile:
         if not os.path.isfile(ninecharfile):
-            logger.error('The specified 9-chars. list file does not exists : ' + ninecharfile)
+            logger.error('The specified 9-chars. list file does not exists: ' + ninecharfile)
             raise RinexModInputArgsError
 
         with open(ninecharfile, "r") as F:
@@ -913,7 +913,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
         modif_source_kw = 'keywords:' + " ".join(modif_kw.keys())
         rnxobj = modif_kw_apply_on_rnxobj(rnxobj, modif_kw)
-        logger.debug('RINEX Manual Keywords-Modified Metadata :\n' + rnxobj.get_metadata()[0])
+        logger.debug('RINEX Manual Keywords-Modified Metadata:\n' + rnxobj.get_metadata()[0])
 
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
@@ -982,7 +982,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     try:
         outputfile = rnxobj.write_to_path(myoutputfolder,
                                           compression=output_compression)
-        logger.info('Output file : ' + outputfile)
+        logger.info('# Output file: ' + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
         logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', rinexfile))
         outputfile = None
