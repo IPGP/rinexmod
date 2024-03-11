@@ -1080,7 +1080,7 @@ class RinexFile:
 
         return
 
-    def mod_receiver(self, serial=None, type=None, firmware=None):
+    def mod_receiver(self, serial=None, type_=None, firmware=None):
         """
         Modify within the RINEX header the receiver information
         (``REC # / TYPE / VERS`` line)
@@ -1089,7 +1089,7 @@ class RinexFile:
         ----------
         serial : str, optional
             Receiver Serial Number. The default is None.
-        type : str, optional
+        type_ : str, optional
             Receiver model. The default is None.
         firmware : str, optional
             Firmware version. The default is None.
@@ -1117,18 +1117,18 @@ class RinexFile:
         label = receiver_meta[60:]
         # Edit line
         if serial:
-            serial_meta = serial[:20].ljust(20)
-        if type:
-            type_meta = type[:20].ljust(20)
+            serial_meta = str(serial)[:20].ljust(20)
+        if type_:
+            type_meta = str(type_)[:20].ljust(20)
         if firmware:
-            firmware_meta = firmware[:20].ljust(20)
+            firmware_meta = str(firmware)[:20].ljust(20)
         new_line = serial_meta + type_meta + firmware_meta + label
         # Set line
         self.rinex_data[receiver_header_idx] = new_line
 
         return
 
-    def mod_antenna(self, serial=None, type=None):
+    def mod_antenna(self, serial=None, type_=None):
         """
         Modify within the RINEX header the antenna information
         (``ANT # / TYPE`` line)
@@ -1137,7 +1137,7 @@ class RinexFile:
         ----------
         serial : str, optional
             Antenne Serial Number. The default is None.
-        type : TYPE, optional
+        type_ : str, optional
             Antenna model. The default is None.
 
         Returns
@@ -1161,9 +1161,9 @@ class RinexFile:
         label = antenna_meta[60:]
         # Edit line
         if serial:
-            serial_meta = serial[:20].ljust(20)
-        if type:
-            type_meta = type[:20].ljust(20)
+            serial_meta = str(serial)[:20].ljust(20)
+        if type_:
+            type_meta = str(type_)[:20].ljust(20)
         new_line = serial_meta + type_meta + ' ' * 20 + label
         # Set line
         self.rinex_data[antenna_header_idx] = new_line

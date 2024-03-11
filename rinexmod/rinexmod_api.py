@@ -7,6 +7,8 @@ Created on Wed Mar  8 12:14:54 2023
 
 @author: psakic
 """
+
+import argparse
 import os
 import re
 from datetime import datetime
@@ -445,11 +447,13 @@ def _modif_kw_check(modif_kw):
                            'filename_data_freq',
                            'filename_file_period',
                            'filename_data_source',
-                           'comment']
+                           'comment_[0-9]+'] 
+                            ### comment is a regex, bc several comments are possible
+                            # suffix _N is added by ParseKwargs
 
     for kw in modif_kw:
-        if kw not in acceptable_keywords:
-            logger.error('{}\' is not an acceptable keyword for header modification.'.format(kw))
+        if not any([re.match(akw, kw) for akw in acceptable_keywords]):
+            logger.error("'{}' is not an acceptable keyword for header modification.".format(kw))
             return RinexModInputArgsError
 
     return None
@@ -487,7 +491,7 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
 
     rinexfileobj.mod_agencies(modif_kw.get('operator'),
                               modif_kw.get('agency'))
-
+    
     rinexfileobj.mod_sat_system(modif_kw.get('sat_system'))
     if modif_kw.get('sat_system'):
         rinexfileobj.sat_system = modif_kw.get('sat_system')
@@ -499,15 +503,16 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
     rinexfileobj.mod_interval(modif_kw.get('interval'))
 
     # for the filename
-    rinexfileobj.mod_filename_file_period(
-        modif_kw.get('filename_file_period'))
-    rinexfileobj.mod_filename_data_freq(
-        modif_kw.get('filename_data_freq'))
-    rinexfileobj.mod_filename_data_source(
-        modif_kw.get('filename_data_source'))
+    rinexfileobj.mod_filename_file_period(modif_kw.get('filename_file_period'))
+    rinexfileobj.mod_filename_data_freq(modif_kw.get('filename_data_freq'))
+    rinexfileobj.mod_filename_data_source(modif_kw.get('filename_data_source'))
 
     # comment
-    rinexfileobj.add_comment(modif_kw.get('comment'))
+    # special case: several keys comment_1, comment_2, comment_N are possible
+    # number are added automatically by ParseKwargs
+    comment_keys = [k for k in modif_kw.keys() if 'comment' in k]
+    for ck in comment_keys:
+        rinexfileobj.add_comment(modif_kw.get(ck).split('_')[0])
 
     return rinexfileobj
 
@@ -608,7 +613,7 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
 # Main function
 
 def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
-             longname=False, force_rnx_load=False, force_sitelog=False,
+             country='', longname=False, force_rnx_load=False, force_sitelog=False,
              ignore=False, ninecharfile=None, compression=None, relative='',
              verbose=True, full_history=False, tolerant_file_period=False,
              return_lists=None, station_info=None, lfile_apriori=None,
@@ -666,6 +671,12 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Apply also to the header's MARKER NAME,
         but a custom modification keyword marker_name='XXXX' overrides it
         (modif_kw argument below)
+        The default is ''.
+    country : str, optional
+        A three character string corresponding to the ISO 3166 Country code 
+        that will be used to rename input files.
+        It overrides other country code sources (sitelog, --marker...)
+        list of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
         The default is ''.
     longname : bool, optional
         Rename file using long name RINEX convention (force gzip compression).
@@ -844,6 +855,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ###########################################################################
     ########## Handle the similar options to set the site code
     ### Priority for the Country source
+    # 0) if --country is given it overrides everything,
+    #    but at the end of the tests
     # 1) the marker option if 9 char are given
     # 2) the nine_char_dict from the ninecharfile option
     # 3) the MetaData object (most useful actually),
@@ -851,33 +864,39 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     # 4) last chance: test if the country code we get from the input 9-char
     #    code is not XXX. If so, we keep it
     # Finally, set default value for the monument & country codes
-
+    #
     rnx_4char = rnxobj.get_site(True, True)
     rnx_9char = rnxobj.get_site(False, False)
 
     if marker and len(marker) == 9:
         monum = marker[4:6]
-        country = marker[6:]
+        cntry = marker[6:]
     elif ninecharfile:
         if not rnx_4char in nine_char_dict:
             logger.warning('32 - Site\'s missing in the input 9-char. file: %s', rinexfile)
         else:
             monum = nine_char_dict[rnx_4char].upper()[4:6]
-            country = nine_char_dict[rnx_4char].upper()[6:]
+            cntry = nine_char_dict[rnx_4char].upper()[6:]
     elif metadataobj:
         monum = "00"
-        country = metadataobj.get_country()
+        cntry = metadataobj.get_country()
     elif rnx_9char[6:] != 'XXX':
         monum = rnx_9char[4:6]
-        country = rnx_9char[6:]
+        cntry = rnx_9char[6:]
     else:
         monum = "00"
-        country = "XXX"
+        cntry = "XXX"
 
-    if country == "XXX":
-        logger.warning('32 - Site\'s country not retrevied, will not be properly renamed: %s', rinexfile)
+    if country:
+        if len(country) == 3:
+            cntry = country
+        else:
+            logger.warning('39 - Input country code is not 3 chars. RINEX will not be properly renamed: %s', rinexfile)
 
-    rnxobj.set_site(rnx_4char, monum, country)
+    if cntry == "XXX":
+        logger.warning('32 - Site\'s country not retrieved. RINEX will not be properly renamed: %s', rinexfile)
+
+    rnxobj.set_site(rnx_4char, monum, cntry)
 
     ###########################################################################
     ########## Remove previous comments
@@ -992,8 +1011,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 # Upper level rinexmod for a Console run
 
 def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker='',
-                 longname=False, force_sitelog=False, force_rnx_load=False, ignore=False,
-                 ninecharfile=None, compression=None, relative='', verbose=True,
+                 country='', longname=False, force_sitelog=False, force_rnx_load=False,
+                 ignore=False, ninecharfile=None, compression=None, relative='', verbose=True,
                  alone=False, output_logs=None, write=False, sort=False, full_history=False,
                  tolerant_file_period=False, multi_process=1, debug=False, station_info=None,
                  lfile_apriori=None, force_fake_coords=False):
@@ -1005,7 +1024,7 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
     Optimized for a CLI (in a Terminal usage) but can be used also in a 
     stand-alone API mode.
     
-    For a detailled description, check the help of the lower level 
+    For a detailed description, check the help of the lower level
     `rinexmod` function or the help of the frontend CLI function in a Terminal
     
     Parameters
@@ -1045,10 +1064,12 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
         raise RinexModInputArgsError
 
     # If inputfile doesn't exists, return
-    if isinstance(rinexinput, list):
-        pass
-    elif not os.path.isfile(rinexinput):
-        logger.critical('The input file doesn\'t exist : ' + rinexinput)
+    if len(rinexinput) == 1 and not os.path.isfile(rinexinput[0]):
+        logger.critical('The input file doesn\'t exist: %s', rinexinput)
+        raise RinexModInputArgsError
+
+    if len(rinexinput) > 1 and alone:
+        logger.critical('several inputs are given while -a/--alone option is set')
         raise RinexModInputArgsError
 
     if output_logs and not os.path.isdir(output_logs):
@@ -1075,21 +1096,33 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
     else:
         _ = rimo_log.logger_define('INFO', logfile, 'INFO')
 
+    ### the refactor of 2024-03 make this obsolete
+    ## now rinexinput is ALWAYS a list
+    # if isinstance(rinexinput, list):
+    #     pass
+    # elif alone:
+    #     rinexinput = [rinexinput]
+    ### the refactor of 2024-03 make this obsolete
+    
     # Opening and reading lines of the file containing list of rinex to proceed
-    if alone:
-        rinexinput = [rinexinput]
-    elif isinstance(rinexinput, list):
-        pass
-    else:
+    if len(rinexinput) == 1 and not alone:
         try:
-            rinexinput = [line.strip() for line in open(rinexinput).readlines()]
+            rinexinput_use = [line.strip() for line in open(rinexinput[0]).readlines()]
         except:
-            logger.error('The input file is not a list : ' + rinexinput)
+            logger.error('Something went wrong while reading: %s', str(rinexinput[0]))
+            logger.error('Did you forget -a/--alone option?')
             return RinexModInputArgsError
-
+    else:
+        rinexinput_use = rinexinput
+    
+    if rinexinput_use[0].endswith('RINEX VERSION / TYPE'):
+        logger.error('The input file is not a file list but a RINEX: %s', str(rinexinput[0]))
+        logger.error('Did you forget -a/--alone option?')
+        return RinexModInputArgsError
+        
     # sort the RINEX list
     if sort:
-        rinexinput.sort()
+        rinexinput_use.sort()
 
     ### load the sitelogs/GAMIT-files as a **list of MetaData objects**
     # from sitelogs 
@@ -1102,17 +1135,17 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
     else:
         sitelogs_list_use = None
 
-
     ### Looping in file list ###
     return_lists = dict()
     ####### Iterate over each RINEX
     rinexmod_kwargs_list = []
-    for rnx in rinexinput:
+    for rnx in rinexinput_use:
         rnxmod_kwargs = {"rinexfile": rnx,
                          "outputfolder": outputfolder,
                          "sitelog": sitelogs_list_use,
                          "modif_kw": modif_kw,
                          "marker": marker,
+                         "country": country,
                          "longname": longname,
                          "force_rnx_load": force_rnx_load,
                          "force_sitelog": force_sitelog,
@@ -1163,5 +1196,39 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
         _return_lists_write(return_lists, logfolder, now)
 
     return return_lists
+
+
+##### Class for --modif_kw
+class ParseKwargs(argparse.Action):
+    # source: 
+    # https://sumit-ghosh.com/posts/parsing-dictionary-key-value-pairs-kwargs-argparse-python/
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, dict())
+        icmt=0        
+        for value in values:
+            try:
+                key, value = value.split('=')
+
+                if key=='comment':
+                    getattr(namespace, self.dest)[key+'_'+str(icmt)] = value
+                    icmt += 1
+                else:
+                    getattr(namespace, self.dest)[key] = value
+                    
+            except Exception as e:
+                def _print_kw_tips(values):
+                    logger.critical("********************************************")
+                    logger.critical("TIP1: be sure you have respected the syntax:")
+                    logger.critical("      -k keyword1='value' keyword2='value'  ")
+                    #logger.critical("TIP2: don't use -k/--modif_kw as the final  ") 
+                    #logger.critical("      option, it will enroll rinexinput &   ")
+                    #logger.critical("      outputfolder arguments                ")
+                    #logger.critical("      use -e/--end_kw to end -k/--modif_kw  ") 
+                    #logger.critical("      sequence                              ")
+                    logger.critical("********************************************")
+                    logger.critical(values)
+                    return None
+                _print_kw_tips(values)
+                raise e
 
 # *****************************************************************************
