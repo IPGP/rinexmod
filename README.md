@@ -132,9 +132,9 @@ RinexMod will add two comment lines, one indicating the source of the modificati
 usage: rinexmod.py [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER [-s SITELOG]
                    [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER] [-co COUNTRY]
                    [-n NINECHARFILE] [-sti STATION_INFO] [-lfi LFILE_APRIORI]
-                   [-r RELATIVE] [-c COMPRESSION] [-l] [-fs] [-fc] [-fr] [-ig] [-a]
-                   [-ol OUTPUT_LOGS] [-w] [-v] [-t] [-u] [-tol] [-mp MULTI_PROCESS]
-                   [-d]
+                   [-r RELATIVE] [-nh] [-c COMPRESSION] [-l] [-fs] [-fc] [-fr]
+                   [-ig] [-a] [-ol OUTPUT_LOGS] [-w] [-v] [-t] [-u] [-tol]
+                   [-mp MULTI_PROCESS] [-d]
 
 RinexMod takes RINEX files (v2 or v3, compressed or not), rename them and modifiy
 their headers, and write them back to a destination directory
@@ -145,7 +145,7 @@ options:
 required arguments:
   -i RINEXINPUT [RINEXINPUT ...], --rinexinput RINEXINPUT [RINEXINPUT ...]
                         Input RINEX file(s). It can be 1) a list file of the RINEX
-                        paths to process (generated with a find or ls command for
+                        paths to process (generated with find or ls command for
                         instance) 2) several RINEX files paths 3) a single RINEX
                         file path (see -a/--alone for a single input file)
   -o OUTPUTFOLDER, --outputfolder OUTPUTFOLDER
@@ -164,21 +164,21 @@ optional arguments:
                         (legacy alias for marker_name), receiver_serial,
                         receiver_type, receiver_fw, antenna_serial, antenna_type,
                         antenna_X_pos, antenna_Y_pos, antenna_Z_pos,
-                        antenna_H_delta, antenna_E_delta, antenna_N_delta, operator,
-                        agency, sat_system, observables (legacy alias for
+                        antenna_H_delta, antenna_E_delta, antenna_N_delta,
+                        operator, agency, sat_system, observables (legacy alias for
                         sat_system), interval, filename_file_period (01H, 01D...),
                         filename_data_freq (30S, 01S...), filename_data_source (R,
                         S, U).
   -m MARKER, --marker MARKER
                         A four or nine character site code that will be used to
-                        rename input files. (apply also to the header's MARKER NAME,
-                        but a custom -k marker_name='XXXX' overrides it)
+                        rename input files. (apply also to the header's MARKER
+                        NAME, but a custom -k marker_name='XXXX' overrides it)
   -co COUNTRY, --country COUNTRY
                         A three character string corresponding to the ISO 3166
                         Country code that will be used to rename input files. It
-                        overrides other country code sources (sitelog, --marker...).
-                        List of ISO country codes:
-                        https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
+                        overrides other country code sources (sitelog,
+                        --marker...). List of ISO country codes: https://en.wikiped
+                        ia.org/wiki/List_of_ISO_3166_country_codes
   -n NINECHARFILE, --ninecharfile NINECHARFILE
                         Path of a file that contains 9-char. site names (e.g. from
                         the M3G database)
@@ -192,9 +192,11 @@ optional arguments:
                         Reconstruct files relative subfolders. You have to indicate
                         the common parent folder, that will be replaced with the
                         output folder
+  -nh, --no_hatanaka    Skip high-level RINEX-specific Hatanaka compression
+                        (performed per default). See also -c 'none'
   -c COMPRESSION, --compression COMPRESSION
-                        Set file's compression (acceptable values : 'gz'
-                        (recommended to fit IGS standards), 'Z', 'none')
+                        Set low-level RINEX file compression (acceptable values :
+                        'gz' (recommended to fit IGS standards), 'Z', 'none')
   -l, --longname        Rename file using long name RINEX convention (force gzip
                         compression).
   -fs, --force_sitelog  If a single sitelog is provided, force sitelog-based header
@@ -203,13 +205,13 @@ optional arguments:
                         formated sitelogs.
   -fc, --force_fake_coords
                         When using GAMIT station.info metadata without apriori
-                        coordinates in the L-File, gives fake coordinates at (0°,0°)
-                        to the site
+                        coordinates in the L-File, gives fake coordinates at
+                        (0°,0°) to the site
   -fr, --force_rnx_load
                         Force the loading of the input RINEX. Useful if its name is
                         not standard
-  -ig, --ignore         Ignore firmware changes between instrumentation periods when
-                        getting header values info from sitelogs
+  -ig, --ignore         Ignore firmware changes between instrumentation periods
+                        when getting header values info from sitelogs
   -a, --alone           INPUT is a single/alone RINEX file (and not a list file of
                         RINEX paths)
   -ol OUTPUT_LOGS, --output_logs OUTPUT_LOGS
@@ -253,10 +255,12 @@ RinexMod can be launched directly as a Python function:
 import rinexmod.rinexmod_api as rimo_api
 
 rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
-                  longname=False, force_rnx_load=False, force_sitelog=False,
-                  ignore=False, ninecharfile=None, compression=None, relative='', 
-                  verbose=True, full_history=False, return_lists=None):
-
+             country='', longname=False, force_rnx_load=False, force_sitelog=False,
+             ignore=False, ninecharfile=None, no_hatanaka=False, compression=None,
+             relative='', verbose=True, full_history=False, tolerant_file_period=False,
+             return_lists=None, station_info=None, lfile_apriori=None,
+             force_fake_coords=False):
+    """
     Parameters
     ----------
     rinexfile : str
@@ -265,7 +269,7 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
         Folder where to write the modified RINEX files.
     sitelog : str, list of str, MetaData object, list of MetaData objects, optional
         Get the RINEX header values from a sitelog.
-        Possible inputs are: 
+        Possible inputs are:
          * list of string (sitelog file paths),
          * single string (single sitelog file path or directory containing the sitelogs),
          * list of MetaData object
@@ -284,13 +288,13 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
          * station (legacy alias for marker_name)
          * receiver_serial
          * receiver_type
-         * receiver_fw 
+         * receiver_fw
          * antenna_serial
          * antenna_type
          * antenna_X_pos
          * antenna_Y_pos
          * antenna_Z_pos
-         * antenna_H_delta 
+         * antenna_H_delta
          * antenna_E_delta
          * antenna_N_delta
          * operator
@@ -306,9 +310,15 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
     marker : str, optional
         A four or nine character site code that will be used to rename
         input files.
-        Apply also to the header's MARKER NAME, 
-        but a custom modification kewyord marker_name='XXXX' overrides it 
+        Apply also to the header's MARKER NAME,
+        but a custom modification keyword marker_name='XXXX' overrides it
         (modif_kw argument below)
+        The default is ''.
+    country : str, optional
+        A three character string corresponding to the ISO 3166 Country code 
+        that will be used to rename input files.
+        It overrides other country code sources (sitelog, --marker...)
+        list of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
         The default is ''.
     longname : bool, optional
         Rename file using long name RINEX convention (force gzip compression).
@@ -317,28 +327,34 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
         Force the loading of the input RINEX. Useful if its name is not standard.
         The default is False.
     force_sitelog : bool, optional
-        Force sitelog-based header values when RINEX's header
-        and sitelog site name do not correspond. The default is False.
+        If a single sitelog is provided, force sitelog-based header 
+        values when RINEX's header and sitelog site name do not correspond.
+        If several sitelogs are provided, skip badly-formated sitelogs.
+        The default is False.
     ignore : bool, optional
-        Ignore firmware changes between instrumentation periods 
+        Ignore firmware changes between instrumentation periods
         when getting header values info from sitelogs. The default is False.
     ninecharfile : str, optional
         Path of a file that contains 9-char. site names from the M3G database.
         The default is None.
+    no_hatanaka : bool, optional
+        Skip high-level RINEX-specific Hatanaka compression
+        (performed per default).
+        The default is False.
     compression : str, optional
-        Set RINEX compression 
-        acceptables values : gz (recommended to fit IGS standards), 'Z', None. 
+        Set low-level RINEX file compression.
+        acceptable values : gz (recommended to fit IGS standards), 'Z', None.
         The default is None.
     relative : str, optional
-        Reconstruct files relative subfolders. 
-        You have to indicate the common parent folder, 
+        Reconstruct files relative subfolders.
+        You have to indicate the common parent folder,
         that will be replaced with the output folder. The default is ''.
     verbose : bool, optional
-        set the level of verbosity 
+        set the level of verbosity
         (False for the INFO level, True for the DEBUG level).
         The default is True.
     full_history : bool, optional
-        Add the full history of the station in 
+        Add the full history of the station in
         the RINEX's header as comment.
     tolerant_file_period : bool, optional
         If True, the RINEX file period is tolerant and stick to
@@ -352,13 +368,13 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
         to activates it, give a dict as input (an empty one - dict() works)
         The default is None.
     station_info: str, optional
-        Path of a GAMIT station.info file to obtain GNSS site 
+        Path of a GAMIT station.info file to obtain GNSS site
         metadata information (needs also lfile_apriori option)
     lfile_apriori: str, optional
-        Path of a GAMIT apriori apr/L-File to obtain GNSS site 
+        Path of a GAMIT apriori apr/L-File to obtain GNSS site
         position and DOMES information (needs also station_info option)
     force_fake_coords: bool, optional
-        When using GAMIT station.info metadata without apriori coordinates 
+        When using GAMIT station.info metadata without apriori coordinates
         in the L-File, gives fake coordinates at (0°,0°) to the site
 
     Raises
@@ -371,7 +387,7 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
     Returns
     -------
     outputfile : str
-        the path of the rinexmoded RINEX    
+        the path of the rinexmoded RINEX
 
     OR
 
