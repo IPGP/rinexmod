@@ -58,8 +58,9 @@ if __name__ == '__main__':
     optional.add_argument('-lfi', '--lfile_apriori',
                         help='Path of a GAMIT apriori apr/L-File to obtain GNSS site position and DOMES information (needs also -sti option)', type=str, default="")    
     optional.add_argument('-r', '--relative', help='Reconstruct files relative subfolders. You have to indicate the common parent folder, that will be replaced with the output folder', type=str, default=0)
+    optional.add_argument('-nh', '--no_hatanaka', help="Skip high-level RINEX-specific Hatanaka compression (performed per default). See also -c 'none'", action='store_true', default=False)
     optional.add_argument('-c', '--compression', type=str,
-                        help="Set file's compression (acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')", default='')
+                        help="Set low-level RINEX file compression (acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')", default='')
     optional.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     optional.add_argument(
@@ -99,6 +100,7 @@ if __name__ == '__main__':
     country = args.country
     ninecharfile = args.ninecharfile
     relative = args.relative
+    no_hatanaka = args.no_hatanaka
     compression = args.compression
     longname = args.longname
     force_sitelog = args.force_sitelog
@@ -127,7 +129,8 @@ if __name__ == '__main__':
                           force_sitelog=force_sitelog,
                           force_rnx_load=force_rnx_load,
                           ignore=ignore, 
-                          ninecharfile=ninecharfile, 
+                          ninecharfile=ninecharfile,
+                          no_hatanaka=no_hatanaka,
                           compression=compression,
                           relative=relative, 
                           verbose=verbose, 

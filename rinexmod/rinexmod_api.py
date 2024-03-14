@@ -609,8 +609,8 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
 
 def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
              country='', longname=False, force_rnx_load=False, force_sitelog=False,
-             ignore=False, ninecharfile=None, compression=None, relative='',
-             verbose=True, full_history=False, tolerant_file_period=False,
+             ignore=False, ninecharfile=None, no_hatanaka=False, compression=None,
+             relative='', verbose=True, full_history=False, tolerant_file_period=False,
              return_lists=None, station_info=None, lfile_apriori=None,
              force_fake_coords=False):
     """
@@ -690,8 +690,12 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ninecharfile : str, optional
         Path of a file that contains 9-char. site names from the M3G database.
         The default is None.
+    no_hatanaka : bool, optional
+        Skip high-level RINEX-specific Hatanaka compression
+        (performed per default).
+        The default is False.
     compression : str, optional
-        Set RINEX compression
+        Set low-level RINEX file compression.
         acceptable values : gz (recommended to fit IGS standards), 'Z', None.
         The default is None.
     relative : str, optional
@@ -981,7 +985,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ########## Writing output file
     try:
         outputfile = rnxobj.write_to_path(myoutputfolder,
-                                          compression=output_compression)
+                                          compression=output_compression,
+                                          no_hatanaka=no_hatanaka)
         logger.info('# Output file: ' + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
         logger.error('{:110s} - {}'.format('06 - File could not be written - hatanaka exception', rinexfile))
@@ -1007,10 +1012,10 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
 def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker='',
                  country='', longname=False, force_sitelog=False, force_rnx_load=False,
-                 ignore=False, ninecharfile=None, compression=None, relative='', verbose=True,
-                 alone=False, output_logs=None, write=False, sort=False, full_history=False,
-                 tolerant_file_period=False, multi_process=1, debug=False, station_info=None,
-                 lfile_apriori=None, force_fake_coords=False):
+                 ignore=False, ninecharfile=None, no_hatanaka=False, compression=None, relative='',
+                 verbose=True, alone=False, output_logs=None, write=False, sort=False,
+                 full_history=False, tolerant_file_period=False, multi_process=1, debug=False,
+                 station_info=None, lfile_apriori=None, force_fake_coords=False):
     """
     Main function for reading a Rinex list file. It process the list, and apply
     file name modification, command line based header modification, or sitelog-based
@@ -1146,6 +1151,7 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
                          "force_sitelog": force_sitelog,
                          "ignore": ignore,
                          "ninecharfile": ninecharfile,
+                         "no_hatanaka": no_hatanaka,
                          "compression": compression,
                          "relative": relative,
                          "verbose": verbose,

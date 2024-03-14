@@ -1600,7 +1600,8 @@ class RinexFile:
         """
         return '\n'.join(self.rinex_data).encode(encode)
 
-    def write_to_path(self, output_directory, compression='gz'):
+    def write_to_path(self, output_directory, compression='gz',
+                      no_hatanaka=True):
         """
         Will turn rinex_data from list to string, utf-8, then compress as hatanaka
         and zip to the 'compression' format, then write to file. The 'compression' param
@@ -1612,11 +1613,17 @@ class RinexFile:
         output_directory : str
             The output directory.
             
-        compression : TYPE, optional
+        compression : str, optional
             'gz' (default), 'bz2', 'Z', 
             'none' (string, compliant with hatanaka module) or 
             None (NoneType, compliant with the rinex object initialisation). 
             The default is 'gz'.
+
+        no_hatanaka : bool, optional
+            If True, the Hatanaka compression is not performed.
+            (Hatanaka compression is applied per default.)
+            The default is False.
+
         Returns
         -------
         outputfile : str
@@ -1636,19 +1643,30 @@ class RinexFile:
 
         output_data = self.get_as_string()
 
-        output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
+        if not no_hatanaka: ## regular case, Hatanaka-compression of the RINEX
+            output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
 
         ### The data source is an actual RINEX file
         if self.source_from_file:
-            # manage hatanaka compression extension
-            # RNX3
-            if "rnx" in self.filename:
-                filename_out = self.filename.replace("rnx", "crx")
-            # RNX2
-            elif self.filename[-1] in "o":
-                filename_out = self.filename[:-1] + "d"
-            else:
-                filename_out = self.filename
+            if not no_hatanaka:
+                # manage hatanaka compression extension
+                # RNX3
+                if "rnx" in self.filename:
+                    filename_out = self.filename.replace("rnx", "crx")
+                # RNX2
+                elif self.filename[-1] in "o":
+                    filename_out = self.filename[:-1] + "d"
+                else:
+                    filename_out = self.filename
+            else: ### NO Hatanaka-compression of the RINEX, the extension must be changed
+                # RNX3
+                if "crx" in self.filename:
+                    filename_out = self.filename.replace("crx", "rnx")
+                # RNX2
+                elif self.filename[-1] in "d":
+                    filename_out = self.filename[:-1] + "o"
+                else:
+                    filename_out = self.filename
 
             # manage low-level compression extension
             if compression in ('none', None):
