@@ -1,4 +1,4 @@
-#  rinexmod
+#  RinexMod
 
 <img src="./logo_rinexmod.png" width="300">
 
