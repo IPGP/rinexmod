@@ -13,9 +13,6 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-# Create a logger object.
-import logging
-#logger = logging.getLogger(__name__)
 import string
 
 import rinexmod.logger as rimo_log
@@ -1194,6 +1191,8 @@ class RinexFile:
         # Identify line that contains INTERVAL
         line_exists = False
         idx = -1
+        interval_idx = None
+
         for e in self.rinex_data:
             idx += 1
             if "INTERVAL" in e:
@@ -1247,7 +1246,7 @@ class RinexFile:
         if self.status:
             return
 
-        if not any([X, Y, Z]):
+        if (X is None) and (Y is None) and (X is None):
             return
 
         # Identify line that contains APPROX POSITION XYZ
@@ -1297,7 +1296,7 @@ class RinexFile:
         if self.status:
             return
 
-        if not any([H, E, N]):
+        if (H is None) and (E is None) and (N is None):
             return
 
         # Identify line that contains ANTENNA: DELTA H/E/N

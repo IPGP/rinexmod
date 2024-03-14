@@ -284,7 +284,7 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp,
         ##### receiver
         rec_dic = {}
         rec_dic['Receiver Type'] = str(row['receiver type'])
-        rec_dic['Satellite System'] = 'GPS'
+        rec_dic['Satellite System'] = 'GPS+GLO+GAL+BDS+QZSS+SBAS'
         rec_dic['Serial Number'] = str(row['receiver sn'])
         rec_dic['Firmware Version'] = str(row['vers'])
         rec_dic['Elevation Cutoff Setting'] = '0'
@@ -395,7 +395,7 @@ def doy2dt(year, days, hours=0, minutes=0, seconds=0):
             raise e
 
         tempsecs = seconds + 60 * minutes + 3600 * hours
-        # finalsecs     = np.floor(tempsecs)
+        # finalsecs = np.floor(tempsecs)
         finalmicrosec = int(np.round(tempsecs * 10 ** 6))
 
         return dt.datetime(year, 1, 1) + dt.timedelta(days - 1) + \
