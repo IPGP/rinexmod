@@ -81,7 +81,6 @@ class RinexFile:
         self.file_period, self.session = self.get_file_period_from_data(tolerant_file_period=True,
                                                                         inplace_set=False)
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
-        self.sat_system = self.get_sat_system()
 
     def __str__(self):
         """
@@ -300,7 +299,7 @@ class RinexFile:
                              self.start_date.strftime(timeformat),
                              file_period_name,
                              self.sample_rate_string,
-                             self.sat_system + obs_type + ext + compression))
+                             self.get_sat_system() + obs_type + ext + compression))
 
         if inplace_set:
             self.filename = longname
@@ -1080,7 +1079,7 @@ class RinexFile:
 
         return
 
-    def mod_receiver(self, serial=None, type_=None, firmware=None):
+    def mod_receiver(self, serial=None, type=None, firmware=None):
         """
         Modify within the RINEX header the receiver information
         (``REC # / TYPE / VERS`` line)
@@ -1089,7 +1088,7 @@ class RinexFile:
         ----------
         serial : str, optional
             Receiver Serial Number. The default is None.
-        type_ : str, optional
+        type : str, optional
             Receiver model. The default is None.
         firmware : str, optional
             Firmware version. The default is None.
@@ -1118,8 +1117,8 @@ class RinexFile:
         # Edit line
         if serial:
             serial_meta = str(serial)[:20].ljust(20)
-        if type_:
-            type_meta = str(type_)[:20].ljust(20)
+        if type:
+            type_meta = str(type)[:20].ljust(20)
         if firmware:
             firmware_meta = str(firmware)[:20].ljust(20)
         new_line = serial_meta + type_meta + firmware_meta + label
@@ -1128,7 +1127,7 @@ class RinexFile:
 
         return
 
-    def mod_antenna(self, serial=None, type_=None):
+    def mod_antenna(self, serial=None, type=None):
         """
         Modify within the RINEX header the antenna information
         (``ANT # / TYPE`` line)
@@ -1137,7 +1136,7 @@ class RinexFile:
         ----------
         serial : str, optional
             Antenne Serial Number. The default is None.
-        type_ : str, optional
+        type : str, optional
             Antenna model. The default is None.
 
         Returns
@@ -1162,8 +1161,8 @@ class RinexFile:
         # Edit line
         if serial:
             serial_meta = str(serial)[:20].ljust(20)
-        if type_:
-            type_meta = str(type_)[:20].ljust(20)
+        if type:
+            type_meta = str(type)[:20].ljust(20)
         new_line = serial_meta + type_meta + ' ' * 20 + label
         # Set line
         self.rinex_data[antenna_header_idx] = new_line
@@ -1601,7 +1600,8 @@ class RinexFile:
         """
         return '\n'.join(self.rinex_data).encode(encode)
 
-    def write_to_path(self, output_directory, compression='gz'):
+    def write_to_path(self, output_directory, compression='gz',
+                      no_hatanaka=True):
         """
         Will turn rinex_data from list to string, utf-8, then compress as hatanaka
         and zip to the 'compression' format, then write to file. The 'compression' param
@@ -1613,11 +1613,17 @@ class RinexFile:
         output_directory : str
             The output directory.
             
-        compression : TYPE, optional
+        compression : str, optional
             'gz' (default), 'bz2', 'Z', 
             'none' (string, compliant with hatanaka module) or 
             None (NoneType, compliant with the rinex object initialisation). 
             The default is 'gz'.
+
+        no_hatanaka : bool, optional
+            If True, the Hatanaka compression is not performed.
+            (Hatanaka compression is applied per default.)
+            The default is False.
+
         Returns
         -------
         outputfile : str
@@ -1637,19 +1643,30 @@ class RinexFile:
 
         output_data = self.get_as_string()
 
-        output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
+        if not no_hatanaka: ## regular case, Hatanaka-compression of the RINEX
+            output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
 
         ### The data source is an actual RINEX file
         if self.source_from_file:
-            # manage hatanaka compression extension
-            # RNX3
-            if "rnx" in self.filename:
-                filename_out = self.filename.replace("rnx", "crx")
-            # RNX2
-            elif self.filename[-1] in "o":
-                filename_out = self.filename[:-1] + "d"
-            else:
-                filename_out = self.filename
+            if not no_hatanaka:
+                # manage hatanaka compression extension
+                # RNX3
+                if "rnx" in self.filename:
+                    filename_out = self.filename.replace("rnx", "crx")
+                # RNX2
+                elif self.filename[-1] in "o":
+                    filename_out = self.filename[:-1] + "d"
+                else:
+                    filename_out = self.filename
+            else: ### NO Hatanaka-compression of the RINEX, the extension must be changed
+                # RNX3
+                if "crx" in self.filename:
+                    filename_out = self.filename.replace("crx", "rnx")
+                # RNX2
+                elif self.filename[-1] in "d":
+                    filename_out = self.filename[:-1] + "o"
+                else:
+                    filename_out = self.filename
 
             # manage low-level compression extension
             if compression in ('none', None):
