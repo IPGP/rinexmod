@@ -1259,15 +1259,15 @@ class RinexFile:
         Z_meta = antenna_pos_meta[28:42]
         label = antenna_pos_meta[60:]
         # Edit line
-        if X:  # Format as 14.4 float. Set to zero if too large but should not happen
+        if X is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
             X_meta = '{:14.4f}'.format(float(X))
             if len(X_meta) > 14:
                 X_meta = '{:14.4f}'.format(float('0'))
-        if Y:
+        if Y is not None:
             Y_meta = '{:14.4f}'.format(float(Y))
             if len(Y_meta) > 14:
                 Y_meta = '{:14.4f}'.format(float('0'))
-        if Z:
+        if Z is not None:
             Z_meta = '{:14.4f}'.format(float(Z))
             if len(Z_meta) > 14:
                 Z_meta = '{:14.4f}'.format(float('0'))
@@ -1309,15 +1309,15 @@ class RinexFile:
         N_meta = antenna_delta_meta[28:42]
         label = antenna_delta_meta[60:]
         # Edit line
-        if H:  # Format as 14.4 float. Set to zero if too large but should not happen
+        if H is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
             H_meta = '{:14.4f}'.format(float(H))
             if len(H_meta) > 14:
                 H_meta = '{:14.4f}'.format(float('0'))
-        if E:
+        if E is not None:
             E_meta = '{:14.4f}'.format(float(E))
             if len(E_meta) > 14:
                 E_meta = '{:14.4f}'.format(float('0'))
-        if N:
+        if N is not None:
             N_meta = '{:14.4f}'.format(float(N))
             if len(N_meta) > 14:
                 N_meta = '{:14.4f}'.format(float('0'))
@@ -1642,7 +1642,7 @@ class RinexFile:
 
         output_data = self.get_as_string()
 
-        if not no_hatanaka: ## regular case, Hatanaka-compression of the RINEX
+        if not no_hatanaka:  ## regular case, Hatanaka-compression of the RINEX
             output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
 
         ### The data source is an actual RINEX file
@@ -1657,7 +1657,7 @@ class RinexFile:
                     filename_out = self.filename[:-1] + "d"
                 else:
                     filename_out = self.filename
-            else: ### NO Hatanaka-compression of the RINEX, the extension must be changed
+            else:  ### NO Hatanaka-compression of the RINEX, the extension must be changed
                 # RNX3
                 if "crx" in self.filename:
                     filename_out = self.filename.replace("crx", "rnx")
