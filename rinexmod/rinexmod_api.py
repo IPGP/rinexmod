@@ -821,7 +821,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
 
     # set the marker as Rinex site, if any
     # This preliminary set_site is for th research of the right sitelog
-    # a second set_site will take place a just after
+    # a second set_site will take place a just after with more details
     if marker:
         # We store the old site name to add a comment in rinex file's header
         ## modif_marker = rnxobj.get_site(True,False) ### Useless...
