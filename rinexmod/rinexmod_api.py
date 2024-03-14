@@ -408,7 +408,6 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     rnxobj.mod_interval(rnxobj.sample_rate_numeric)
     rnxobj.mod_antenna(**antenna)
     rnxobj.mod_antenna_pos(**antenna_pos)
-    print("BBBBBBBBBBBB")
     rnxobj.mod_antenna_delta(**antenna_delta)
     rnxobj.mod_agencies(**agencies)
     rnxobj.mod_sat_system(sat_system_long_fmt)
