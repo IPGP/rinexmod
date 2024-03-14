@@ -203,7 +203,7 @@ def read_gamit_station_info(station_info_inp):
                      encoding='iso8859_1',
                      header=None)
     
-    #df.columns = col
+    df.columns = col
 
     ##### clean df
     ### remove empty rows
