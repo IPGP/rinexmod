@@ -200,9 +200,10 @@ def read_gamit_station_info(station_info_inp):
     df = pd.read_fwf(station_info_inp,
                      skiprows=bad_lines,
                      widths=colsize_use,
-                     encoding='iso8859_1')
-
-    df.columns = col
+                     encoding='iso8859_1',
+                     header=None)
+    
+    #df.columns = col
 
     ##### clean df
     ### remove empty rows
