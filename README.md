@@ -3,7 +3,7 @@
 <img src="./logo_rinexmod.png" width="300">
 
 RinexMod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
-It supports Hatanaka-compressed and non-compressed files, RINEX versions 2 and 3, and short and long naming conventions.  
+It supports Hatanaka-compressed and non-compressed files, RINEX versions 2 and 3/4, and short and long naming conventions.  
 It is developed in Python 3, and can be run from the command line or directly in API mode by calling a python function.  
 The required input metadata can come from a sitelog file, or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
@@ -68,8 +68,7 @@ format in an output folder. It also allows to rename the files, changing
 the four first characters of the file name with another site code. It can write
 those files with the long name naming convention with the --longname option.
 
-Two ways of passing parameters to modify headers are possible: `sitelog` and `modification_kw`.
-
+Three ways of passing parameters to modify headers are possible: `sitelog`, `modification_kw` and `station_info`/`lfile_apriori` (from GAMIT/GLOBK software).
 
 * ```
    --sitelog : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
@@ -93,7 +92,7 @@ Two ways of passing parameters to modify headers are possible: `sitelog` and `mo
                        Marker->ARP East Ecc(m)
                        Marker->ARP North Ecc(m)
                        On-Site Agency Preferred Abbreviation
-                       Responsible Agency Preferred Abbreviation 
+                       Responsible Agency Preferred Abbreviation
 
 * ```
   --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
@@ -120,8 +119,15 @@ Two ways of passing parameters to modify headers are possible: `sitelog` and `mo
                               filename_file_period (01H, 01D...),
                               filename_data_freq (30S, 01S...),
                               filename_data_source (R, S, U) 
-
-You can not provide both `--modification_kw` and `--sitelog` options.
+* ```
+  -sti STATION_INFO, --station_info STATION_INFO
+                        Path of a GAMIT station.info file to obtain GNSS site
+                        metadata information (needs also -lfi option)
+  -lfi LFILE_APRIORI, --lfile_apriori LFILE_APRIORI
+                        Path of a GAMIT apriori apr/L-File to obtain GNSS site
+                        position and DOMES information (needs also -sti
+                        option)
+`--modification_kw` values will orverride the ones obtained with `--sitelog` and `--station_info`/`--lfile_apriori`.
 
 RinexMod will add two comment lines, one indicating the source of the modification
 (sitelog or arguments) and the other the modification timestamp.
@@ -239,12 +245,11 @@ https://github.com/IPGP/rinexmod
 
 ### Examples
 
-
 ```
-./rinexmod.py RINEXLIST OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+./rinexmod.py -i RINEXLIST -o OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
 ```
 ```
-./rinexmod.py (-a) RINEXFILE OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+./rinexmod.py (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 ```
 
 ## RinexMod in API mode
