@@ -11,7 +11,7 @@
     - ``-ol OUTPUT_LOGS, --output_logs OUTPUT_LOGS``
 - import of GAMIT's files _station.info_ & _apr/L-file_ is now possible with `-sti` and `-lfi` options
 - Refactoring: `SiteLog` class becomes `MetaData` class for more versatility. Many functions and variables have been renamed accordingly.
-- add an option `-nh/--no_hatanaka`
+- add an option `-nh/--no_hatanaka` and `-co/--country`
 - Misc. bugs correction
 
 ### v2.2.1 (Jan 13, 2024)
