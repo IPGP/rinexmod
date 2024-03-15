@@ -33,7 +33,7 @@ It's a teqc-free equivalent of teqc +meta.
 ## Installation
 
 ### Assisted installation 
-The tool is designed in Python 3, you must have it installed on your machine.
+The tool is designed in Python 3, and you must have it installed on your machine.
 
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
@@ -42,10 +42,10 @@ You can use `pip` to install the last GitHub-hosted version with the following c
 
 *NB*: Following the assisted installation procedure above, the required external modules will be automatically installed.
 
-You need _Python Hatanaka_ library from Martin Valgur @valgur (https://github.com/valgur/hatanaka):  
+You need _Python Hatanaka_ library from M. Valgur:  
  `pip install hatanaka`
  
-You need _pycountry_ to associate country names with their ISO abbreviations (but it is facultative):  
+You need _pycountry_ to associate country names with their ISO abbreviations (facultative but recommended):  
 `pip install pycountry`
 
 You need _matplotlib_ for plotting samples intervals with crzmeta:  
@@ -58,13 +58,13 @@ You need _pandas_ to for internal low-level data management:
 `pip install pandas`
 
 
-## rinexmod in command lines interface
+## RinexMod in command lines interface
 
 ### rinexmod.py
 
 This is the main frontend function. It takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
-loop the RINEX files list to modify the file's header. It then writes them back to Hatanaka
-compressed format in an output folder. It permits also to rename the files changing
+loop over the RINEX files list to modify the file's header. It then writes them back to Hatanaka-compressed
+format in an output folder. It also allows to rename the files, changing
 the four first characters of the file name with another site code. It can write
 those files with the long name naming convention with the --longname option.
 
@@ -124,7 +124,7 @@ Two ways of passing parameters to modify headers are possible: `sitelog` and `mo
 You can not provide both `--modification_kw` and `--sitelog` options.
 
 RinexMod will add two comment lines, one indicating the source of the modification
-(sitelog or arguments) and the other the timestamp of the modification.
+(sitelog or arguments) and the other the modification timestamp.
 
 
 ### Synopsis
@@ -136,7 +136,7 @@ usage: rinexmod.py [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER [-s SITEL
                    [-ig] [-a] [-ol OUTPUT_LOGS] [-w] [-v] [-t] [-u] [-tol]
                    [-mp MULTI_PROCESS] [-d]
 
-RinexMod takes RINEX files (v2 or v3, compressed or not), rename them and modifiy
+RinexMod takes RINEX files (v2 or v3/4, compressed or not), renames them, and modify
 their headers, and write them back to a destination directory
 
 options:
@@ -146,7 +146,7 @@ required arguments:
   -i RINEXINPUT [RINEXINPUT ...], --rinexinput RINEXINPUT [RINEXINPUT ...]
                         Input RINEX file(s). It can be 1) a list file of the RINEX
                         paths to process (generated with find or ls command for
-                        instance) 2) several RINEX files paths 3) a single RINEX
+                        instance) 2) several RINEX file paths 3) a single RINEX
                         file path (see -a/--alone for a single input file)
   -o OUTPUTFOLDER, --outputfolder OUTPUTFOLDER
                         Output folder for modified RINEX files
@@ -170,11 +170,11 @@ optional arguments:
                         filename_data_freq (30S, 01S...), filename_data_source (R,
                         S, U).
   -m MARKER, --marker MARKER
-                        A four or nine character site code that will be used to
+                        A four or nine-character site code that will be used to
                         rename input files. (apply also to the header's MARKER
                         NAME, but a custom -k marker_name='XXXX' overrides it)
   -co COUNTRY, --country COUNTRY
-                        A three character string corresponding to the ISO 3166
+                        A three-character string corresponding to the ISO 3166
                         Country code that will be used to rename input files. It
                         overrides other country code sources (sitelog,
                         --marker...). List of ISO country codes: https://en.wikiped
@@ -190,7 +190,7 @@ optional arguments:
                         position and DOMES information (needs also -sti option)
   -r RELATIVE, --relative RELATIVE
                         Reconstruct files relative subfolders. You have to indicate
-                        the common parent folder, that will be replaced with the
+                        the common parent folder, which will be replaced with the
                         output folder
   -nh, --no_hatanaka    Skip high-level RINEX-specific Hatanaka compression
                         (performed per default). See also -c 'none'
@@ -224,16 +224,16 @@ optional arguments:
   -u, --full_history    Add the full history of the station in the RINEX's 'header
                         as comment.
   -tol, --tolerant_file_period
-                        the RINEX file period is tolerant and stick to the actual
+                        the RINEX file period is tolerant and sticks to the actual
                         data content, but then can be odd (e.g. 07H, 14H...). A
                         strict file period is applied per default (01H or 01D),
                         being compatible with the IGS conventions
   -mp MULTI_PROCESS, --multi_process MULTI_PROCESS
-                        Number of parallel multiprocesing (default: 1, no
+                        Number of parallel multiprocessing (default: 1, no
                         parallelization)
   -d, --debug           Debug mode, stops if something goes wrong (default: False)
 
-RinexMod 3.x.x - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS -
+RinexMod 3.0.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS -
 https://github.com/IPGP/rinexmod
 ```
 
@@ -408,10 +408,10 @@ EXAMPLE:
 
 ### get_m3g_sitelogs.py
 
-This script will get last version of sitelogs from M3G repository and write them
+This script will get the last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
-The -d --delete option will delete old version as to get only last version even
-in a name changing case.
+The -d --delete option will delete the old version to get only the last version even
+in a name-changing case.
 
 ```
 USE :
@@ -434,7 +434,7 @@ occurring on specific files from the rinex list. Here are the error codes :
 
 `01 - The specified file does not exists`
 
-That means that the input file containing list of rinex files is wrong and references a file that is not present. It can also mean that the file has been deleteted between the list generation and the script launch, but this case should be quite rare.
+That means that the input file containing a list of rinex files is wrong and references a file that is not present. It can also mean that the file was deleted between the list generation and the script launch, but this case should be quite rare.
 
 `02 - Not an observation Rinex file`
 
