@@ -28,7 +28,7 @@ if __name__ == '__main__':
             return argparse.HelpFormatter._split_lines(self, text, width)
 
     ##### Parsing Args
-    parser = argparse.ArgumentParser(description='RinexMod takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory',
+    parser = argparse.ArgumentParser(description='RinexMod takes RINEX files (v2 or v3/4, compressed or not), rename them and modifiy their headers, and write them back to a destination directory',
                                      formatter_class=SmartFormatter,
                                      epilog=textwrap.dedent('RinexMod ' + str(rinexmod.__version__) + ' - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS - https://github.com/IPGP/rinexmod'))
     required = parser.add_argument_group('required arguments')
@@ -48,9 +48,9 @@ if __name__ == '__main__':
                                                        filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U).
                                                     """), nargs='+', metavar="KEY=VALUE", action=rimo_api.ParseKwargs, default=None) 
     optional.add_argument('-m', '--marker', 
-                        help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
+                        help="A four or nine-character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
     optional.add_argument('-co', '--country',
-                        help='A three character string corresponding to the ISO 3166 Country code that will be used to rename input files. It overrides other country code sources (sitelog, --marker...). List of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', type=str, default="")
+                        help='A three-character string corresponding to the ISO 3166 Country code that will be used to rename input files. It overrides other country code sources (sitelog, --marker...). List of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', type=str, default="")
     optional.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names (e.g. from the M3G database)', type=str, default="")
     optional.add_argument('-sti', '--station_info',
