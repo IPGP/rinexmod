@@ -28,14 +28,14 @@ if __name__ == '__main__':
             return argparse.HelpFormatter._split_lines(self, text, width)
 
     ##### Parsing Args
-    parser = argparse.ArgumentParser(description='RinexMod takes RINEX files (v2 or v3, compressed or not), rename them and modifiy their headers, and write them back to a destination directory',
+    parser = argparse.ArgumentParser(description='RinexMod takes RINEX files (v2 or v3/4, compressed or not), rename them and modifiy their headers, and write them back to a destination directory',
                                      formatter_class=SmartFormatter,
                                      epilog=textwrap.dedent('RinexMod ' + str(rinexmod.__version__) + ' - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS - https://github.com/IPGP/rinexmod'))
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
     
     required.add_argument('-i','--rinexinput', type=str, required=True, nargs='+',
-                          help="Input RINEX file(s). it can be 1) a list file of the RINEX paths to process (generated with a find or ls command for instance) 2) several RINEX files paths 3) a single RINEX file path (see -a/--alone for a single input file)")
+                          help="Input RINEX file(s). It can be 1) a list file of the RINEX paths to process (generated with find or ls command for instance) 2) several RINEX files paths 3) a single RINEX file path (see -a/--alone for a single input file)")
     required.add_argument('-o','--outputfolder', type=str, required=True,
                           help='Output folder for modified RINEX files')
     optional.add_argument(
@@ -48,9 +48,9 @@ if __name__ == '__main__':
                                                        filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U).
                                                     """), nargs='+', metavar="KEY=VALUE", action=rimo_api.ParseKwargs, default=None) 
     optional.add_argument('-m', '--marker', 
-                        help="A four or nine character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
+                        help="A four or nine-character site code that will be used to rename input files. (apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)", type=str, default='')
     optional.add_argument('-co', '--country',
-                        help='A three character string corresponding to the ISO 3166 Country code that will be used to rename input files. It overrides other country code sources (sitelog, --marker...). List of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', type=str, default="")
+                        help='A three-character string corresponding to the ISO 3166 Country code that will be used to rename input files. It overrides other country code sources (sitelog, --marker...). List of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', type=str, default="")
     optional.add_argument('-n', '--ninecharfile',
                         help='Path of a file that contains 9-char. site names (e.g. from the M3G database)', type=str, default="")
     optional.add_argument('-sti', '--station_info',
@@ -58,8 +58,9 @@ if __name__ == '__main__':
     optional.add_argument('-lfi', '--lfile_apriori',
                         help='Path of a GAMIT apriori apr/L-File to obtain GNSS site position and DOMES information (needs also -sti option)', type=str, default="")    
     optional.add_argument('-r', '--relative', help='Reconstruct files relative subfolders. You have to indicate the common parent folder, that will be replaced with the output folder', type=str, default=0)
+    optional.add_argument('-nh', '--no_hatanaka', help="Skip high-level RINEX-specific Hatanaka compression (performed per default). See also -c 'none'", action='store_true', default=False)
     optional.add_argument('-c', '--compression', type=str,
-                        help="Set file's compression (acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')", default='')
+                        help="Set low-level RINEX file compression (acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')", default='')
     optional.add_argument(
         '-l', '--longname', help='Rename file using long name RINEX convention (force gzip compression).', action='store_true', default=False)
     optional.add_argument(
@@ -85,7 +86,7 @@ if __name__ == '__main__':
     optional.add_argument(
             '-tol', '--tolerant_file_period', help="the RINEX file period is tolerant and stick to the actual data content, but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), being compatible with the IGS conventions", action='store_true', default=False)
     optional.add_argument(
-            '-mp', '--multi_process', help="Mumber of parallel multiprocesing (default: %(default)s, no parallelization)", type=int, default=1)
+            '-mp', '--multi_process', help="Number of parallel multiprocesing (default: %(default)s, no parallelization)", type=int, default=1)
     optional.add_argument(
             '-d', '--debug', help="Debug mode, stops if something goes wrong (default: %(default)s)", action='store_true', default=False)
     
@@ -99,6 +100,7 @@ if __name__ == '__main__':
     country = args.country
     ninecharfile = args.ninecharfile
     relative = args.relative
+    no_hatanaka = args.no_hatanaka
     compression = args.compression
     longname = args.longname
     force_sitelog = args.force_sitelog
@@ -127,7 +129,8 @@ if __name__ == '__main__':
                           force_sitelog=force_sitelog,
                           force_rnx_load=force_rnx_load,
                           ignore=ignore, 
-                          ninecharfile=ninecharfile, 
+                          ninecharfile=ninecharfile,
+                          no_hatanaka=no_hatanaka,
                           compression=compression,
                           relative=relative, 
                           verbose=verbose, 

@@ -13,9 +13,6 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-# Create a logger object.
-import logging
-#logger = logging.getLogger(__name__)
 import string
 
 import rinexmod.logger as rimo_log
@@ -1194,6 +1191,8 @@ class RinexFile:
         # Identify line that contains INTERVAL
         line_exists = False
         idx = -1
+        interval_idx = None
+
         for e in self.rinex_data:
             idx += 1
             if "INTERVAL" in e:
@@ -1247,7 +1246,7 @@ class RinexFile:
         if self.status:
             return
 
-        if not any([X, Y, Z]):
+        if (X is None) and (Y is None) and (X is None):
             return
 
         # Identify line that contains APPROX POSITION XYZ
@@ -1260,15 +1259,15 @@ class RinexFile:
         Z_meta = antenna_pos_meta[28:42]
         label = antenna_pos_meta[60:]
         # Edit line
-        if X:  # Format as 14.4 float. Set to zero if too large but should not happen
+        if X is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
             X_meta = '{:14.4f}'.format(float(X))
             if len(X_meta) > 14:
                 X_meta = '{:14.4f}'.format(float('0'))
-        if Y:
+        if Y is not None:
             Y_meta = '{:14.4f}'.format(float(Y))
             if len(Y_meta) > 14:
                 Y_meta = '{:14.4f}'.format(float('0'))
-        if Z:
+        if Z is not None:
             Z_meta = '{:14.4f}'.format(float(Z))
             if len(Z_meta) > 14:
                 Z_meta = '{:14.4f}'.format(float('0'))
@@ -1297,7 +1296,7 @@ class RinexFile:
         if self.status:
             return
 
-        if not any([H, E, N]):
+        if (H is None) and (E is None) and (N is None):
             return
 
         # Identify line that contains ANTENNA: DELTA H/E/N
@@ -1310,15 +1309,15 @@ class RinexFile:
         N_meta = antenna_delta_meta[28:42]
         label = antenna_delta_meta[60:]
         # Edit line
-        if H:  # Format as 14.4 float. Set to zero if too large but should not happen
+        if H is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
             H_meta = '{:14.4f}'.format(float(H))
             if len(H_meta) > 14:
                 H_meta = '{:14.4f}'.format(float('0'))
-        if E:
+        if E is not None:
             E_meta = '{:14.4f}'.format(float(E))
             if len(E_meta) > 14:
                 E_meta = '{:14.4f}'.format(float('0'))
-        if N:
+        if N is not None:
             N_meta = '{:14.4f}'.format(float(N))
             if len(N_meta) > 14:
                 N_meta = '{:14.4f}'.format(float('0'))
@@ -1600,7 +1599,8 @@ class RinexFile:
         """
         return '\n'.join(self.rinex_data).encode(encode)
 
-    def write_to_path(self, output_directory, compression='gz'):
+    def write_to_path(self, output_directory, compression='gz',
+                      no_hatanaka=True):
         """
         Will turn rinex_data from list to string, utf-8, then compress as hatanaka
         and zip to the 'compression' format, then write to file. The 'compression' param
@@ -1612,11 +1612,17 @@ class RinexFile:
         output_directory : str
             The output directory.
             
-        compression : TYPE, optional
+        compression : str, optional
             'gz' (default), 'bz2', 'Z', 
             'none' (string, compliant with hatanaka module) or 
             None (NoneType, compliant with the rinex object initialisation). 
             The default is 'gz'.
+
+        no_hatanaka : bool, optional
+            If True, the Hatanaka compression is not performed.
+            (Hatanaka compression is applied per default.)
+            The default is False.
+
         Returns
         -------
         outputfile : str
@@ -1636,19 +1642,30 @@ class RinexFile:
 
         output_data = self.get_as_string()
 
-        output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
+        if not no_hatanaka:  ## regular case, Hatanaka-compression of the RINEX
+            output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
 
         ### The data source is an actual RINEX file
         if self.source_from_file:
-            # manage hatanaka compression extension
-            # RNX3
-            if "rnx" in self.filename:
-                filename_out = self.filename.replace("rnx", "crx")
-            # RNX2
-            elif self.filename[-1] in "o":
-                filename_out = self.filename[:-1] + "d"
-            else:
-                filename_out = self.filename
+            if not no_hatanaka:
+                # manage hatanaka compression extension
+                # RNX3
+                if "rnx" in self.filename:
+                    filename_out = self.filename.replace("rnx", "crx")
+                # RNX2
+                elif self.filename[-1] in "o":
+                    filename_out = self.filename[:-1] + "d"
+                else:
+                    filename_out = self.filename
+            else:  ### NO Hatanaka-compression of the RINEX, the extension must be changed
+                # RNX3
+                if "crx" in self.filename:
+                    filename_out = self.filename.replace("crx", "rnx")
+                # RNX2
+                elif self.filename[-1] in "d":
+                    filename_out = self.filename[:-1] + "o"
+                else:
+                    filename_out = self.filename
 
             # manage low-level compression extension
             if compression in ('none', None):
