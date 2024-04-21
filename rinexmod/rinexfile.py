@@ -1111,6 +1111,19 @@ class RinexFile:
         type_meta = receiver_meta[20:40]
         firmware_meta = receiver_meta[40:60]
         label = receiver_meta[60:]
+        # warning
+        ### for the receiver, info in te input RINEX should be the correct ones
+        def _rec_rnx_metadata_val_test(field_type,rinex_val,metadata_val):
+            if rinex_val.strip() != metadata_val.strip():
+                logger.warning("%s rec. %s in RINEX (%s) & in metadata (%) are different.",
+                               self.get_site,field_type,rinex_val,metadata_val)
+                logger.warning("The RINEX value might be the correct one, double-check your metadata source.")
+            return None
+        
+        _rec_rnx_metadata_val_test("serial number",serial,serial_meta)
+        _rec_rnx_metadata_val_test("model type",type,type_meta)        
+        _rec_rnx_metadata_val_test("firmware version",firmware,firmware_meta)
+        
         # Edit line
         if serial:
             serial_meta = str(serial)[:20].ljust(20)
