@@ -20,7 +20,7 @@ logger = rimo_log.logger_define('INFO')
 
 class MetaData:
     """
-    Parses and store in a dict informations from an IGS sitelog or GAMIT-like files.
+    Parses and stores in a dict information from an IGS sitelog or GAMIT-like files.
     Requires one parameter, the sitelog path.
     At instantiation, will parse the sitelog and store in a dict all parsed values.
     Dict accessible via MetaData.raw_content
@@ -255,8 +255,7 @@ class MetaData:
             sitelogdict[key]['Agency'] = " ".join(sitelogdict[key]['Agency'].split())
             if sitelogdict[key]['Secondary Contact']['Additional Information']:
                 # Putting the 'Additional Information' in the lower level dict
-                sitelogdict[key]['Additional Information'] = sitelogdict[key]['Secondary Contact'][
-                    'Additional Information']
+                sitelogdict[key]['Additional Information'] = sitelogdict[key]['Secondary Contact']['Additional Information']
                 # Removing it from the incorrect dict level
                 sitelogdict[key]['Secondary Contact'].pop('Additional Information', None)
 
@@ -430,11 +429,11 @@ class MetaData:
     #                                                 |___/
 
     def find_instru(self, starttime, endtime, ignore=False):
-        '''
+        """
         We get the instrumentation corresponding to the starttime and endtime.
         If ignore option set to True, we will force ignoring the firmware version
         modification between two periods and consider only the other parameters.
-        '''
+        """
 
         # We get the installation corresponding to the starttime and endtime
         thisinstall = None

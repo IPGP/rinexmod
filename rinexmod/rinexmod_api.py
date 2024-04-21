@@ -671,7 +671,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         A three character string corresponding to the ISO 3166 Country code 
         that will be used to rename input files.
         It overrides other country code sources (sitelog, --marker...)
-        list of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
+        list of ISO country codes:
+        https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
         The default is ''.
     longname : bool, optional
         Rename file using long name RINEX convention (force gzip compression).
