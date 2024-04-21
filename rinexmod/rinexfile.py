@@ -527,9 +527,9 @@ class RinexFile:
             self.rinex_data, 'RINEX VERSION / TYPE')
         version_header = self.rinex_data[version_header_idx]
         # Parse line
-        rinex_ver_meta = version_header[0:9].strip()
+        rinex_ver_head = version_header[0:9].strip()
 
-        return rinex_ver_meta
+        return rinex_ver_head
 
     def get_data_source(self):
         """
@@ -645,10 +645,10 @@ class RinexFile:
                                              '%Y %m %d %H %M %S.%f0')
             return date_out
 
-        start_meta = _find_meta_label('TIME OF FIRST OBS')
-        end_meta = _find_meta_label('TIME OF LAST OBS')
+        start_head = _find_meta_label('TIME OF FIRST OBS')
+        end_head = _find_meta_label('TIME OF LAST OBS')
 
-        return start_meta, end_meta
+        return start_head, end_head
 
     def get_dates_all(self):
         """
@@ -907,9 +907,9 @@ class RinexFile:
         # Identify line that contains RINEX VERSION / TYPE
         sat_system_header_idx = search_idx_value(
             self.rinex_data, 'RINEX VERSION / TYPE')
-        sat_system_meta = self.rinex_data[sat_system_header_idx]
+        sat_system_head = self.rinex_data[sat_system_header_idx]
         # Parse line
-        sat_system = sat_system_meta[40:41]
+        sat_system = sat_system_head[40:41]
 
         return sat_system
 
@@ -942,19 +942,19 @@ class RinexFile:
         if self.status:
             return ''
 
-        site_meta = 'MARKER NAME'
+        site_head = 'MARKER NAME'
 
         for line in self.rinex_data:
-            if re.search(site_meta, line):
-                site_meta = line
+            if re.search(site_head, line):
+                site_head = line
                 break
 
-        if site_meta == 'MARKER NAME':
+        if site_head == 'MARKER NAME':
             return None
 
-        site_meta = site_meta.split(' ')[0].upper()
+        site_head = site_head.split(' ')[0].upper()
 
-        return site_meta
+        return site_head
 
     def get_sys_obs_types(self):
         """
@@ -1105,12 +1105,12 @@ class RinexFile:
         # Identify line that contains REC # / TYPE / VERS
         receiver_header_idx = search_idx_value(
             self.rinex_data, 'REC # / TYPE / VERS')
-        receiver_meta = self.rinex_data[receiver_header_idx]
+        receiver_head = self.rinex_data[receiver_header_idx]
         # Parse line
-        serial_meta = receiver_meta[0:20]
-        type_meta = receiver_meta[20:40]
-        firmware_meta = receiver_meta[40:60]
-        label = receiver_meta[60:]
+        serial_head = receiver_head[0:20]
+        type_head = receiver_head[20:40]
+        firmware_head = receiver_head[40:60]
+        label = receiver_head[60:]
         # warning
         ### for the receiver, info in te input RINEX should be the correct ones
         def _rec_rnx_metadata_val_test(field_type,rinex_val,metadata_val):
@@ -1120,18 +1120,18 @@ class RinexFile:
                 logger.warning("The RINEX value might be the correct one, double-check your metadata source.")
             return None
         
-        _rec_rnx_metadata_val_test("serial number",serial,serial_meta)
-        _rec_rnx_metadata_val_test("model type",type,type_meta)        
-        _rec_rnx_metadata_val_test("firmware version",firmware,firmware_meta)
+        _rec_rnx_metadata_val_test("serial number",serial,serial_head)
+        _rec_rnx_metadata_val_test("model type",type,type_head)
+        _rec_rnx_metadata_val_test("firmware version",firmware,firmware_head)
         
         # Edit line
         if serial:
-            serial_meta = str(serial)[:20].ljust(20)
+            serial_head = str(serial)[:20].ljust(20)
         if type:
-            type_meta = str(type)[:20].ljust(20)
+            type_head = str(type)[:20].ljust(20)
         if firmware:
-            firmware_meta = str(firmware)[:20].ljust(20)
-        new_line = serial_meta + type_meta + firmware_meta + label
+            firmware_head = str(firmware)[:20].ljust(20)
+        new_line = serial_head + type_head + firmware_head + label
         # Set line
         self.rinex_data[receiver_header_idx] = new_line
 
@@ -1163,17 +1163,17 @@ class RinexFile:
 
         # Identify line that contains ANT # / TYPE
         antenna_header_idx = search_idx_value(self.rinex_data, 'ANT # / TYPE')
-        antenna_meta = self.rinex_data[antenna_header_idx]
+        antenna_head = self.rinex_data[antenna_header_idx]
         # Parse line
-        serial_meta = antenna_meta[0:20]
-        type_meta = antenna_meta[20:40]
-        label = antenna_meta[60:]
+        serial_head = antenna_head[0:20]
+        type_head = antenna_head[20:40]
+        label_head = antenna_head[60:]
         # Edit line
         if serial:
-            serial_meta = str(serial)[:20].ljust(20)
+            serial_head = str(serial)[:20].ljust(20)
         if type:
-            type_meta = str(type)[:20].ljust(20)
-        new_line = serial_meta + type_meta + ' ' * 20 + label
+            type_head = str(type)[:20].ljust(20)
+        new_line = serial_head + type_head + ' ' * 20 + label_head
         # Set line
         self.rinex_data[antenna_header_idx] = new_line
 
@@ -1221,16 +1221,16 @@ class RinexFile:
 
         if line_exists:
             #interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'INTERVAL' in e)
-            interval_meta = self.rinex_data[interval_idx]
-            label = interval_meta[60:]
+            interval_head = self.rinex_data[interval_idx]
+            label_head = interval_head[60:]
         else:
             #interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'TIME OF FIRST OBS' in e)
-            label = "INTERVAL"
+            label_head = "INTERVAL"
 
         # Parse line
-        sample_rate_meta = "{:10.3f}".format(float(sample_rate_input))
+        sample_rate_head = "{:10.3f}".format(float(sample_rate_input))
 
-        new_line = sample_rate_meta + ' ' * 50 + label
+        new_line = sample_rate_head + ' ' * 50 + label_head
 
         # Set line
         if line_exists:
@@ -1265,26 +1265,26 @@ class RinexFile:
         # Identify line that contains APPROX POSITION XYZ
         antenna_pos_header_idx = search_idx_value(
             self.rinex_data, 'APPROX POSITION XYZ')
-        antenna_pos_meta = self.rinex_data[antenna_pos_header_idx]
+        antenna_pos_head = self.rinex_data[antenna_pos_header_idx]
         # Parse line
-        X_meta = antenna_pos_meta[0:14]
-        Y_meta = antenna_pos_meta[14:28]
-        Z_meta = antenna_pos_meta[28:42]
-        label = antenna_pos_meta[60:]
+        x_head = antenna_pos_head[0:14]
+        y_head = antenna_pos_head[14:28]
+        z_head = antenna_pos_head[28:42]
+        label = antenna_pos_head[60:]
         # Edit line
         if X is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
-            X_meta = '{:14.4f}'.format(float(X))
-            if len(X_meta) > 14:
-                X_meta = '{:14.4f}'.format(float('0'))
+            x_head = '{:14.4f}'.format(float(X))
+            if len(x_head) > 14:
+                x_head = '{:14.4f}'.format(float('0'))
         if Y is not None:
-            Y_meta = '{:14.4f}'.format(float(Y))
-            if len(Y_meta) > 14:
-                Y_meta = '{:14.4f}'.format(float('0'))
+            y_head = '{:14.4f}'.format(float(Y))
+            if len(y_head) > 14:
+                y_head = '{:14.4f}'.format(float('0'))
         if Z is not None:
-            Z_meta = '{:14.4f}'.format(float(Z))
-            if len(Z_meta) > 14:
-                Z_meta = '{:14.4f}'.format(float('0'))
-        new_line = X_meta + Y_meta + Z_meta + ' ' * 18 + label
+            z_head = '{:14.4f}'.format(float(Z))
+            if len(z_head) > 14:
+                z_head = '{:14.4f}'.format(float('0'))
+        new_line = x_head + y_head + z_head + ' ' * 18 + label
         # Set line
         self.rinex_data[antenna_pos_header_idx] = new_line
 
@@ -1315,26 +1315,26 @@ class RinexFile:
         # Identify line that contains ANTENNA: DELTA H/E/N
         antenna_delta_header_idx = search_idx_value(
             self.rinex_data, 'ANTENNA: DELTA H/E/N')
-        antenna_delta_meta = self.rinex_data[antenna_delta_header_idx]
+        antenna_delta_head = self.rinex_data[antenna_delta_header_idx]
         # Parse line
-        H_meta = antenna_delta_meta[0:14]
-        E_meta = antenna_delta_meta[14:28]
-        N_meta = antenna_delta_meta[28:42]
-        label = antenna_delta_meta[60:]
+        h_head = antenna_delta_head[0:14]
+        e_head = antenna_delta_head[14:28]
+        n_head = antenna_delta_head[28:42]
+        label = antenna_delta_head[60:]
         # Edit line
         if H is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
-            H_meta = '{:14.4f}'.format(float(H))
-            if len(H_meta) > 14:
-                H_meta = '{:14.4f}'.format(float('0'))
+            h_head = '{:14.4f}'.format(float(H))
+            if len(h_head) > 14:
+                h_head = '{:14.4f}'.format(float('0'))
         if E is not None:
-            E_meta = '{:14.4f}'.format(float(E))
-            if len(E_meta) > 14:
-                E_meta = '{:14.4f}'.format(float('0'))
+            e_head = '{:14.4f}'.format(float(E))
+            if len(e_head) > 14:
+                e_head = '{:14.4f}'.format(float('0'))
         if N is not None:
-            N_meta = '{:14.4f}'.format(float(N))
-            if len(N_meta) > 14:
-                N_meta = '{:14.4f}'.format(float('0'))
-        new_line = H_meta + E_meta + N_meta + ' ' * 18 + label
+            n_head = '{:14.4f}'.format(float(N))
+            if len(n_head) > 14:
+                n_head = '{:14.4f}'.format(float('0'))
+        new_line = h_head + e_head + n_head + ' ' * 18 + label
         # Set line
         self.rinex_data[antenna_delta_header_idx] = new_line
 
@@ -1371,17 +1371,17 @@ class RinexFile:
             logger.warning('no %s field has been found in %s, unable to mod it', 'OBSERVER / AGENCY', self.filename)
             return
 
-        agencies_meta = self.rinex_data[agencies_header_idx]
+        agencies_head = self.rinex_data[agencies_header_idx]
         # Parse line
-        operator_meta = agencies_meta[0:20]
-        agency_meta = agencies_meta[20:40]
-        label = agencies_meta[60:]
+        operator_head = agencies_head[0:20]
+        agency_head = agencies_head[20:40]
+        label_head = agencies_head[60:]
         # Edit line
         if operator:  # Format as 14.4 float. Cut if too large but will not happen
-            operator_meta = operator[:20].ljust(20)
+            operator_head = operator[:20].ljust(20)
         if agency:
-            agency_meta = agency[:40].ljust(40)
-        new_line = operator_meta + agency_meta + label
+            agency_head = agency[:40].ljust(40)
+        new_line = operator_head + agency_head + label_head
         # Set line
         self.rinex_data[agencies_header_idx] = new_line
 
@@ -1413,12 +1413,12 @@ class RinexFile:
         # Identify line that contains RINEX VERSION / TYPE
         sat_system_header_idx = search_idx_value(
             self.rinex_data, 'RINEX VERSION / TYPE')
-        sat_system_meta = self.rinex_data[sat_system_header_idx]
+        sat_system_head = self.rinex_data[sat_system_header_idx]
         # Parse line
-        rinex_ver_meta = sat_system_meta[0:9]
-        type_of_rinex_file_meta = sat_system_meta[20:40]
-        # sat_system_meta = sat_system_meta[40:60]
-        label = sat_system_meta[60:]
+        rinex_ver_head = sat_system_head[0:9]
+        type_of_rinex_file_head = sat_system_head[20:40]
+        # sat_system_head = sat_system_head[40:60]
+        label = sat_system_head[60:]
         # Edit line
         if '+' in sat_system:
             sat_system = 'MIXED'
@@ -1440,10 +1440,10 @@ class RinexFile:
                 sat_system_code = sat_system
                 sat_system = ''
 
-        sat_system_meta = sat_system_code[0] + \
+        sat_system_head = sat_system_code[0] + \
                           ' : ' + sat_system[:16].ljust(16)
-        new_line = rinex_ver_meta + ' ' * 11 + \
-                   type_of_rinex_file_meta + sat_system_meta + label
+        new_line = rinex_ver_head + ' ' * 11 + \
+                   type_of_rinex_file_head + sat_system_head + label
         # Set line
         self.rinex_data[sat_system_header_idx] = new_line
 
@@ -1483,7 +1483,7 @@ class RinexFile:
         last_obs_idx = search_idx_value(self.rinex_data,
                                         'TIME OF LAST OBS')
 
-        first_obs_meta = self.rinex_data[first_obs_idx]
+        first_obs_head = self.rinex_data[first_obs_idx]
 
         # Parse line
         def _time_line_make(time, sys="GPS"):
@@ -1499,7 +1499,7 @@ class RinexFile:
 
             return timelout
 
-        sysuse = first_obs_meta[48:52]
+        sysuse = first_obs_head[48:52]
         line_firstobs = _time_line_make(first_obs, sysuse) + "TIME OF FIRST OBS"
         line_lastobs = _time_line_make(last_obs, sysuse) + "TIME OF LAST OBS"
 
