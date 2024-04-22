@@ -1113,16 +1113,16 @@ class RinexFile:
         label = receiver_head[60:]
         # warning
         ### for the receiver, info in te input RINEX should be the correct ones
-        def _rec_rnx_metadata_val_test(field_type,rinex_val,metadata_val):
+        def _mod_receiver_check(field_type,rinex_val,metadata_val):
             if rinex_val.strip() != metadata_val.strip():
-                logger.warning("%s rec. %s in RINEX (%s) & in metadata (%) are different.",
-                               self.get_site,field_type,rinex_val,metadata_val)
+                logger.warning("%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
+                               self.get_site(lower_case=False),field_type,rinex_val.strip(),metadata_val.strip())
                 logger.warning("The RINEX value might be the correct one, double-check your metadata source.")
             return None
         
-        _rec_rnx_metadata_val_test("serial number",serial,serial_head)
-        _rec_rnx_metadata_val_test("model type",type,type_head)
-        _rec_rnx_metadata_val_test("firmware version",firmware,firmware_head)
+        _mod_receiver_check("serial number",serial,serial_head)
+        _mod_receiver_check("model type",type,type_head)
+        _mod_receiver_check("firmware version",firmware,firmware_head)
         
         # Edit line
         if serial:
