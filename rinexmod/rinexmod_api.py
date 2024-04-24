@@ -96,7 +96,6 @@ def sitelog_input_manage(sitelog_inp, force=False):
      * single string (directory containing the sitelogs)
      * list of MetaData objects
      * single MetaData object
-    
 
     Parameters
     ----------
@@ -107,7 +106,8 @@ def sitelog_input_manage(sitelog_inp, force=False):
 
     Returns
     -------
-    list of MetaData
+        list of MetaData objects.
+        (can be a singleton)
 
     """
     if isinstance(sitelog_inp, rimo_mda.MetaData):
