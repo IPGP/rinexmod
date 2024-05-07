@@ -84,7 +84,7 @@ if __name__ == '__main__':
     optional.add_argument(
         '-u', '--full_history', help="Add the full history of the station in the RINEX's 'header as comment.", action='store_true', default=False)
     optional.add_argument(
-            '-tol', '--tolerant_file_period', help="the RINEX file period is tolerant and stick to the actual data content, but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), being compatible with the IGS conventions", action='store_true', default=False)
+            '-tol', '--tolerant_file_period', help="the RINEX file period is tolerant and corresponds to the actual data content, but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), being compatible with the IGS conventions", action='store_true', default=False)
     optional.add_argument(
             '-mp', '--multi_process', help="Number of parallel multiprocesing (default: %(default)s, no parallelization)", type=int, default=1)
     optional.add_argument(

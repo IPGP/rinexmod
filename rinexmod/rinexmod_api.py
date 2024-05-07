@@ -711,7 +711,7 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
         Add the full history of the station in
         the RINEX's header as comment.
     tolerant_file_period : bool, optional
-        If True, the RINEX file period is tolerant and stick to
+        If True, the RINEX file period is tolerant and corresponds to
         the actual data content, but then can be odd (e.g. 07H, 14H...).
         If False, A strict file period is applied per default (01H or 01D),
         being compatible with the IGS conventions.
