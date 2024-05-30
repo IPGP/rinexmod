@@ -87,7 +87,7 @@ def git_get_revision_short_hash():
 
 def metadata_input_manage(sitelog_inp, force=False):
     """
-    Manage the multiple types possible for a Sitelog inputs
+    Manage the multiple types possible for metadata inputs
     Return a list of MetaData to be handeled by metadata_find_site
     
     Possible inputs are: 
