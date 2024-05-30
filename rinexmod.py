@@ -92,58 +92,29 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    rinexinput = args.rinexinput
-    outputfolder = args.outputfolder
-    sitelog = args.sitelog
-    modif_kw = args.modif_kw
-    marker = args.marker
-    country = args.country
-    ninecharfile = args.ninecharfile
-    relative = args.relative
-    no_hatanaka = args.no_hatanaka
-    compression = args.compression
-    longname = args.longname
-    force_sitelog = args.force_sitelog
-    force_rnx_load = args.force_rnx_load
-    ignore = args.ignore
-    alone = args.alone
-    output_logs = args.output_logs
-    write = args.write
-    verbose = args.verbose
-    sort = args.sort
-    full_history = args.full_history
-    tolerant_file_period = args.tolerant_file_period 
-    multi_process = args.multi_process
-    debug = args.debug
-    station_info = args.station_info
-    lfile_apriori = args.lfile_apriori
-    force_fake_coords = args.force_fake_coords
-    
-    rimo_api.rinexmod_cli(rinexinput,
-                          outputfolder,
-                          sitelog=sitelog,
-                          modif_kw=modif_kw,
-                          marker=marker,
-                          country=country,
-                          longname=longname,
-                          force_sitelog=force_sitelog,
-                          force_rnx_load=force_rnx_load,
-                          ignore=ignore, 
-                          ninecharfile=ninecharfile,
-                          no_hatanaka=no_hatanaka,
-                          compression=compression,
-                          relative=relative, 
-                          verbose=verbose, 
-                          alone=alone, 
-                          output_logs=output_logs, 
-                          write=write, 
-                          sort=sort,
-                          full_history=full_history,
-                          tolerant_file_period=tolerant_file_period,
-                          multi_process=multi_process,
-                          debug=debug,
-                          station_info=station_info,
-                          lfile_apriori=lfile_apriori,
-                          force_fake_coords=force_fake_coords) 
-
-
+    rimo_api.rinexmod_cli(args.rinexinput,
+                          args.outputfolder,
+                          sitelog=args.sitelog,
+                          modif_kw=args.modif_kw,
+                          marker=args.marker,
+                          country=args.country,
+                          longname=args.longname,
+                          force_sitelog=args.force_sitelog,
+                          force_rnx_load=args.force_rnx_load,
+                          ignore=args.ignore,
+                          ninecharfile=args.ninecharfile,
+                          no_hatanaka=args.no_hatanaka,
+                          compression=args.compression,
+                          relative=args.relative,
+                          verbose=args.verbose,
+                          alone=args.alone,
+                          output_logs=args.output_logs,
+                          write=args.write,
+                          sort=args.sort,
+                          full_history=args.full_history,
+                          tolerant_file_period=args.tolerant_file_period,
+                          multi_process=args.multi_process,
+                          debug=args.debug,
+                          station_info=args.station_info,
+                          lfile_apriori=args.lfile_apriori,
+                          force_fake_coords=args.force_fake_coords)
