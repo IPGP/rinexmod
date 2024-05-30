@@ -83,9 +83,9 @@ def git_get_revision_short_hash():
 
 
 # *****************************************************************************
-# Sitelog import
+# Metadata import
 
-def sitelog_input_manage(sitelog_inp, force=False):
+def metadata_input_manage(sitelog_inp, force=False):
     """
     Manage the multiple types possible for a Sitelog inputs
     Return a list of MetaData to be handeled by metadata_find_site
@@ -831,8 +831,8 @@ def rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker='',
     ### load the metadata from sitelog or GAMIT files if any
     ## sitelogs
     if sitelog:
-        metadata_obj_list = sitelog_input_manage(sitelog,
-                                                 force=force_sitelog)
+        metadata_obj_list = metadata_input_manage(sitelog,
+                                                  force=force_sitelog)
     ## GAMIT files
     # We read the GAMIT files only if no input 'sitelog' variable is given.
     # Indeed, the GAMIT files might have been read outside this function
@@ -1128,7 +1128,7 @@ def rinexmod_cli(rinexinput, outputfolder, sitelog=None, modif_kw=dict(), marker
     ### load the sitelogs/GAMIT-files as a **list of MetaData objects**
     # from sitelogs 
     if sitelog:
-        sitelogs_list_use = sitelog_input_manage(sitelog, force_sitelog)
+        sitelogs_list_use = metadata_input_manage(sitelog, force_sitelog)
     # from GAMIT files
     elif station_info and lfile_apriori:
         sitelogs_list_use = gamit2metadata_objs(station_info, lfile_apriori,
