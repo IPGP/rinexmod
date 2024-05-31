@@ -375,9 +375,11 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
     """
+
+    ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    metadata_4char = metadataobj.misc_meta['Four Character ID'].lower()
+    metadata_4char = metadataobj.misc_meta['Character ID'].lower()[:4]
 
     if rnx_4char != metadata_4char:
         logger.warning(

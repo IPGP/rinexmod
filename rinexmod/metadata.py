@@ -401,11 +401,17 @@ class MetaData:
         dictionary containing all the useful metadata information which are not
         stored in the instrumentation dictionary
         (see _get_instru_dicts )
+
+        Consistent with [IGSMAIL-8458] (2024-06-01)
         """
 
         mm_dic = {}
 
-        mm_dic['Four Character ID'] = self.raw_content['1.']['Four Character ID']
+        if 'Nine Character ID' in self.raw_content['1.'].keys(): # now consistent with [IGSMAIL-8458]
+            mm_dic['Character ID'] = self.raw_content['1.']['Nine Character ID']
+        else:
+            mm_dic['Character ID'] = self.raw_content['1.']['Four Character ID']
+
         mm_dic['IERS DOMES Number'] = self.raw_content['1.']['IERS DOMES Number']
 
         mm_dic['operator'] = self.raw_content['11.']['Preferred Abbreviation']
@@ -415,7 +421,12 @@ class MetaData:
         mm_dic['Y coordinate (m)'] = self.raw_content['2.']['Y coordinate (m)']
         mm_dic['Z coordinate (m)'] = self.raw_content['2.']['Z coordinate (m)']
 
-        mm_dic['Country'] = self.raw_content['2.']['Country']
+        if 'Country/Region' in self.raw_content['2.'].keys():  # now consistent with [IGSMAIL-8458]
+            mm_dic['Country'] = self.raw_content['2.']['Country/Region']
+        elif 'Country or Region' in self.raw_content['2.'].keys(): # now consistent with [IGSMAIL-8458]
+            mm_dic['Country'] = self.raw_content['2.']['Country or Region']
+        else:
+            mm_dic['Country'] = self.raw_content['2.']['Country']
 
         return mm_dic
 
@@ -482,6 +493,8 @@ class MetaData:
         """
         Return the ISO country code based on the Sitelog's Country field.
         Requires pycountry module
+
+        Consistent with [IGSMAIL-8458] (2024-06-01)
         """
 
         try:
@@ -489,12 +502,24 @@ class MetaData:
         except ModuleNotFoundError:
             logger.warning("Python's module 'pycountry' is recommended to recover the Country name automatically")
 
-        full_country = self.misc_meta['Country']
-        full_country2 = full_country.split("(the)")[0].strip()
-        try:
-            iso_country = pycountry.countries.get(name=full_country2).alpha_3
-        except:
-            iso_country = "XXX"
+        raw_country = self.misc_meta['Country']
+
+        #### The raw input is a 3-letter ISO code, now consistent with [IGSMAIL-8458]
+        if len(raw_country) == 3:
+            iso_country = raw_country
+            try:
+                full_country = pycountry.countries.get(alpha_3=iso_country).name
+            except:
+                full_country = "Somewhere"
+
+        #### The raw input is a full country name
+        else:
+            full_country = raw_country
+            full_country2 = full_country.split("(the)")[0].strip()
+            try:
+                iso_country = pycountry.countries.get(name=full_country2).alpha_3
+            except:
+                iso_country = "XXX"
 
         if iso_code:
             return iso_country
@@ -528,9 +553,9 @@ class MetaData:
 
         # We construct the TEQC args line
         teqcargs = [
-            "-O.mo[nument] '{}'".format(self.raw_content['1.']['Four Character ID']),
-            "-M.mo[nument] '{}'".format(self.raw_content['1.']['Four Character ID']),
-            "-O.mn '{}'".format(self.raw_content['1.']['Four Character ID']),
+            "-O.mo[nument] '{}'".format(self.raw_content['1.']['Character ID'][:4]),
+            "-M.mo[nument] '{}'".format(self.raw_content['1.']['Character ID'][:4]),
+            "-O.mn '{}'".format(self.raw_content['1.']['Character ID'][:4]),
             "-O.px[WGS84xyz,m] {} {} {}".format(self.raw_content['2.']['X coordinate (m)'],
                                                 self.raw_content['2.']['Y coordinate (m)'],
                                                 self.raw_content['2.']['Z coordinate (m)']),
@@ -561,7 +586,7 @@ class MetaData:
         if not instrumentation:
             return None, ignored
 
-        fourchar_id = self.misc_meta['Four Character ID']
+        fourchar_id = self.misc_meta['Character ID'][:4]
         domes_id = self.misc_meta['IERS DOMES Number']
 
         observable_type = instrumentation['receiver']['Satellite System']
