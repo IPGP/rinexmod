@@ -17,13 +17,13 @@ import string
 
 import rinexmod.logger as rimo_log
 
-logger = rimo_log.logger_define('INFO')
+logger = rimo_log.logger_define("INFO")
 
 
 # logger = logging.getLogger("rinexmod_api")
 
-#from rinexmod import rinexmod_api as rimo_api
-#logger = rimo_api.logger_define('INFO')
+# from rinexmod import rinexmod_api as rimo_api
+# logger = rimo_api.logger_define('INFO')
 
 
 # *****************************************************************************
@@ -54,29 +54,35 @@ class RinexFile:
             self.source_from_file = False
             self.path = ""
             self.path_output = ""
-            self.content_input = bytes(rinex_input.read(), 'utf-8')  ## ready-to-read for hatanaka
+            self.content_input = bytes(
+                rinex_input.read(), "utf-8"
+            )  ## ready-to-read for hatanaka
         else:
             logger.error("input rinex_input is not str, Path, or StringIO")
 
-        self.rinex_data, self.status = self._load_rinex_data(force_rnx_load=force_rnx_load)
+        self.rinex_data, self.status = self._load_rinex_data(
+            force_rnx_load=force_rnx_load
+        )
         self.size = self.get_size()
         self.name_conv = self.get_naming_convention()
         self.compression, self.hatanka_input = self.get_compression()
         self.filename = self.get_filename()
         self.data_source = self.get_data_source()
 
-        #### site is an internal attribute, always 9char 
+        #### site is an internal attribute, always 9char
         # (filled with 00XXX in nothing else is provided)
         # it is accessible wit get_site()
-        self._site = self.get_site_from_filename(lower_case=False,
-                                                 only_4char=False)
+        self._site = self.get_site_from_filename(lower_case=False, only_4char=False)
 
         self.version = self.get_version()
         self.start_date, self.end_date = self.get_dates()
-        self.sample_rate_string, self.sample_rate_numeric = self.get_sample_rate(plot=False)
-        #self.file_period, self.session = self.get_file_period_from_filename()
-        self.file_period, self.session = self.get_file_period_from_data(tolerant_file_period=True,
-                                                                        inplace_set=False)
+        self.sample_rate_string, self.sample_rate_numeric = self.get_sample_rate(
+            plot=False
+        )
+        # self.file_period, self.session = self.get_file_period_from_filename()
+        self.file_period, self.session = self.get_file_period_from_data(
+            tolerant_file_period=True, inplace_set=False
+        )
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
 
     def __str__(self):
@@ -85,23 +91,27 @@ class RinexFile:
         header, plus 20 lines of data, plus the number of not printed lines.
         """
         if self.rinex_data == None:
-            return ''
+            return ""
 
         # We get header
-        end_of_header_idx = search_idx_value(
-            self.rinex_data, 'END OF HEADER') + 1
+        end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
         str_RinexFile = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
         str_RinexFile.extend(
-            self.rinex_data[end_of_header_idx:end_of_header_idx + 20])
+            self.rinex_data[end_of_header_idx : end_of_header_idx + 20]
+        )
         # We add a line that contains the number of lines not to be printed
         length = len(self.rinex_data) - len(str_RinexFile) - 20
-        cut_lines_rep = ' ' * 20 + \
-                        '[' + \
-                        '{} lines hidden'.format(length).center(40, '.') + ']' + ' ' * 20
+        cut_lines_rep = (
+            " " * 20
+            + "["
+            + "{} lines hidden".format(length).center(40, ".")
+            + "]"
+            + " " * 20
+        )
         str_RinexFile.append(cut_lines_rep)
 
-        return '\n'.join(str_RinexFile)
+        return "\n".join(str_RinexFile)
 
     # *****************************************************************************
     #### Main methods
@@ -112,7 +122,7 @@ class RinexFile:
         the header, and a python dict of the same information.
         """
 
-        #if self.status not in [0, 2]:
+        # if self.status not in [0, 2]:
         #    return None
 
         if self.status:
@@ -121,15 +131,15 @@ class RinexFile:
         metadata = {}
 
         metadata_lines = [
-            'RINEX VERSION / TYPE',
-            'MARKER NAME',
-            'MARKER NUMBER',
-            'OBSERVER / AGENCY',
-            'REC # / TYPE / VERS',
-            'ANT # / TYPE',
-            'APPROX POSITION XYZ',
-            'ANTENNA: DELTA H/E/N',
-            'TIME OF FIRST OBS'
+            "RINEX VERSION / TYPE",
+            "MARKER NAME",
+            "MARKER NUMBER",
+            "OBSERVER / AGENCY",
+            "REC # / TYPE / VERS",
+            "ANT # / TYPE",
+            "APPROX POSITION XYZ",
+            "ANTENNA: DELTA H/E/N",
+            "TIME OF FIRST OBS",
         ]
 
         missing_metadata_lines = []
@@ -138,61 +148,61 @@ class RinexFile:
                 if kw in line:
                     metadata[kw] = line
                     break
-                if 'END OF HEADER' in line:
+                if "END OF HEADER" in line:
                     missing_metadata_lines.append(kw)
                     break
 
         for miss_kw in missing_metadata_lines:
-            logger.warning('%s field is missing in %s header',
-                           miss_kw, self.filename)
-            metadata[miss_kw] = ''
+            logger.warning("%s field is missing in %s header", miss_kw, self.filename)
+            metadata[miss_kw] = ""
 
-        ### previous case with just 'MARKER NUMBER', too weak hardcoded solution    
-        #if not 'MARKER NUMBER' in metadata:
+        ### previous case with just 'MARKER NUMBER', too weak hardcoded solution
+        # if not 'MARKER NUMBER' in metadata:
         #    metadata['MARKER NUMBER'] = ''
 
-        metadata_parsed = {'File': self.path,
-                           'File size (bytes)': self.size,
-                           'Rinex version': metadata['RINEX VERSION / TYPE'][0:9].strip(),
-                           'Sample rate': self.sample_rate_string, 'File period': self.file_period,
-                           'Observable type': metadata['RINEX VERSION / TYPE'][40:60].strip(),
-                           'Marker name': metadata['MARKER NAME'][0:60].strip(),
-                           'Marker number': metadata['MARKER NUMBER'][0:60].strip(),
-                           'Operator': metadata['OBSERVER / AGENCY'][0:20].strip(),
-                           'Agency': metadata['OBSERVER / AGENCY'][20:40].strip(),
-                           'Receiver serial': metadata['REC # / TYPE / VERS'][0:20].strip(),
-                           'Receiver type': metadata['REC # / TYPE / VERS'][20:40].strip(),
-                           'Receiver firmware version': metadata['REC # / TYPE / VERS'][40:60].strip(),
-                           'Antenna serial': metadata['ANT # / TYPE'][0:20].strip(),
-                           'Antenna type': metadata['ANT # / TYPE'][20:40].strip(),
-                           'Antenna position (XYZ)': '{:14} {:14} {:14}'.format(
-                               metadata['APPROX POSITION XYZ'][0:14].strip(),
-                               metadata['APPROX POSITION XYZ'][14:28].strip(
-                               ),
-                               metadata['APPROX POSITION XYZ'][28:42].strip()),
-                           'Antenna delta (H/E/N)': '{:14} {:14} {:14}'.format(
-                               metadata['ANTENNA: DELTA H/E/N'][0:14].strip(),
-                               metadata['ANTENNA: DELTA H/E/N'][14:28].strip(
-                               ),
-                               metadata['ANTENNA: DELTA H/E/N'][28:42].strip()),
-                           'Start date and time': self.start_date,
-                           'Final date and time': self.end_date}
+        metadata_parsed = {
+            "File": self.path,
+            "File size (bytes)": self.size,
+            "Rinex version": metadata["RINEX VERSION / TYPE"][0:9].strip(),
+            "Sample rate": self.sample_rate_string,
+            "File period": self.file_period,
+            "Observable type": metadata["RINEX VERSION / TYPE"][40:60].strip(),
+            "Marker name": metadata["MARKER NAME"][0:60].strip(),
+            "Marker number": metadata["MARKER NUMBER"][0:60].strip(),
+            "Operator": metadata["OBSERVER / AGENCY"][0:20].strip(),
+            "Agency": metadata["OBSERVER / AGENCY"][20:40].strip(),
+            "Receiver serial": metadata["REC # / TYPE / VERS"][0:20].strip(),
+            "Receiver type": metadata["REC # / TYPE / VERS"][20:40].strip(),
+            "Receiver firmware version": metadata["REC # / TYPE / VERS"][40:60].strip(),
+            "Antenna serial": metadata["ANT # / TYPE"][0:20].strip(),
+            "Antenna type": metadata["ANT # / TYPE"][20:40].strip(),
+            "Antenna position (XYZ)": "{:14} {:14} {:14}".format(
+                metadata["APPROX POSITION XYZ"][0:14].strip(),
+                metadata["APPROX POSITION XYZ"][14:28].strip(),
+                metadata["APPROX POSITION XYZ"][28:42].strip(),
+            ),
+            "Antenna delta (H/E/N)": "{:14} {:14} {:14}".format(
+                metadata["ANTENNA: DELTA H/E/N"][0:14].strip(),
+                metadata["ANTENNA: DELTA H/E/N"][14:28].strip(),
+                metadata["ANTENNA: DELTA H/E/N"][28:42].strip(),
+            ),
+            "Start date and time": self.start_date,
+            "Final date and time": self.end_date,
+        }
 
-        metadata_string = '\n'.join(['{:29} : {}'.format(
-            key, value) for key, value in metadata_parsed.items()])
+        metadata_string = "\n".join(
+            ["{:29} : {}".format(key, value) for key, value in metadata_parsed.items()]
+        )
 
-        metadata_string = '\n' + metadata_string + '\n'
+        metadata_string = "\n" + metadata_string + "\n"
 
         return metadata_string, metadata_parsed
 
-    def get_site(self,
-                 lower_case=True,
-                 only_4char=False,
-                 no_country_then_4char=False):
+    def get_site(self, lower_case=True, only_4char=False, no_country_then_4char=False):
         """
         Get the site of the Rinex Object
         if no_country_then_4char = True, the return site code
-        falls back to a 4-char code, if no monum/country is provided 
+        falls back to a 4-char code, if no monum/country is provided
         (i.e. the 9char code ends with 00XXX)
         if no_country_then_4char = False, 00XXX will remain
         """
@@ -235,13 +245,15 @@ class RinexFile:
 
         return None
 
-    def get_longname(self,
-                     data_source="R",
-                     obs_type='O',
-                     ext='auto',
-                     compression='auto',
-                     tolerant_file_period=False,
-                     inplace_set=False):
+    def get_longname(
+        self,
+        data_source="R",
+        obs_type="O",
+        ext="auto",
+        compression="auto",
+        tolerant_file_period=False,
+        inplace_set=False,
+    ):
         """
         Generate the long RINEX filename
         can be stored directly as filename attribute with inplace = True
@@ -256,22 +268,24 @@ class RinexFile:
         """
 
         if ext == "auto" and self.hatanka_input:
-            ext = 'crx'
+            ext = "crx"
         elif ext == "auto" and not self.hatanka_input:
-            ext = 'rnx'
+            ext = "rnx"
         else:
-            ext = 'rnx'
+            ext = "rnx"
 
-        ext = '.' + ext
+        ext = "." + ext
 
-        if compression == 'auto' and self.compression:
-            compression = '.' + self.compression
-        elif compression == 'auto' and not self.compression:
-            compression = ''
-        elif compression != "":  # when a manual compression arg is given, and is not void
-            compression = '.' + compression
+        if compression == "auto" and self.compression:
+            compression = "." + self.compression
+        elif compression == "auto" and not self.compression:
+            compression = ""
+        elif (
+            compression != ""
+        ):  # when a manual compression arg is given, and is not void
+            compression = "." + compression
         else:
-            compression = ''
+            compression = ""
 
         if tolerant_file_period:
             file_period_name = self.file_period
@@ -279,24 +293,30 @@ class RinexFile:
         else:
             file_period_name, session_name = self.get_file_period_round()
 
-        if file_period_name == '01D':  ## Daily case
+        if file_period_name == "01D":  ## Daily case
             if session_name:
-                timeformat = '%Y%j%H%M'
+                timeformat = "%Y%j%H%M"
             else:
-                timeformat = '%Y%j0000'  # Start of the day
+                timeformat = "%Y%j0000"  # Start of the day
         elif file_period_name[-1] == "M":  ### Subhourly case
-            timeformat = '%Y%j%H%M'
-        elif file_period_name == '00U':  ## Unknown case: the filename deserves a full description to identify potential bug
-            timeformat = '%Y%j%H%M'
+            timeformat = "%Y%j%H%M"
+        elif (
+            file_period_name == "00U"
+        ):  ## Unknown case: the filename deserves a full description to identify potential bug
+            timeformat = "%Y%j%H%M"
         else:  ## Hourly case
-            timeformat = '%Y%j%H00'  # Start of the hour
+            timeformat = "%Y%j%H00"  # Start of the hour
 
-        longname = '_'.join((self.get_site(False, False),
-                             data_source,
-                             self.start_date.strftime(timeformat),
-                             file_period_name,
-                             self.sample_rate_string,
-                             self.get_sat_system() + obs_type + ext + compression))
+        longname = "_".join(
+            (
+                self.get_site(False, False),
+                data_source,
+                self.start_date.strftime(timeformat),
+                file_period_name,
+                self.sample_rate_string,
+                self.get_sat_system() + obs_type + ext + compression,
+            )
+        )
 
         if inplace_set:
             self.filename = longname
@@ -304,11 +324,13 @@ class RinexFile:
 
         return longname
 
-    def get_shortname(self,
-                      file_type='auto',
-                      compression='auto',
-                      tolerant_file_period=False,
-                      inplace_set=False):
+    def get_shortname(
+        self,
+        file_type="auto",
+        compression="auto",
+        tolerant_file_period=False,
+        inplace_set=False,
+    ):
         """
         Generate the short RINEX filename
         can be stored directly as filename attribute with inplace = True
@@ -321,16 +343,16 @@ class RinexFile:
             is given without dot as 1st character
         """
 
-        if file_type == 'auto' and self.hatanka_input:
-            file_type = 'd'
-        elif file_type == 'auto' and not self.hatanka_input:
-            file_type = 'o'
+        if file_type == "auto" and self.hatanka_input:
+            file_type = "d"
+        elif file_type == "auto" and not self.hatanka_input:
+            file_type = "o"
 
-        if compression == 'auto':
+        if compression == "auto":
             compression = self.compression
 
         if compression != "":
-            compression = '.' + compression
+            compression = "." + compression
 
         if tolerant_file_period:
             file_period_name = self.file_period
@@ -338,13 +360,13 @@ class RinexFile:
         else:
             file_period_name, session_name = self.get_file_period_round()
 
-        if file_period_name == '01D':
-            timeformat = '%j0.%y' + file_type + compression
+        if file_period_name == "01D":
+            timeformat = "%j0.%y" + file_type + compression
         else:
             Alphabet = list(map(chr, range(97, 123)))
-            timeformat = '%j' + \
-                         Alphabet[self.start_date.hour] + \
-                         '.%y' + file_type + compression
+            timeformat = (
+                "%j" + Alphabet[self.start_date.hour] + ".%y" + file_type + compression
+            )
 
         shortname = self.get_site(True, True) + self.start_date.strftime(timeformat)
 
@@ -356,14 +378,14 @@ class RinexFile:
 
     def get_header_body(self, return_index_end=False):
         """
-        Get the RINEX's header and body as a list of lines, 
+        Get the RINEX's header and body as a list of lines,
         and the index of the END OF HEADER line if asked
         """
         i_end = None
-        i_end = search_idx_value(self.rinex_data, 'END OF HEADER')
+        i_end = search_idx_value(self.rinex_data, "END OF HEADER")
 
-        head = self.rinex_data[:i_end + 1]
-        body = self.rinex_data[i_end + 1:]
+        head = self.rinex_data[: i_end + 1]
+        body = self.rinex_data[i_end + 1 :]
 
         if return_index_end:
             return head, body, i_end
@@ -393,27 +415,29 @@ class RinexFile:
         ##### The input is a file
         else:
             try:
-                rinex_data = hatanaka.decompress(self.content_input).decode('utf-8')
-                rinex_data = rinex_data.split('\n')
+                rinex_data = hatanaka.decompress(self.content_input).decode("utf-8")
+                rinex_data = rinex_data.split("\n")
                 status = None
 
             except ValueError:
                 rinex_data = None
-                status = '03 - Invalid or empty compressed file'
+                status = "03 - Invalid or empty compressed file"
 
             except hatanaka.hatanaka.HatanakaException:
                 rinex_data = None
-                status = '04 - Invalid Compressed RINEX file'
+                status = "04 - Invalid Compressed RINEX file"
 
             bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
             bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
 
             if not force_rnx_load and not (bool_l1_obs or bool_l1_crx):
-                logger.warning("File's 1st line does not match an Observation RINEX: " +
-                               os.path.join(self.path))
+                logger.warning(
+                    "File's 1st line does not match an Observation RINEX: "
+                    + os.path.join(self.path)
+                )
                 logger.warning("try to force the loading with force_rnx_load = True")
                 rinex_data = None
-                status = '02 - Not an observation RINEX file'
+                status = "02 - Not an observation RINEX file"
 
         if status:
             logger.warning(status)
@@ -427,24 +451,24 @@ class RinexFile:
         # Daily or hourly, hatanaka or not, gz or Z compressed file
         pattern_dic = regex_pattern_rinex_filename()
 
-        pattern_shortname = re.compile(pattern_dic['shortname'])
-        pattern_longname = re.compile(pattern_dic['longname'])
+        pattern_shortname = re.compile(pattern_dic["shortname"])
+        pattern_longname = re.compile(pattern_dic["longname"])
         # GFZ's DataCenter internal naming convention (here it is equivalent to a longname)
-        pattern_longname_gfz = re.compile(pattern_dic['longname_gfz'])
+        pattern_longname_gfz = re.compile(pattern_dic["longname_gfz"])
 
         if pattern_shortname.match(os.path.basename(self.path)):
-            name_conv = 'SHORT'
+            name_conv = "SHORT"
         elif pattern_longname.match(os.path.basename(self.path)):
-            name_conv = 'LONG'
+            name_conv = "LONG"
         elif pattern_longname_gfz.match(os.path.basename(self.path)):
-            name_conv = 'LONGGFZ'
+            name_conv = "LONGGFZ"
         else:
-            name_conv = 'UNKNOWN'
+            name_conv = "UNKNOWN"
 
         return name_conv
 
     def get_size(self):
-        """ 
+        """
         Get RINEX file size
         """
 
@@ -468,7 +492,7 @@ class RinexFile:
         basename = os.path.basename(self.path)
 
         # find compress value
-        if basename.lower().endswith('z'):
+        if basename.lower().endswith("z"):
             compress = os.path.splitext(basename)[1][1:]
         else:
             compress = None
@@ -477,7 +501,7 @@ class RinexFile:
         if self.name_conv == "SHORT":
 
             if compress:
-                type_letter = basename.split('.')[-2][-1]
+                type_letter = basename.split(".")[-2][-1]
             else:
                 type_letter = basename[-1]
 
@@ -488,7 +512,7 @@ class RinexFile:
 
         else:  # LONG name
             if compress:
-                type_ext = basename.split('.')[-2][-3:]
+                type_ext = basename.split(".")[-2][-3:]
             else:
                 type_ext = basename[-3:]
 
@@ -500,7 +524,7 @@ class RinexFile:
         return compress, hatanaka
 
     def get_filename(self):
-        """ 
+        """
         Get filename WITHOUT its compression extension
         """
 
@@ -521,10 +545,9 @@ class RinexFile:
         """
 
         if self.status:
-            return ''
+            return ""
 
-        version_header_idx = search_idx_value(
-            self.rinex_data, 'RINEX VERSION / TYPE')
+        version_header_idx = search_idx_value(self.rinex_data, "RINEX VERSION / TYPE")
         version_header = self.rinex_data[version_header_idx]
         # Parse line
         rinex_ver_head = version_header[0:9].strip()
@@ -548,7 +571,7 @@ class RinexFile:
 
     def _get_date_patterns(self):
         """
-        Internal function to get the correct epoch pattern depending 
+        Internal function to get the correct epoch pattern depending
         on the RINEX version
 
         Returns
@@ -559,24 +582,26 @@ class RinexFile:
             for RINEX2, the year prefix.
         """
         # Date lines pattern
-        if self.version[0] >= '3':
+        if self.version[0] >= "3":
             # Pattern of an observation line containing a date - RINEX 3
-            #date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
+            # date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
             date_pattern = re.compile(
-                '> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})')
+                "> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})"
+            )
             year_prefix = ""  # Prefix of year for date formatting
 
-        elif self.version[0] == '2':
+        elif self.version[0] == "2":
             # Pattern of an observation line containing a date - RINEX 2
             date_pattern = re.compile(
-                ' (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})')
+                " (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})"
+            )
             year_prefix = "20"  # Prefix of year for date formatting
             ### !!!!!!!!! before 2000 must be implemented !!!!!!
 
         return date_pattern, year_prefix
 
     def get_dates(self):
-        """ 
+        """
         Get start and end date from rinex file.
         we search for the date of the first and last observation directly in
         the data.
@@ -604,10 +629,21 @@ class RinexFile:
                 year = year_pattern + m.group(1)
 
                 # Building a date string
-                epoc = year + ' ' + m.group(2) + ' ' + m.group(3) + ' ' + \
-                       m.group(4) + ' ' + m.group(5) + ' ' + m.group(6)
+                epoc = (
+                    year
+                    + " "
+                    + m.group(2)
+                    + " "
+                    + m.group(3)
+                    + " "
+                    + m.group(4)
+                    + " "
+                    + m.group(5)
+                    + " "
+                    + m.group(6)
+                )
 
-                epoc = datetime.strptime(epoc, '%Y %m %d %H %M %S.%f')
+                epoc = datetime.strptime(epoc, "%Y %m %d %H %M %S.%f")
             else:
                 epoc = None
 
@@ -619,7 +655,7 @@ class RinexFile:
         return start_epoch, end_epoch
 
     def get_dates_in_header(self):
-        """ 
+        """
         Get start and end date from rinex file.
         Start date cames from TIME OF FIRST OBS file's header.
         In RINEX3, there's a TIME OF LAST OBS in the header but it's not available
@@ -641,12 +677,13 @@ class RinexFile:
                 date_out = None
             else:
                 date_out = line.split()
-                date_out = datetime.strptime(' '.join(date_out[0:6]),
-                                             '%Y %m %d %H %M %S.%f0')
+                date_out = datetime.strptime(
+                    " ".join(date_out[0:6]), "%Y %m %d %H %M %S.%f0"
+                )
             return date_out
 
-        start_head = _find_meta_label('TIME OF FIRST OBS')
-        end_head = _find_meta_label('TIME OF LAST OBS')
+        start_head = _find_meta_label("TIME OF FIRST OBS")
+        end_head = _find_meta_label("TIME OF LAST OBS")
 
         return start_head, end_head
 
@@ -689,98 +726,124 @@ class RinexFile:
 
         # If less than 2 samples, can't get a sample rate
         if len(Samples_stack) < 2:
-            self.status = '05 - Less than two epochs in the file'
-            logger.error("get_sample_rate: less than 2 samples found, can't get a sample rate %s", Samples_stack)
+            self.status = "05 - Less than two epochs in the file"
+            logger.error(
+                "get_sample_rate: less than 2 samples found, can't get a sample rate %s",
+                Samples_stack,
+            )
             return None, None
 
         # Building a date string
         def _date_conv(sample):
-            date = year_prefix + sample.group(1) + ' ' + sample.group(2) + ' ' + sample.group(3) + ' ' + \
-                   sample.group(4) + ' ' + sample.group(5) + ' ' + sample.group(6)
+            date = (
+                year_prefix
+                + sample.group(1)
+                + " "
+                + sample.group(2)
+                + " "
+                + sample.group(3)
+                + " "
+                + sample.group(4)
+                + " "
+                + sample.group(5)
+                + " "
+                + sample.group(6)
+            )
 
-            date = datetime.strptime(date, '%Y %m %d %H %M %S.%f')
+            date = datetime.strptime(date, "%Y %m %d %H %M %S.%f")
             return date
 
         # Format dates to datetime
         Samples_stack = [_date_conv(d) for d in Samples_stack]
         Samples_rate_diff = np.diff(Samples_stack)  # Getting intervals
         # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
-        Samples_rate_diff = [diff.total_seconds(
-        ) for diff in Samples_rate_diff if diff != timedelta(seconds=0)]
+        Samples_rate_diff = [
+            diff.total_seconds()
+            for diff in Samples_rate_diff
+            if diff != timedelta(seconds=0)
+        ]
 
         # If less than one interval after removing 0 values, can't get a sample rate
         if len(Samples_rate_diff) < 1:
-            self.status = '05 - Less than two epochs in the file'
-            logger.error("get_sample_rate: less than one interval after removing 0 values %s", Samples_rate_diff)
+            self.status = "05 - Less than two epochs in the file"
+            logger.error(
+                "get_sample_rate: less than one interval after removing 0 values %s",
+                Samples_rate_diff,
+            )
             return None, None
 
         # If less than 2 intervals, can't compare intervals
         if len(Samples_rate_diff) < 2:
-            return '00U', 0.
+            return "00U", 0.0
 
         # Most frequent
-        sample_rate_num = max(set(Samples_rate_diff),
-                              key=Samples_rate_diff.count)
+        sample_rate_num = max(set(Samples_rate_diff), key=Samples_rate_diff.count)
 
         # Counting the intervals that are not equal to the most frequent
         num_bad_sp = len(
-            [diff for diff in Samples_rate_diff if diff != sample_rate_num])
+            [diff for diff in Samples_rate_diff if diff != sample_rate_num]
+        )
 
         non_nominal_interval_percent = num_bad_sp / len(Samples_rate_diff)
 
         if plot:
-            print('{:29} : {}'.format('Sample intervals not nominals',
-                                      str(non_nominal_interval_percent * 100) + ' %'))
+            print(
+                "{:29} : {}".format(
+                    "Sample intervals not nominals",
+                    str(non_nominal_interval_percent * 100) + " %",
+                )
+            )
             plt.plot(Samples_rate_diff)
             plt.show()
 
         non_nominal_trigger = 0.45
-        if non_nominal_interval_percent > non_nominal_trigger:  # Don't set sample rate to files
+        if (
+            non_nominal_interval_percent > non_nominal_trigger
+        ):  # Don't set sample rate to files
             # That have more that 45% of non nominal sample rate
-            logger.error("get_sample_rate: non nominal sample rate >%d%%: %d%% (# epochs: %d)",
-                         non_nominal_trigger * 100,
-                         non_nominal_interval_percent * 100,
-                         len(Samples_stack))
-            return '00U', 0.
+            logger.error(
+                "get_sample_rate: non nominal sample rate >%d%%: %d%% (# epochs: %d)",
+                non_nominal_trigger * 100,
+                non_nominal_interval_percent * 100,
+                len(Samples_stack),
+            )
+            return "00U", 0.0
 
         # Format of sample rate from RINEX3 specs : RINEX Long Filenames
         # We round samples rates to avoid leap-seconds related problems
         if sample_rate_num <= 0.0001:
             # XXU – Unspecified
-            sample_rate_str = '00U'
+            sample_rate_str = "00U"
         elif sample_rate_num <= 0.01:
             # XXC – 100 Hertz
             sample_rate_num = round(sample_rate_num, 4)
-            sample_rate_str = (
-                    str(int(1 / (100 * sample_rate_num))) + 'C').rjust(3, '0')
+            sample_rate_str = (str(int(1 / (100 * sample_rate_num))) + "C").rjust(
+                3, "0"
+            )
         elif sample_rate_num < 1:
             # XXZ – Hertz
             sample_rate_num = round(sample_rate_num, 2)
-            sample_rate_str = (
-                    str(int(1 / sample_rate_num)) + 'Z').rjust(3, '0')
+            sample_rate_str = (str(int(1 / sample_rate_num)) + "Z").rjust(3, "0")
         elif sample_rate_num < 60:
             # XXS – Seconds
             sample_rate_num = round(sample_rate_num, 0)
-            sample_rate_str = (str(int(sample_rate_num)) + 'S').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate_num)) + "S").rjust(3, "0")
         ##### NB: a sample rate at the minute level or even above is very unlikely
         elif sample_rate_num < 3600:
             # XXM – Minutes
             sample_rate_num = round(sample_rate_num, 0)
-            sample_rate_str = (
-                    str(int(sample_rate_num / 60)) + 'M').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate_num / 60)) + "M").rjust(3, "0")
         elif sample_rate_num < 86400:
             # XXH – Hours
             sample_rate_num = round(sample_rate_num, 0)
-            sample_rate_str = (
-                    str(int(sample_rate_num / 3600)) + 'H').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate_num / 3600)) + "H").rjust(3, "0")
         elif sample_rate_num <= 8553600:
             # XXD – Days
             sample_rate_num = round(sample_rate_num, 0)
-            sample_rate_str = (
-                    str(int(sample_rate_num / 86400)) + 'D').rjust(3, '0')
+            sample_rate_str = (str(int(sample_rate_num / 86400)) + "D").rjust(3, "0")
         else:
             # XXU – Unspecified
-            sample_rate_str = '00U'
+            sample_rate_str = "00U"
 
         return sample_rate_str, sample_rate_num
 
@@ -796,39 +859,38 @@ class RinexFile:
 
         session = False
 
-        if self.name_conv == 'SHORT':
+        if self.name_conv == "SHORT":
             file_period = self.filename[7:8]
             if file_period.isdigit():
-                if file_period != '0':
+                if file_period != "0":
                     session = True
                 # 01D–1 Day
-                file_period = '01D'
+                file_period = "01D"
             elif file_period.isalpha():
                 # 01H–1 Hour
-                file_period = '01H'
+                file_period = "01H"
             else:
                 # 00U-Unspecified
-                file_period = '00U'
+                file_period = "00U"
 
-        elif self.name_conv == 'LONG':
+        elif self.name_conv == "LONG":
             file_period = self.filename[24:27]
 
-        elif self.name_conv == 'LONGGFZ':
+        elif self.name_conv == "LONGGFZ":
             file_period = self.filename[46:49]
         else:
             # 00U-Unspecified
-            file_period = '00U'
+            file_period = "00U"
 
         return file_period, session
 
-    def get_file_period_from_data(self, tolerant_file_period=False,
-                                  inplace_set=False):
+    def get_file_period_from_data(self, tolerant_file_period=False, inplace_set=False):
         """
         Get the file period from the data themselves.
 
-        see also get_file_period_round() 
+        see also get_file_period_round()
         to round this value to an conventional one
-        
+
         the RINEX file period is tolerant and stick to the actual data content,
         but then can be odd (e.g. 07H, 14H...). A strict file period is applied
         per default (01H or 01D), being compatible with the IGS conventions
@@ -836,7 +898,7 @@ class RinexFile:
         Parameters
         ----------
         tolerant_file_period : bool, optional
-            apply (if True) or not (if False) get_file_period_round. 
+            apply (if True) or not (if False) get_file_period_round.
             The default is False.
         inplace_set : bool, optional
             change the values in the RinexFile object. The default is False.
@@ -850,8 +912,9 @@ class RinexFile:
 
         """
 
-        file_period, session = file_period_from_timedelta(self.start_date,
-                                                          self.end_date)
+        file_period, session = file_period_from_timedelta(
+            self.start_date, self.end_date
+        )
 
         if inplace_set:
             self.file_period = file_period
@@ -866,7 +929,7 @@ class RinexFile:
         """
         Round the RINEX file period to a conventional value: 01D, 01H
 
-        NB: this method aims to respect the IGS convention and thus uses NOMINAL 
+        NB: this method aims to respect the IGS convention and thus uses NOMINAL
         period
 
         Parameters
@@ -884,7 +947,7 @@ class RinexFile:
         """
 
         if self.file_period[2] == "H" and int(self.file_period[:2]) > 1:
-            file_period_rnd = '01D'
+            file_period_rnd = "01D"
             session_rnd = False
         else:
             file_period_rnd = self.file_period
@@ -906,7 +969,8 @@ class RinexFile:
 
         # Identify line that contains RINEX VERSION / TYPE
         sat_system_header_idx = search_idx_value(
-            self.rinex_data, 'RINEX VERSION / TYPE')
+            self.rinex_data, "RINEX VERSION / TYPE"
+        )
         sat_system_head = self.rinex_data[sat_system_header_idx]
         # Parse line
         sat_system = sat_system_head[40:41]
@@ -914,7 +978,7 @@ class RinexFile:
         return sat_system
 
     def get_site_from_filename(self, lower_case=True, only_4char=False):
-        """ 
+        """
         Get site name from the filename
         """
 
@@ -924,7 +988,7 @@ class RinexFile:
         if self.name_conv in ("LONG", "LONGGFZ"):
             site_out = self.filename[:9]
         else:
-            site_out = self.filename[:4] + '00' + 'XXX'
+            site_out = self.filename[:4] + "00" + "XXX"
 
         if only_4char:
             site_out = site_out[:9]
@@ -935,40 +999,40 @@ class RinexFile:
             return site_out.upper()
 
     def get_site_from_header(self):
-        """ 
+        """
         Get site name from the MARKER NAME line in rinex file's header
         """
 
         if self.status:
-            return ''
+            return ""
 
-        site_head = 'MARKER NAME'
+        site_head = "MARKER NAME"
 
         for line in self.rinex_data:
             if re.search(site_head, line):
                 site_head = line
                 break
 
-        if site_head == 'MARKER NAME':
+        if site_head == "MARKER NAME":
             return None
 
-        site_head = site_head.split(' ')[0].upper()
+        site_head = site_head.split(" ")[0].upper()
 
         return site_head
 
     def get_sys_obs_types(self):
         """
-        Get the systems/observables values from the 
+        Get the systems/observables values from the
         ``SYS / # / OBS TYPES`` lines
 
         for RINEX 3/4 only
-        
+
         Returns
         -------
         dict_sys_obs : dict
             a dictionary of lists describing the observables per system, e.g.:
             ``{"G" : ["C1C","C1W","C2W","L1C","L2W","S1C",S2W"]}``.
-                      
+
         dict_sys_nobs : dict
             a dictionary of integer describing the number of observables per system, e.g.:
             ``{'C': 8, 'E': 16, 'G': 16, 'I': 4, 'R': 12, 'S': 4}``.
@@ -978,16 +1042,15 @@ class RinexFile:
         if self.status:
             return
 
-        if self.version[0] < '3':
+        if self.version[0] < "3":
             logger.warn("get_sys_obs_types is only compatible with RINEX3/4")
             return
 
         # Identify line that contains SYS / # / OBS TYPES
-        sys_obs_idx0 = search_idx_value(self.rinex_data,
-                                        'SYS / # / OBS TYPES')
+        sys_obs_idx0 = search_idx_value(self.rinex_data, "SYS / # / OBS TYPES")
 
         sys_obs_idx_fin = sys_obs_idx0
-        while 'SYS / # / OBS TYPES' in self.rinex_data[sys_obs_idx_fin]:
+        while "SYS / # / OBS TYPES" in self.rinex_data[sys_obs_idx_fin]:
             sys_obs_idx_fin += 1
 
         #### get the systems and observations
@@ -1013,8 +1076,12 @@ class RinexFile:
             dict_sys_nobs[sys] = int(Sysobs[1])
             ## adds the LLI and SSI indicators
             if len(Sysobs[2:]) != int(Sysobs[1]):
-                logger.warn("difference between theorectical (%d) and actual (%d) obs nbr for sys (%s)",
-                            len(Sysobs[2:]), int(Sysobs[1]), sys)
+                logger.warn(
+                    "difference between theorectical (%d) and actual (%d) obs nbr for sys (%s)",
+                    len(Sysobs[2:]),
+                    int(Sysobs[1]),
+                    sys,
+                )
 
         return dict_sys_obs, dict_sys_nobs
 
@@ -1033,7 +1100,7 @@ class RinexFile:
             The default is None.
         number_inp : str, optional
             DOMES number. The default is None.
-            
+
         Returns
         -------
         None.
@@ -1047,26 +1114,25 @@ class RinexFile:
             return
 
         # Identify line that contains MARKER NAME
-        marker_name_header_idx = search_idx_value(
-            self.rinex_data, 'MARKER NAME')
+        marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
         # Edit line
-        new_line = '{}'.format(marker_inp.ljust(60)) + 'MARKER NAME'
+        new_line = "{}".format(marker_inp.ljust(60)) + "MARKER NAME"
         if marker_name_header_idx:
-            #marker_name_meta = self.rinex_data[marker_name_header_idx]
+            # marker_name_meta = self.rinex_data[marker_name_header_idx]
             # Set line
             self.rinex_data[marker_name_header_idx] = new_line
         else:
-            pgm_header_idx = search_idx_value(
-                self.rinex_data, 'PGM / RUN BY / DATE')
+            pgm_header_idx = search_idx_value(self.rinex_data, "PGM / RUN BY / DATE")
             self.rinex_data.insert(pgm_header_idx, new_line)
 
         if number_inp:
             # Identify line that contains MARKER NUMBER
             ## marker_number_header_idx = next((i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e), None)
             marker_number_header_idx = search_idx_value(
-                self.rinex_data, 'MARKER NUMBER')
+                self.rinex_data, "MARKER NUMBER"
+            )
             # Edit line
-            new_line = '{}'.format(number_inp.ljust(60)) + 'MARKER NUMBER'
+            new_line = "{}".format(number_inp.ljust(60)) + "MARKER NUMBER"
             if marker_number_header_idx:  # The line exsits
                 # Set line
                 self.rinex_data[marker_number_header_idx] = new_line
@@ -1103,27 +1169,34 @@ class RinexFile:
             return
 
         # Identify line that contains REC # / TYPE / VERS
-        receiver_header_idx = search_idx_value(
-            self.rinex_data, 'REC # / TYPE / VERS')
+        receiver_header_idx = search_idx_value(self.rinex_data, "REC # / TYPE / VERS")
         receiver_head = self.rinex_data[receiver_header_idx]
         # Parse line
         serial_head = receiver_head[0:20]
         type_head = receiver_head[20:40]
         firmware_head = receiver_head[40:60]
         label = receiver_head[60:]
+
         # warning
         ### for the receiver, info in te input RINEX should be the correct ones
-        def _mod_receiver_check(field_type,rinex_val,metadata_val):
+        def _mod_receiver_check(field_type, rinex_val, metadata_val):
             if rinex_val.strip() != metadata_val.strip():
-                logger.warning("%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
-                               self.get_site(lower_case=False),field_type,rinex_val.strip(),metadata_val.strip())
-                logger.warning("The RINEX value might be the correct one, double-check your metadata source.")
+                logger.warning(
+                    "%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
+                    self.get_site(lower_case=False),
+                    field_type,
+                    rinex_val.strip(),
+                    metadata_val.strip(),
+                )
+                logger.warning(
+                    "The RINEX value might be the correct one, double-check your metadata source."
+                )
             return None
-        
-        _mod_receiver_check("serial number",serial,serial_head)
-        _mod_receiver_check("model type",type,type_head)
-        _mod_receiver_check("firmware version",firmware,firmware_head)
-        
+
+        _mod_receiver_check("serial number", serial, serial_head)
+        _mod_receiver_check("model type", type, type_head)
+        _mod_receiver_check("firmware version", firmware, firmware_head)
+
         # Edit line
         if serial:
             serial_head = str(serial)[:20].ljust(20)
@@ -1162,7 +1235,7 @@ class RinexFile:
             return
 
         # Identify line that contains ANT # / TYPE
-        antenna_header_idx = search_idx_value(self.rinex_data, 'ANT # / TYPE')
+        antenna_header_idx = search_idx_value(self.rinex_data, "ANT # / TYPE")
         antenna_head = self.rinex_data[antenna_header_idx]
         # Parse line
         serial_head = antenna_head[0:20]
@@ -1173,7 +1246,7 @@ class RinexFile:
             serial_head = str(serial)[:20].ljust(20)
         if type:
             type_head = str(type)[:20].ljust(20)
-        new_line = serial_head + type_head + ' ' * 20 + label_head
+        new_line = serial_head + type_head + " " * 20 + label_head
         # Set line
         self.rinex_data[antenna_header_idx] = new_line
 
@@ -1212,7 +1285,7 @@ class RinexFile:
                 line_exists = True
                 interval_idx = idx
                 break
-            elif 'TIME OF FIRST OBS' in e:
+            elif "TIME OF FIRST OBS" in e:
                 interval_idx = idx
             elif "END OF HEADER" in e:
                 break
@@ -1220,17 +1293,17 @@ class RinexFile:
                 continue
 
         if line_exists:
-            #interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'INTERVAL' in e)
+            # interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'INTERVAL' in e)
             interval_head = self.rinex_data[interval_idx]
             label_head = interval_head[60:]
         else:
-            #interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'TIME OF FIRST OBS' in e)
+            # interval_idx = next(i for i, e in enumerate(self.rinex_data) if 'TIME OF FIRST OBS' in e)
             label_head = "INTERVAL"
 
         # Parse line
         sample_rate_head = "{:10.3f}".format(float(sample_rate_input))
 
-        new_line = sample_rate_head + ' ' * 50 + label_head
+        new_line = sample_rate_head + " " * 50 + label_head
 
         # Set line
         if line_exists:
@@ -1264,7 +1337,8 @@ class RinexFile:
 
         # Identify line that contains APPROX POSITION XYZ
         antenna_pos_header_idx = search_idx_value(
-            self.rinex_data, 'APPROX POSITION XYZ')
+            self.rinex_data, "APPROX POSITION XYZ"
+        )
         antenna_pos_head = self.rinex_data[antenna_pos_header_idx]
         # Parse line
         x_head = antenna_pos_head[0:14]
@@ -1272,19 +1346,21 @@ class RinexFile:
         z_head = antenna_pos_head[28:42]
         label = antenna_pos_head[60:]
         # Edit line
-        if X is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
-            x_head = '{:14.4f}'.format(float(X))
+        if (
+            X is not None
+        ):  # Format as 14.4 float. Set to zero if too large but should not happen
+            x_head = "{:14.4f}".format(float(X))
             if len(x_head) > 14:
-                x_head = '{:14.4f}'.format(float('0'))
+                x_head = "{:14.4f}".format(float("0"))
         if Y is not None:
-            y_head = '{:14.4f}'.format(float(Y))
+            y_head = "{:14.4f}".format(float(Y))
             if len(y_head) > 14:
-                y_head = '{:14.4f}'.format(float('0'))
+                y_head = "{:14.4f}".format(float("0"))
         if Z is not None:
-            z_head = '{:14.4f}'.format(float(Z))
+            z_head = "{:14.4f}".format(float(Z))
             if len(z_head) > 14:
-                z_head = '{:14.4f}'.format(float('0'))
-        new_line = x_head + y_head + z_head + ' ' * 18 + label
+                z_head = "{:14.4f}".format(float("0"))
+        new_line = x_head + y_head + z_head + " " * 18 + label
         # Set line
         self.rinex_data[antenna_pos_header_idx] = new_line
 
@@ -1314,7 +1390,8 @@ class RinexFile:
 
         # Identify line that contains ANTENNA: DELTA H/E/N
         antenna_delta_header_idx = search_idx_value(
-            self.rinex_data, 'ANTENNA: DELTA H/E/N')
+            self.rinex_data, "ANTENNA: DELTA H/E/N"
+        )
         antenna_delta_head = self.rinex_data[antenna_delta_header_idx]
         # Parse line
         h_head = antenna_delta_head[0:14]
@@ -1322,19 +1399,21 @@ class RinexFile:
         n_head = antenna_delta_head[28:42]
         label = antenna_delta_head[60:]
         # Edit line
-        if H is not None:  # Format as 14.4 float. Set to zero if too large but should not happen
-            h_head = '{:14.4f}'.format(float(H))
+        if (
+            H is not None
+        ):  # Format as 14.4 float. Set to zero if too large but should not happen
+            h_head = "{:14.4f}".format(float(H))
             if len(h_head) > 14:
-                h_head = '{:14.4f}'.format(float('0'))
+                h_head = "{:14.4f}".format(float("0"))
         if E is not None:
-            e_head = '{:14.4f}'.format(float(E))
+            e_head = "{:14.4f}".format(float(E))
             if len(e_head) > 14:
-                e_head = '{:14.4f}'.format(float('0'))
+                e_head = "{:14.4f}".format(float("0"))
         if N is not None:
-            n_head = '{:14.4f}'.format(float(N))
+            n_head = "{:14.4f}".format(float(N))
             if len(n_head) > 14:
-                n_head = '{:14.4f}'.format(float('0'))
-        new_line = h_head + e_head + n_head + ' ' * 18 + label
+                n_head = "{:14.4f}".format(float("0"))
+        new_line = h_head + e_head + n_head + " " * 18 + label
         # Set line
         self.rinex_data[antenna_delta_header_idx] = new_line
 
@@ -1364,11 +1443,14 @@ class RinexFile:
             return
 
         # Identify line that contains OBSERVER / AGENCY
-        agencies_header_idx = search_idx_value(
-            self.rinex_data, 'OBSERVER / AGENCY')
+        agencies_header_idx = search_idx_value(self.rinex_data, "OBSERVER / AGENCY")
 
         if not agencies_header_idx:  ##### THIS TEST SHOULD BE IN ALL MOD METHODS !!!!
-            logger.warning('no %s field has been found in %s, unable to mod it', 'OBSERVER / AGENCY', self.filename)
+            logger.warning(
+                "no %s field has been found in %s, unable to mod it",
+                "OBSERVER / AGENCY",
+                self.filename,
+            )
             return
 
         agencies_head = self.rinex_data[agencies_header_idx]
@@ -1389,13 +1471,13 @@ class RinexFile:
 
     def mod_sat_system(self, sat_system):
         """
-        Modify within the RINEX header the *type* of the 
+        Modify within the RINEX header the *type* of the
         ``RINEX VERSION / TYPE`` line
 
 
         Parameters
         ----------
-        sat_system : 
+        sat_system :
             Satellite system.
 
         Returns
@@ -1412,7 +1494,8 @@ class RinexFile:
 
         # Identify line that contains RINEX VERSION / TYPE
         sat_system_header_idx = search_idx_value(
-            self.rinex_data, 'RINEX VERSION / TYPE')
+            self.rinex_data, "RINEX VERSION / TYPE"
+        )
         sat_system_head = self.rinex_data[sat_system_header_idx]
         # Parse line
         rinex_ver_head = sat_system_head[0:9]
@@ -1420,30 +1503,34 @@ class RinexFile:
         # sat_system_head = sat_system_head[40:60]
         label = sat_system_head[60:]
         # Edit line
-        if '+' in sat_system:
-            sat_system = 'MIXED'
-            sat_system_code = 'M'
+        if "+" in sat_system:
+            sat_system = "MIXED"
+            sat_system_code = "M"
         else:
             gnss_codes = {
-                'GPS': 'G',
-                'GLO': 'R',
-                'GAL': 'E',
-                'BDS': 'C',
-                'QZSS': 'J',
-                'IRNSS': 'I',
-                'SBAS': 'S',
-                'MIXED': 'M'
+                "GPS": "G",
+                "GLO": "R",
+                "GAL": "E",
+                "BDS": "C",
+                "QZSS": "J",
+                "IRNSS": "I",
+                "SBAS": "S",
+                "MIXED": "M",
             }
             sat_system_code = gnss_codes.get(sat_system)
 
             if not sat_system_code:
                 sat_system_code = sat_system
-                sat_system = ''
+                sat_system = ""
 
-        sat_system_head = sat_system_code[0] + \
-                          ' : ' + sat_system[:16].ljust(16)
-        new_line = rinex_ver_head + ' ' * 11 + \
-                   type_of_rinex_file_head + sat_system_head + label
+        sat_system_head = sat_system_code[0] + " : " + sat_system[:16].ljust(16)
+        new_line = (
+            rinex_ver_head
+            + " " * 11
+            + type_of_rinex_file_head
+            + sat_system_head
+            + label
+        )
         # Set line
         self.rinex_data[sat_system_header_idx] = new_line
 
@@ -1451,9 +1538,9 @@ class RinexFile:
 
     def mod_time_obs(self, first_obs=None, last_obs=None):
         """
-        Modify within the RINEX header the ``TIME OF FIRST OBS`` 
+        Modify within the RINEX header the ``TIME OF FIRST OBS``
         and ``TIME OF LAST OBS``
-        
+
 
         Parameters
         ----------
@@ -1478,10 +1565,8 @@ class RinexFile:
             last_obs = self.end_date
 
         # Identify line that contains TIME OF FIRST OBS
-        first_obs_idx = search_idx_value(self.rinex_data,
-                                         'TIME OF FIRST OBS')
-        last_obs_idx = search_idx_value(self.rinex_data,
-                                        'TIME OF LAST OBS')
+        first_obs_idx = search_idx_value(self.rinex_data, "TIME OF FIRST OBS")
+        last_obs_idx = search_idx_value(self.rinex_data, "TIME OF LAST OBS")
 
         first_obs_head = self.rinex_data[first_obs_idx]
 
@@ -1489,13 +1574,15 @@ class RinexFile:
         def _time_line_make(time, sys="GPS"):
             timel = "{:6d}{:6d}{:6d}{:6d}{:6d}{:13.7f}     {:3s}        "
 
-            timelout = timel.format(time.year,
-                                    time.month,
-                                    time.day,
-                                    time.hour,
-                                    time.minute,
-                                    time.second + time.microsecond * 10 ** -6,
-                                    sys)
+            timelout = timel.format(
+                time.year,
+                time.month,
+                time.day,
+                time.hour,
+                time.minute,
+                time.second + time.microsecond * 10**-6,
+                sys,
+            )
 
             return timelout
 
@@ -1513,9 +1600,9 @@ class RinexFile:
 
     def mod_sys_obs_types(self, dict_sys_obs):
         """
-        Modify within the RINEX header the systems/observables 
+        Modify within the RINEX header the systems/observables
         of the ``SYS / # / OBS TYPES`` lines
-        
+
         for RINEX 3/4 only
 
         Parameters
@@ -1531,23 +1618,22 @@ class RinexFile:
         if not any([dict_sys_obs]):
             return
 
-        if self.version[0] < '3':
+        if self.version[0] < "3":
             logger.warn("mod_sys_obs_types is only compatible with RINEX3/4")
             return
 
         # Identify line that contains SYS / # / OBS TYPES
-        sys_obs_idx0 = search_idx_value(self.rinex_data,
-                                        'SYS / # / OBS TYPES')
+        sys_obs_idx0 = search_idx_value(self.rinex_data, "SYS / # / OBS TYPES")
 
         sys_obs_idx_fin = sys_obs_idx0
-        while 'SYS / # / OBS TYPES' in self.rinex_data[sys_obs_idx_fin]:
+        while "SYS / # / OBS TYPES" in self.rinex_data[sys_obs_idx_fin]:
             sys_obs_idx_fin += 1
 
         ### parse the dict
         lfmt_stk = []
         for sys, obs in dict_sys_obs.items():
-            ### make slice of 13 elements, i.e. the number of obervable max in 
-            ### one line 
+            ### make slice of 13 elements, i.e. the number of obervable max in
+            ### one line
             obs_slice = slice_list(obs, 13)
 
             for iobss, obss in enumerate(obs_slice):
@@ -1559,18 +1645,20 @@ class RinexFile:
                 else:
                     l = "      " + " {:3s}" * nobss + "   " * (13 - nobss)
                     lfmt = l.format(*obss)
-                lfmt = lfmt + '  SYS / # / OBS TYPES'
+                lfmt = lfmt + "  SYS / # / OBS TYPES"
                 lfmt_stk.append(lfmt)
 
-        self.rinex_data = self.rinex_data[:sys_obs_idx0] + \
-                          lfmt_stk + \
-                          self.rinex_data[sys_obs_idx_fin:]
+        self.rinex_data = (
+            self.rinex_data[:sys_obs_idx0]
+            + lfmt_stk
+            + self.rinex_data[sys_obs_idx_fin:]
+        )
 
         return
 
     def mod_filename_data_freq(self, data_freq_inp=None):
         """
-        Modify within the RINEX filename the data freqency 
+        Modify within the RINEX filename the data freqency
         (``30S``, ``01S``...)
         """
 
@@ -1606,14 +1694,13 @@ class RinexFile:
     #############################################################################
     ### misc methods. change the content of the RINEX header
 
-    def get_as_string(self, encode='utf-8'):
+    def get_as_string(self, encode="utf-8"):
         """
         get the RINEX data (header and body) as a string
         """
-        return '\n'.join(self.rinex_data).encode(encode)
+        return "\n".join(self.rinex_data).encode(encode)
 
-    def write_to_path(self, output_directory, compression='gz',
-                      no_hatanaka=True):
+    def write_to_path(self, output_directory, compression="gz", no_hatanaka=True):
         """
         Will turn rinex_data from list to string, utf-8, then compress as hatanaka
         and zip to the 'compression' format, then write to file. The 'compression' param
@@ -1624,11 +1711,11 @@ class RinexFile:
         ----------
         output_directory : str
             The output directory.
-            
+
         compression : str, optional
-            'gz' (default), 'bz2', 'Z', 
-            'none' (string, compliant with hatanaka module) or 
-            None (NoneType, compliant with the rinex object initialisation). 
+            'gz' (default), 'bz2', 'Z',
+            'none' (string, compliant with hatanaka module) or
+            None (NoneType, compliant with the rinex object initialisation).
             The default is 'gz'.
 
         no_hatanaka : bool, optional
@@ -1649,7 +1736,7 @@ class RinexFile:
         # make the compression compliant with hatanaka module
         # (accept only 'none' as string)
         if not compression:
-            comp_htnk_inp = 'none'
+            comp_htnk_inp = "none"
         else:
             comp_htnk_inp = compression
 
@@ -1681,11 +1768,12 @@ class RinexFile:
                     filename_out = self.filename
 
             # manage low-level compression extension
-            if compression in ('none', None):
+            if compression in ("none", None):
                 outputfile = os.path.join(output_directory, filename_out)
             else:
-                outputfile = os.path.join(output_directory,
-                                          filename_out + '.' + compression)
+                outputfile = os.path.join(
+                    output_directory, filename_out + "." + compression
+                )
         ### the data source is a StringIO
         else:
             outputfile = output_directory
@@ -1697,36 +1785,37 @@ class RinexFile:
         return outputfile
 
     def add_comment(self, comment=None, add_pgm_cmt=False):
-        '''
+        """
         We add the argument comment line at the end of the header
         Append as last per default
 
-        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line 
+        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line
         Then comment is a 2-tuple (program,run_by)
-        '''
+        """
         if self.status:
             return
 
         if not comment:
             return
 
-        end_of_header_idx = search_idx_value(
-            self.rinex_data, 'END OF HEADER') + 1
-        Idx = [i for i, e in enumerate(
-            self.rinex_data[0:end_of_header_idx]) if 'COMMENT' in e]
+        end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
+        Idx = [
+            i
+            for i, e in enumerate(self.rinex_data[0:end_of_header_idx])
+            if "COMMENT" in e
+        ]
 
         if not add_pgm_cmt:
             last_comment_idx = max(Idx)
             new_comment_idx = last_comment_idx + 1
-            new_line = ' {} '.format(comment).center(59, '-') + ' COMMENT'
+            new_line = " {} ".format(comment).center(59, "-") + " COMMENT"
 
         else:
             first_comment_idx = min(Idx)
             new_comment_idx = first_comment_idx
             program, run_by = comment
             date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
-            new_line = '{:20}{:20}{:20}{:}'.format(
-                program, run_by, date, 'COMMENT')
+            new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.rinex_data.insert(new_comment_idx, new_line)
 
@@ -1736,7 +1825,7 @@ class RinexFile:
         """
         Add several comments at the same time.
         The input is then a list of comments (strings)
-        Useful for the full history changes for instance 
+        Useful for the full history changes for instance
 
         """
         for com in comment_list:
@@ -1745,7 +1834,7 @@ class RinexFile:
 
     def clean_history(self):
         """
-        Remove the Full History Comments 
+        Remove the Full History Comments
         """
 
         i_start, i_end = None, None
@@ -1759,7 +1848,9 @@ class RinexFile:
                 break
 
         if i_start and i_end:
-            self.rinex_data = self.rinex_data[0:i_start - 1] + self.rinex_data[i_end + 1:]
+            self.rinex_data = (
+                self.rinex_data[0 : i_start - 1] + self.rinex_data[i_end + 1 :]
+            )
         return
 
     def clean_rinexmod_comments(self, clean_history=True):
@@ -1776,19 +1867,17 @@ class RinexFile:
         self.rinex_data = rinex_data_new
         return
 
-    def clean_gfzrnx_comments(self,
-                              internal_use_only=True,
-                              format_conversion=False):
+    def clean_gfzrnx_comments(self, internal_use_only=True, format_conversion=False):
         """
         clean warning blocks generated by GFZRNX's RINEX 2>3 conversion
 
         Parameters
         ----------
         internal_use_only : bool, optional
-            clean ``"WARNING - FOR INTERNAL USE ONLY"`` block. 
+            clean ``"WARNING - FOR INTERNAL USE ONLY"`` block.
             The default is True.
         format_conversion : bool, optional
-            clean ``WARNING - FORMAT CONVERSION`` block. 
+            clean ``WARNING - FORMAT CONVERSION`` block.
             The default is False.
 
         Returns
@@ -1812,7 +1901,9 @@ class RinexFile:
                     break
 
             if i_start and i_end:
-                rinex_data_out = rinex_data_in[0:i_start - 1] + rinex_data_in[i_end + 1:]
+                rinex_data_out = (
+                    rinex_data_in[0 : i_start - 1] + rinex_data_in[i_end + 1 :]
+                )
             else:
                 logger.warn("no block %s found in header", block_title)
                 rinex_data_out = rinex_data_in
@@ -1820,49 +1911,55 @@ class RinexFile:
             return rinex_data_out
 
         if internal_use_only:
-            self.rinex_data = __gfzrnx_cleaner(self.rinex_data, "WARNING - FOR INTERNAL USE ONLY")
+            self.rinex_data = __gfzrnx_cleaner(
+                self.rinex_data, "WARNING - FOR INTERNAL USE ONLY"
+            )
         if format_conversion:
-            self.rinex_data = __gfzrnx_cleaner(self.rinex_data, "WARNING - FORMAT CONVERSION")
+            self.rinex_data = __gfzrnx_cleaner(
+                self.rinex_data, "WARNING - FORMAT CONVERSION"
+            )
 
         return
 
     def sort_header(self):
-        header_order = ['RINEX VERSION / TYPE',
-                        'PGM / RUN BY / DATE',
-                        'COMMENT',
-                        'MARKER NAME',
-                        'MARKER NUMBER',
-                        'MARKER TYPE',
-                        'OBSERVER / AGENCY',
-                        'REC # / TYPE / VERS',
-                        'ANT # / TYPE',
-                        'APPROX POSITION XYZ',
-                        'ANTENNA: DELTA H/E/N',
-                        'ANTENNA: DELTA X/Y/Z',
-                        'ANTENNA: PHASECENTER',
-                        'ANTENNA: B.SIGHT XYZ',
-                        'ANTENNA: ZERODIR AZI',
-                        'ANTENNA: ZERODIR XYZ',
-                        'CENTER OF MASS: XYZ',
-                        'DOI',
-                        'LICENSE OF USE',
-                        'STATION INFORMATION',
-                        'SYS / # / OBS TYPES',
-                        'SIGNAL STRENGTH UNIT',
-                        'INTERVAL',
-                        'TIME OF FIRST OBS',
-                        'TIME OF LAST OBS',
-                        'RCV CLOCK OFFS APPL',
-                        'SYS / DCBS APPLIED',
-                        'SYS / PCVS APPLIED',
-                        'SYS / SCALE FACTOR',
-                        'SYS / PHASE SHIFT',
-                        'GLONASS SLOT / FRQ #',
-                        'GLONASS COD/PHS/BIS',
-                        'LEAP SECONDS',
-                        '# OF SATELLITES',
-                        'PRN / # OF OBS',
-                        'END OF HEADER']
+        header_order = [
+            "RINEX VERSION / TYPE",
+            "PGM / RUN BY / DATE",
+            "COMMENT",
+            "MARKER NAME",
+            "MARKER NUMBER",
+            "MARKER TYPE",
+            "OBSERVER / AGENCY",
+            "REC # / TYPE / VERS",
+            "ANT # / TYPE",
+            "APPROX POSITION XYZ",
+            "ANTENNA: DELTA H/E/N",
+            "ANTENNA: DELTA X/Y/Z",
+            "ANTENNA: PHASECENTER",
+            "ANTENNA: B.SIGHT XYZ",
+            "ANTENNA: ZERODIR AZI",
+            "ANTENNA: ZERODIR XYZ",
+            "CENTER OF MASS: XYZ",
+            "DOI",
+            "LICENSE OF USE",
+            "STATION INFORMATION",
+            "SYS / # / OBS TYPES",
+            "SIGNAL STRENGTH UNIT",
+            "INTERVAL",
+            "TIME OF FIRST OBS",
+            "TIME OF LAST OBS",
+            "RCV CLOCK OFFS APPL",
+            "SYS / DCBS APPLIED",
+            "SYS / PCVS APPLIED",
+            "SYS / SCALE FACTOR",
+            "SYS / PHASE SHIFT",
+            "GLONASS SLOT / FRQ #",
+            "GLONASS COD/PHS/BIS",
+            "LEAP SECONDS",
+            "# OF SATELLITES",
+            "PRN / # OF OBS",
+            "END OF HEADER",
+        ]
 
         head, body, i_end_head = self.get_header_body(True)
         try:
@@ -1891,12 +1988,12 @@ def search_idx_value(data, field):
 
 
 def slice_list(seq, num):
-    """ make sublist of num elts of a list """
+    """make sublist of num elts of a list"""
     # http://stackoverflow.com/questions/4501636/creating-sublists
-    return [seq[i:i + num] for i in range(0, len(seq), num)]
+    return [seq[i : i + num] for i in range(0, len(seq), num)]
 
 
-def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
+def round_time(dt=None, date_delta=timedelta(minutes=60), to="average"):
     """
     Round a datetime object to a multiple of a timedelta
     dt : datetime.datetime object, default now.
@@ -1912,15 +2009,17 @@ def round_time(dt=None, date_delta=timedelta(minutes=60), to='average'):
     if seconds % round_to == 0 and dt.microsecond == 0:
         rounding = (seconds + round_to / 2) // round_to * round_to
     else:
-        if to == 'up':
+        if to == "up":
             # // is a floor division, not a comment on following line (like in javascript):
-            rounding = (seconds + dt.microsecond / 1000000 + round_to) // round_to * round_to
-        elif to == 'down':
+            rounding = (
+                (seconds + dt.microsecond / 1000000 + round_to) // round_to * round_to
+            )
+        elif to == "down":
             rounding = seconds // round_to * round_to
         else:
             rounding = (seconds + round_to / 2) // round_to * round_to
 
-    return dt + timedelta(0, rounding - seconds, - dt.microsecond)
+    return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
 
 def regex_pattern_rinex_filename():
@@ -1928,10 +2027,13 @@ def regex_pattern_rinex_filename():
     return a dictionnary with the different REGEX patterns to describe a RIENX filename
     """
     pattern_dic = dict()
-    pattern_dic['shortname'] = '....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))'
-    pattern_dic['longname'] = '.{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)'
-    pattern_dic[
-        'longname_gfz'] = '.{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?'
+    pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
+    pattern_dic["longname"] = (
+        ".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
+    )
+    pattern_dic["longname_gfz"] = (
+        ".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?"
+    )
 
     return pattern_dic
 
@@ -1940,17 +2042,17 @@ def dates_from_rinex_filename(rnx_inp):
     """
     determine the start epoch, the end epoch and the period of a RINEX
     file based on its name only.
-    The RINEX is not readed. This function is much faster but less reliable 
+    The RINEX is not readed. This function is much faster but less reliable
     than the RinexFile.start_date and RinexFile.end_date attribute
-    
-    return the start epoch and end epoch as datetime 
+
+    return the start epoch and end epoch as datetime
     and the period as timedelta
     """
     pattern_dic = regex_pattern_rinex_filename()
 
-    pattern_shortname = re.compile(pattern_dic['shortname'])
-    pattern_longname = re.compile(pattern_dic['longname'])
-    pattern_longname_gfz = re.compile(pattern_dic['longname_gfz'])
+    pattern_shortname = re.compile(pattern_dic["shortname"])
+    pattern_longname = re.compile(pattern_dic["longname"])
+    pattern_longname_gfz = re.compile(pattern_dic["longname_gfz"])
 
     rinexname = os.path.basename(rnx_inp)
 
@@ -1979,7 +2081,9 @@ def dates_from_rinex_filename(rnx_inp):
         doy = int(date_str[4:7])
         hh = int(date_str[7:9])
         mm = int(date_str[9:11])
-        dt_srt = datetime(yyyy, 1, 1) + timedelta(days=doy - 1, seconds=hh * 3600 + mm * 60)
+        dt_srt = datetime(yyyy, 1, 1) + timedelta(
+            days=doy - 1, seconds=hh * 3600 + mm * 60
+        )
         period = _period_to_timedelta(period_str)
         dt_end = dt_srt + period
 
@@ -2044,9 +2148,9 @@ def file_period_from_timedelta(start_date, end_date):
     Returns
     -------
     file_period : str
-        file period (01H, 01D, 15M...) 
+        file period (01H, 01D, 15M...)
     session : bool
-        True if the timedelta refers to a session (<01D) 
+        True if the timedelta refers to a session (<01D)
         False otherwise (01D).
 
     """
@@ -2062,7 +2166,7 @@ def file_period_from_timedelta(start_date, end_date):
     ### first, the special case : N *full* hours
     if delta <= timedelta(seconds=86400 - 3600) and hours > 0:  ## = 23h max
         # delta2 is a more precise delta (average)
-        file_period = str(hours).zfill(2) + 'H'
+        file_period = str(hours).zfill(2) + "H"
         session = True
     ### more regular cases : 01H, 01D, nnM, or Unknown
     elif delta <= timedelta(seconds=3600):
@@ -2071,17 +2175,19 @@ def file_period_from_timedelta(start_date, end_date):
         file_period = None
         for m in [5, 10, 15, 20, 30]:
             if (m * 60 - 1) <= delta_sec and delta_sec <= (m * 60 + 1):
-                file_period = str(m).zfill(2) + 'M'
+                file_period = str(m).zfill(2) + "M"
         if not file_period:
             # NB: this test is useless, it is treated by the previous test
-            file_period = '01H'
-    elif timedelta(seconds=3600) < delta and delta <= timedelta(seconds=86400 + 3600):  ##Note1
-        file_period = '01D'
+            file_period = "01H"
+    elif timedelta(seconds=3600) < delta and delta <= timedelta(
+        seconds=86400 + 3600
+    ):  ##Note1
+        file_period = "01D"
         session = False
     else:
-        file_period = '00U'
+        file_period = "00U"
         session = False
-    ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs 
+    ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs
     ###        includes the epoch of the next hour/day
     ###        and then the present delta value reach 25
     ###        it justify also the necessity of the delta2 variable
