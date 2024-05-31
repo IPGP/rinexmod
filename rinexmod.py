@@ -13,10 +13,11 @@ v1 - 2021-02-07 Félix Léger - leger@ipgp.fr
 v2 - 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 """
 
-import rinexmod
-import rinexmod.rinexmod_api as rimo_api
 import argparse
 import textwrap
+
+import rinexmod
+import rinexmod.rinexmod_api as rimo_api
 
 if __name__ == "__main__":
 

@@ -9,21 +9,16 @@ Low-level functions to import GAMIT metadata file as pandas DataFrame
 
 """
 
+import datetime as dt
+import re
+
 import numpy as np
 import pandas as pd
-import re
-import datetime as dt
-from rinexmod import rinexmod_api as rimo_api
+
 from rinexmod import logger as rimo_log
+from rinexmod import rinexmod_api as rimo_api
 
 logger = rimo_log.logger_define("INFO")
-
-
-# p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.ray"
-# p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.sopac"
-# p = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/station.info.mit"
-# p = "/home/psakicki/Downloads/station.info"
-# lfile_inp = "/home/psakicki/SOFTWARE/GAMIT10_7/210705/updates/source/tables/lfile."
 
 
 def read_gamit_apr_lfile(aprfile_inp):
@@ -433,12 +428,12 @@ def doy2dt(year, days, hours=0, minutes=0, seconds=0):
 
         tempsecs = seconds + 60 * minutes + 3600 * hours
         # finalsecs = np.floor(tempsecs)
-        finalmicrosec = int(np.round(tempsecs * 10**6))
+        finalmicrosec = int(np.round(tempsecs * 10 ** 6))
 
         return (
-            dt.datetime(year, 1, 1)
-            + dt.timedelta(days - 1)
-            + dt.timedelta(microseconds=finalmicrosec)
+                dt.datetime(year, 1, 1)
+                + dt.timedelta(days - 1)
+                + dt.timedelta(microseconds=finalmicrosec)
         )
 
     else:

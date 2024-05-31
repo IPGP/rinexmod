@@ -6,10 +6,13 @@ v1 - 2021-02-07 Félix Léger - felixleger@gmail.com
 v2 - 2024-02-26 Pierre Sakic - sakic@ipgp.fr
 """
 
-import os, re
-from datetime import datetime
 import configparser
-import json, copy
+import copy
+import json
+import os
+import re
+from datetime import datetime
+
 import pandas as pd
 
 import rinexmod.gamit_meta as rimo_gmm

@@ -9,18 +9,19 @@ Created on Wed Mar  8 12:14:54 2023
 """
 
 import argparse
+import multiprocessing as mp
 import os
 import re
-from datetime import datetime
-import hatanaka
 import subprocess
-import multiprocessing as mp
+from datetime import datetime
+
+import hatanaka
 import pandas as pd
 
-import rinexmod.metadata as rimo_mda
-import rinexmod.rinexfile as rimo_rnx
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
+import rinexmod.metadata as rimo_mda
+import rinexmod.rinexfile as rimo_rnx
 
 logger = rimo_log.logger_define("INFO")
 

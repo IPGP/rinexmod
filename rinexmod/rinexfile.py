@@ -7,13 +7,14 @@ Class
 
 import os
 import re
-import hatanaka
-from io import StringIO
-import numpy as np
-from pathlib import Path
-from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
 import string
+from datetime import datetime, timedelta
+from io import StringIO
+from pathlib import Path
+
+import hatanaka
+import matplotlib.pyplot as plt
+import numpy as np
 
 import rinexmod.logger as rimo_log
 
