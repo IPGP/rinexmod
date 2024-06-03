@@ -356,7 +356,7 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
 
     mm_dic = {}
 
-    mm_dic["Four Character ID"] = site
+    mm_dic["ID"] = site
     mm_dic["IERS DOMES Number"] = apr_df_site["domes"]
 
     mm_dic["operator"] = "OPERATOR"

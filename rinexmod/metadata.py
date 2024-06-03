@@ -453,9 +453,9 @@ class MetaData:
         if (
             "Nine Character ID" in self.raw_content["1."].keys()
         ):  # now consistent with [IGSMAIL-8458]
-            mm_dic["Character ID"] = self.raw_content["1."]["Nine Character ID"]
+            mm_dic["ID"] = self.raw_content["1."]["Nine Character ID"]
         else:
-            mm_dic["Character ID"] = self.raw_content["1."]["Four Character ID"]
+            mm_dic["ID"] = self.raw_content["1."]["Four Character ID"]
 
         mm_dic["IERS DOMES Number"] = self.raw_content["1."]["IERS DOMES Number"]
 
@@ -615,9 +615,9 @@ class MetaData:
 
         # We construct the TEQC args line
         teqcargs = [
-            "-O.mo[nument] '{}'".format(self.raw_content["1."]["Character ID"][:4]),
-            "-M.mo[nument] '{}'".format(self.raw_content["1."]["Character ID"][:4]),
-            "-O.mn '{}'".format(self.raw_content["1."]["Character ID"][:4]),
+            "-O.mo[nument] '{}'".format(self.raw_content["1."]["ID"][:4]),
+            "-M.mo[nument] '{}'".format(self.raw_content["1."]["ID"][:4]),
+            "-O.mn '{}'".format(self.raw_content["1."]["ID"][:4]),
             "-O.px[WGS84xyz,m] {} {} {}".format(
                 self.raw_content["2."]["X coordinate (m)"],
                 self.raw_content["2."]["Y coordinate (m)"],
@@ -658,7 +658,7 @@ class MetaData:
         if not instrumentation:
             return None, ignored
 
-        fourchar_id = self.misc_meta["Character ID"][:4]
+        fourchar_id = self.misc_meta["ID"][:4]
         domes_id = self.misc_meta["IERS DOMES Number"]
 
         observable_type = instrumentation["receiver"]["Satellite System"]

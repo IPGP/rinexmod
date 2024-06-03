@@ -83,7 +83,7 @@ def git_get_revision_short_hash():
         logger.warn("unable to get the git commit version")
         githash = "xxxxxxx"
 
-    #### 2msec to run this fuction
+    ####NB: 2msec to run this fuction
 
     return githash
 
@@ -377,12 +377,14 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
 
     logger.debug("Searching corresponding metadata for site: " + rnx_4char)
 
+    metadataobj = []
     if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
         if len(metadata_obj_list) == 1:
             if not force:
                 logger.error(
                     "{:110s} - {}".format(
-                        "33 - RINEX name's site does not correspond to provided metadata - use -f option to force",
+                        "33 - RINEX name's site does not correspond to provided metadata -" 
+                        "use -f option to force",
                         err_label,
                     )
                 )
@@ -390,7 +392,8 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
             else:
                 logger.warning(
                     "{:110s} - {}".format(
-                        "34 - RINEX name's site does not correspond to provided metadata, forced processing anyway",
+                        "34 - RINEX name's site does not correspond to provided metadata," 
+                        "forced processing anyway",
                         err_label,
                     )
                 )
@@ -417,7 +420,7 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    metadata_4char = metadataobj.misc_meta["Character ID"].lower()[:4]
+    metadata_4char = metadataobj.misc_meta["ID"].lower()[:4]
 
     if rnx_4char != metadata_4char:
         logger.warning(
