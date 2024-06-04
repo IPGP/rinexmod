@@ -79,7 +79,7 @@ def git_get_revision_short_hash():
     cmd = ["git", "--git-dir", script_path + "/.git", "rev-parse", "--short", "HEAD"]
     try:
         githash = subprocess.check_output(cmd).decode("ascii").strip()[:7]
-    except:
+    except Exception:
         logger.warn("unable to get the git commit version")
         githash = "xxxxxxx"
 
