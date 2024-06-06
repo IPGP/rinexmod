@@ -239,7 +239,7 @@ optional arguments:
                         parallelization)
   -d, --debug           Debug mode, stops if something goes wrong (default: False)
 
-RinexMod 3.0.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS -
+RinexMod 3.1.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS -
 https://github.com/IPGP/rinexmod
 ```
 

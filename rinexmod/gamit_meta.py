@@ -58,7 +58,11 @@ def read_gamit_apr_lfile(aprfile_inp):
         f = l[1:].split()
 
         site = l[1:5]
-        site_full = f[0]
+        try:
+            site_full = f[0]
+        except Exception as e:
+            logger.error("unable to read the GAMIT's lfile")
+            raise e
 
         x = float(f[1])
         y = float(f[2])
@@ -223,25 +227,30 @@ def read_gamit_station_info(station_info_inp):
     )
 
     df.columns = col
-
+    
     ##### clean df
     ### remove empty rows
-    bool_empty_rows = df["site"].apply(len) == 1
+    try:
+        bool_empty_rows = df["site"].apply(len) == 1
+    except Exception as e:
+        logger.error("unable to read the GAMIT's station.info")
+        raise e
+        
     df = df[np.logical_not(bool_empty_rows)]
     ### do a second NaN cleaning, but the previous should have cleaned everything
     df.dropna(inplace=True, how="all")
     df.reset_index(inplace=True, drop=True)
 
     ##### create datetime start/end columns
-    df["start doy"].replace(999, 365, inplace=True)
-    df["start hh"].replace(99, 00, inplace=True)
-    df["start mm"].replace(99, 00, inplace=True)
-    df["start ss"].replace(99, 00, inplace=True)
+    df["start doy"] = df["start doy"].replace(999, 365)
+    df["start hh"] = df["start hh"].replace(99, 00)
+    df["start mm"] = df["start mm"].replace(99, 00)
+    df["start ss"] = df["start ss"].replace(99, 00)
 
-    df["stop doy"].replace(999, 365, inplace=True)
-    df["stop hh"].replace(99, 00, inplace=True)
-    df["stop mm"].replace(99, 00, inplace=True)
-    df["stop ss"].replace(99, 00, inplace=True)
+    df["stop doy"] = df["stop doy"].replace(999, 365)
+    df["stop hh"] = df["stop hh"].replace(99, 00)
+    df["stop mm"] = df["stop mm"].replace(99, 00)
+    df["stop ss"] = df["stop ss"].replace(99, 00)
 
     df_start = doy2dt(
         df["start year"],
