@@ -949,7 +949,7 @@ def rinexmod(
     # in the 'sitelog' variable as a list of MetaData objects
     
     if not sitelog and (not station_info or not lfile_apriori ):
-        logger.error("No sitelog nor sitation.info/lfile couple provided. Per default rec. header will remain & no new metdata will be written !")
+        logger.error("No sitelog nor sitation.info/lfile **couple** provided. Per default rec. header will remain & no new metdata will be written!")
     
     if (station_info and lfile_apriori) and not sitelog:
         metadata_obj_list = gamit2metadata_objs(
