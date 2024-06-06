@@ -947,6 +947,10 @@ def rinexmod(
     # Indeed, the GAMIT files might have been read outside this function
     # (most likely actually). The already read GAMIT files are then stored
     # in the 'sitelog' variable as a list of MetaData objects
+    
+    if not sitelog and (not station_info or not lfile_apriori ):
+        logger.error("No sitelog nor sitation.info/lfile couple provided. Per default rec. header will remain & no new metdata will be written !")
+    
     if (station_info and lfile_apriori) and not sitelog:
         metadata_obj_list = gamit2metadata_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
