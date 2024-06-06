@@ -1809,7 +1809,7 @@ class RinexFile:
         if not add_pgm_cmt:
             last_comment_idx = max(Idx)
             new_comment_idx = last_comment_idx + 1
-            new_line = " {} ".format(comment[:60]).center(59, "-") + " COMMENT"
+            new_line = " {} ".format(comment).center(59, "-")[:60] + " COMMENT"
 
         else:
             first_comment_idx = min(Idx)
