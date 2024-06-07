@@ -939,6 +939,12 @@ def rinexmod(
         rnxobj.set_site(marker)
 
     ### load the metadata from sitelog or GAMIT files if any
+
+    if not sitelog and (not station_info or not lfile_apriori):
+        logger.error(
+            "No metadata provided. (sitelog or station.info/lfile **couple**)." 
+            "RINEX header with default rec. values will remain!")
+
     ## sitelogs
     if sitelog:
         metadata_obj_list = metadata_input_manage(sitelog, force=force_sitelog)
@@ -947,10 +953,11 @@ def rinexmod(
     # Indeed, the GAMIT files might have been read outside this function
     # (most likely actually). The already read GAMIT files are then stored
     # in the 'sitelog' variable as a list of MetaData objects
-    
-    if not sitelog and (not station_info or not lfile_apriori ):
-        logger.error("No sitelog nor sitation.info/lfile **couple** provided. Per default rec. header will remain & no new metdata will be written!")
-    
+
+    if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
+        logger.critical("station_info and lfile_apriori must be provided together")
+        raise RinexModInputArgsError
+
     if (station_info and lfile_apriori) and not sitelog:
         metadata_obj_list = gamit2metadata_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
@@ -1197,7 +1204,8 @@ def rinexmod_cli(
         and not lfile_apriori
     ):
         logger.critical(
-            "No action asked, provide at least one of the following args : --sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori"
+            "No action asked, provide at least one of the following args:" 
+            "--sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori"
         )
         raise RinexModInputArgsError
 
