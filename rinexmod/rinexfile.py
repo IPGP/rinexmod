@@ -598,6 +598,10 @@ class RinexFile:
             )
             year_prefix = "20"  # Prefix of year for date formatting
             ### !!!!!!!!! before 2000 must be implemented !!!!!!
+        else:
+            logger.warning("unable to find right RIENX version")
+            date_pattern = None
+            year_prefix = None
 
         return date_pattern, year_prefix
 
@@ -622,6 +626,7 @@ class RinexFile:
                 datause = rnxobj.rinex_data
 
             # Searching the last one of the file
+            m = None
             for line in datause:
                 m = re.search(date_pattern, line)
                 if m:
@@ -668,6 +673,7 @@ class RinexFile:
             return None, None
 
         def _find_meta_label(meta_label_in):
+            line = None
             line_found = None
             for line in self.rinex_data:
                 if re.search(meta_label_in, line):
@@ -722,15 +728,15 @@ class RinexFile:
         if self.status:
             return None, None
 
-        Samples_stack = self.get_dates_all()
+        samples_stack = self.get_dates_all()
         date_pattern, year_prefix = self._get_date_patterns()
 
         # If less than 2 samples, can't get a sample rate
-        if len(Samples_stack) < 2:
+        if len(samples_stack) < 2:
             self.status = "05 - Less than two epochs in the file"
             logger.error(
                 "get_sample_rate: less than 2 samples found, can't get a sample rate %s",
-                Samples_stack,
+                samples_stack,
             )
             return None, None
 
@@ -755,37 +761,37 @@ class RinexFile:
             return date
 
         # Format dates to datetime
-        Samples_stack = [_date_conv(d) for d in Samples_stack]
-        Samples_rate_diff = np.diff(Samples_stack)  # Getting intervals
+        samples_stack = [_date_conv(d) for d in samples_stack]
+        samples_rate_diff = np.diff(np.array(samples_stack))  # Getting intervals
         # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
-        Samples_rate_diff = [
+        samples_rate_diff = [
             diff.total_seconds()
-            for diff in Samples_rate_diff
+            for diff in samples_rate_diff
             if diff != timedelta(seconds=0)
         ]
 
         # If less than one interval after removing 0 values, can't get a sample rate
-        if len(Samples_rate_diff) < 1:
+        if len(samples_rate_diff) < 1:
             self.status = "05 - Less than two epochs in the file"
             logger.error(
                 "get_sample_rate: less than one interval after removing 0 values %s",
-                Samples_rate_diff,
+                samples_rate_diff,
             )
             return None, None
 
         # If less than 2 intervals, can't compare intervals
-        if len(Samples_rate_diff) < 2:
+        if len(samples_rate_diff) < 2:
             return "00U", 0.0
 
         # Most frequent
-        sample_rate_num = max(set(Samples_rate_diff), key=Samples_rate_diff.count)
+        sample_rate_num = max(set(samples_rate_diff), key=samples_rate_diff.count)
 
         # Counting the intervals that are not equal to the most frequent
         num_bad_sp = len(
-            [diff for diff in Samples_rate_diff if diff != sample_rate_num]
+            [diff for diff in samples_rate_diff if diff != sample_rate_num]
         )
 
-        non_nominal_interval_percent = num_bad_sp / len(Samples_rate_diff)
+        non_nominal_interval_percent = num_bad_sp / len(samples_rate_diff)
 
         if plot:
             print(
@@ -794,7 +800,7 @@ class RinexFile:
                     str(non_nominal_interval_percent * 100) + " %",
                 )
             )
-            plt.plot(Samples_rate_diff)
+            plt.plot(samples_rate_diff)
             plt.show()
 
         non_nominal_trigger = 0.45
@@ -806,7 +812,7 @@ class RinexFile:
                 "get_sample_rate: non nominal sample rate >%d%%: %d%% (# epochs: %d)",
                 non_nominal_trigger * 100,
                 non_nominal_interval_percent * 100,
-                len(Samples_stack),
+                len(samples_stack),
             )
             return "00U", 0.0
 
@@ -1071,16 +1077,16 @@ class RinexFile:
         dict_sys_nobs = dict()
 
         for il, l in enumerate(Lines_sys):
-            Sysobs = l.split()
-            sys = Sysobs[0]
-            dict_sys_obs[sys] = Sysobs[2:]
-            dict_sys_nobs[sys] = int(Sysobs[1])
+            sysobs = l.split()
+            sys = sysobs[0]
+            dict_sys_obs[sys] = sysobs[2:]
+            dict_sys_nobs[sys] = int(sysobs[1])
             ## adds the LLI and SSI indicators
-            if len(Sysobs[2:]) != int(Sysobs[1]):
+            if len(sysobs[2:]) != int(sysobs[1]):
                 logger.warn(
                     "difference between theorectical (%d) and actual (%d) obs nbr for sys (%s)",
-                    len(Sysobs[2:]),
-                    int(Sysobs[1]),
+                    len(sysobs[2:]),
+                    int(sysobs[1]),
                     sys,
                 )
 
@@ -1369,13 +1375,13 @@ class RinexFile:
 
     def mod_antenna_delta(self, H=None, E=None, N=None):
         """
-        Modify within the RINEX header the E N U antenna's excentricity
+        Modify within the RINEX header the H E N antenna's excentricity
         (``ANTENNA: DELTA H/E/N`` line).
 
         Parameters
         ----------
-        H,N,U : float, optional
-            H N U position. The default is None.
+        H, E, N: float, optional
+            H E N position. The default is None.
 
         Returns
         -------

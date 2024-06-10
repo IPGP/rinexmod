@@ -133,7 +133,7 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
 
     Parameters
     ----------
-    station_info_inp : str
+    station_info_inp : str or pd.DataFrame
         Path of a GAMIT station.info file to obtain
         GNSS site metadata information.
     lfile_inp : TYPE
@@ -717,6 +717,7 @@ def rinexmod(
     station_info=None,
     lfile_apriori=None,
     force_fake_coords=False,
+    remove=False,
 ):
     """
     Parameters
@@ -835,6 +836,9 @@ def rinexmod(
     force_fake_coords: bool, optional
         When using GAMIT station.info metadata without apriori coordinates
         in the L-File, gives fake coordinates at (0°,0°) to the site
+    remove: bool, optional
+        Remove input RINEX file if the output RINEX is correctly written
+        The default is False.
 
     Raises
     ------
@@ -878,19 +882,24 @@ def rinexmod(
         myoutputfolder = os.path.join(outputfolder, relpath)
         if not os.path.isdir(myoutputfolder):
             os.makedirs(myoutputfolder)
+    elif outputfolder == "IDEM":
+        myoutputfolder = os.path.dirname(rinexfile)
     else:
         myoutputfolder = outputfolder
 
     if not modif_kw:
         modif_kw = dict()
 
-    if os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder:
+    if os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder and not outputfolder == "IDEM":
         logger.error(
             "{:110s} - {}".format(
                 "30 - Input and output folders are the same!", rinexfile
             )
         )
         raise RinexFileError
+
+    if outputfolder == "IDEM":
+        logger.warning("The output folder is forced as the same one as the input one")
 
     if not os.path.exists(outputfolder):
         logger.warning("the output folder does not exists")
@@ -1123,15 +1132,19 @@ def rinexmod(
         outputfile = None
         raise e
 
+    if remove and os.path.isfile(outputfile):
+        logger.info("Input file removed: %s", rinexfile)
+        os.remove(rinexfile)
+
     ###########################################################################
-    ########## Construct return dict by adding key if doesn't exists
-    ########## and appending file to corresponding list
+    # Construct return dict by adding key if doesn't exists
+    # and appending file to corresponding list
     if type(return_lists) is dict:
         return_lists = _return_lists_maker(rnxobj, return_lists)
         final_return = return_lists
     else:
         ###########################################################################
-        ###### if no return dict  given, return simply the path of the outputfile
+        # if no return dict given, return simply the path of the outputfile
         final_return = outputfile
 
     return final_return
@@ -1168,6 +1181,7 @@ def rinexmod_cli(
     station_info=None,
     lfile_apriori=None,
     force_fake_coords=False,
+    remove=False
 ):
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -1335,12 +1349,12 @@ def rinexmod_cli(
             "station_info": station_info,
             "lfile_apriori": lfile_apriori,
             "force_fake_coords": force_fake_coords,
+            "remove": remove
         }
 
         rinexmod_kwargs_list.append(rnxmod_kwargs)
 
     global rinexmod_mp_wrapper
-
     def rinexmod_mp_wrapper(rnxmod_kwargs_inp):
         try:
             return_lists_out = rinexmod(**rnxmod_kwargs_inp)
@@ -1358,9 +1372,9 @@ def rinexmod_cli(
     # number of parallel processing
     if multi_process > 1:
         logger.info("multiprocessing: %d cores used", multi_process)
-    Pool = mp.Pool(processes=multi_process)
+    pool = mp.Pool(processes=multi_process)
     results_raw = [
-        Pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list
+        pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list
     ]
     results = [e.get() for e in results_raw]
 
@@ -1401,17 +1415,12 @@ class ParseKwargs(argparse.Action):
 
             except Exception as e:
 
-                def _print_kw_tips(values):
+                def _print_kw_tips(values_inp):
                     logger.critical("********************************************")
                     logger.critical("TIP1: be sure you have respected the syntax:")
                     logger.critical("      -k keyword1='value' keyword2='value'  ")
-                    # logger.critical("TIP2: don't use -k/--modif_kw as the final  ")
-                    # logger.critical("      option, it will enroll rinexinput &   ")
-                    # logger.critical("      outputfolder arguments                ")
-                    # logger.critical("      use -e/--end_kw to end -k/--modif_kw  ")
-                    # logger.critical("      sequence                              ")
                     logger.critical("********************************************")
-                    logger.critical(values)
+                    logger.critical(values_inp)
                     return None
 
                 _print_kw_tips(values)
