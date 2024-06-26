@@ -882,7 +882,7 @@ def rinexmod(
         myoutputfolder = os.path.join(outputfolder, relpath)
         if not os.path.isdir(myoutputfolder):
             os.makedirs(myoutputfolder)
-    elif outputfolder == "IDEM":
+    elif os.path.basename(outputfolder) == "INPUT_FOLDER":
         myoutputfolder = os.path.dirname(rinexfile)
     else:
         myoutputfolder = outputfolder
@@ -957,8 +957,9 @@ def rinexmod(
     # (most likely actually). The already read GAMIT files are then stored
     # in the 'sitelog' variable as a list of MetaData objects
     
-    if not sitelog and (not station_info or not lfile_apriori ):
-        logger.error("No sitelog nor sitation.info/lfile **couple** provided. Per default rec. header will remain & no new metdata will be written!")
+    if not sitelog and (not station_info or not lfile_apriori):
+        logger.warning("No sitelog nor station.info+lfile provided. Per default rec.'s header will remain & no new"
+                       "metdata will be written!")
     
     if (station_info and lfile_apriori) and not sitelog:
         metadata_obj_list = gamit2metadata_objs(
@@ -1364,7 +1365,7 @@ def rinexmod_cli(
                 raise e
             else:
                 logger.error(
-                    "%s raised, RINEX is skiped: %s",
+                    "%s raised, RINEX is skiped: %s. Use -d/--debug option for more details",
                     type(e).__name__,
                     rnxmod_kwargs_inp["rinexfile"],
                 )
