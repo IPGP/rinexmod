@@ -75,7 +75,7 @@ class RinexFile:
         # it is accessible wit get_site()
         self._site = self.get_site_from_filename(lower_case=False, only_4char=False)
 
-        self.version = self.get_version()
+        self.version, self.version_float = self.get_version()
         self.start_date, self.end_date = self.get_dates()
         self.sample_rate_string, self.sample_rate_numeric = self.get_sample_rate(
             plot=False
@@ -428,20 +428,27 @@ class RinexFile:
                 rinex_data = None
                 status = "04 - Invalid Compressed RINEX file"
 
-            bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
-            bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
+            if status:
+                logger.error(status)
+
+            if rinex_data:
+                bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
+                bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
+            else:
+                bool_l1_obs = False
+                bool_l1_crx = False
 
             if not force_rnx_load and not (bool_l1_obs or bool_l1_crx):
-                logger.warning(
+                logger.error(
                     "File's 1st line does not match an Observation RINEX: "
                     + os.path.join(self.path)
                 )
-                logger.warning("try to force the loading with force_rnx_load = True")
+                logger.error("try to force the loading with force_rnx_load = True")
                 rinex_data = None
                 status = "02 - Not an observation RINEX file"
 
         if status:
-            logger.warning(status)
+            logger.error(status)
 
         return rinex_data, status
 
@@ -551,9 +558,11 @@ class RinexFile:
         version_header_idx = search_idx_value(self.rinex_data, "RINEX VERSION / TYPE")
         version_header = self.rinex_data[version_header_idx]
         # Parse line
-        rinex_ver_head = version_header[0:9].strip()
+        rinex_ver_head_str = str(version_header[0:9].strip())
+        rinex_ver_head_flt = float(re.search(r"[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)", rinex_ver_head_str)[0])
+        # must fit a regex pattern of a float, because nasty hidder characters can be present
 
-        return rinex_ver_head
+        return rinex_ver_head_str, rinex_ver_head_flt
 
     def get_data_source(self):
         """
@@ -583,7 +592,7 @@ class RinexFile:
             for RINEX2, the year prefix.
         """
         # Date lines pattern
-        if self.version[0] >= "3":
+        if self.version_float >= 3.:
             # Pattern of an observation line containing a date - RINEX 3
             # date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
             date_pattern = re.compile(
@@ -591,7 +600,7 @@ class RinexFile:
             )
             year_prefix = ""  # Prefix of year for date formatting
 
-        elif self.version[0] == "2":
+        elif self.version_float < 3:
             # Pattern of an observation line containing a date - RINEX 2
             date_pattern = re.compile(
                 " (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})"
@@ -599,7 +608,7 @@ class RinexFile:
             year_prefix = "20"  # Prefix of year for date formatting
             ### !!!!!!!!! before 2000 must be implemented !!!!!!
         else:
-            logger.warning("unable to find right RIENX version")
+            logger.warning("unable to find right RINEX version")
             date_pattern = None
             year_prefix = None
 
@@ -701,15 +710,15 @@ class RinexFile:
         if self.status:
             return None, None
 
-        Samples_stack = []
+        samples_stack = []
 
         date_pattern, _ = self._get_date_patterns()
 
         for line in self.rinex_data:  # We get all the epochs dates
             if re.search(date_pattern, line):
-                Samples_stack.append(re.search(date_pattern, line))
+                samples_stack.append(re.search(date_pattern, line))
 
-        return Samples_stack
+        return samples_stack
 
     def get_sample_rate(self, plot=False):
         """
@@ -735,7 +744,7 @@ class RinexFile:
         if len(samples_stack) < 2:
             self.status = "05 - Less than two epochs in the file"
             logger.error(
-                "get_sample_rate: less than 2 samples found, can't get a sample rate %s",
+                "less than 2 samples found, can't get a sample rate %s",
                 samples_stack,
             )
             return None, None
@@ -774,7 +783,7 @@ class RinexFile:
         if len(samples_rate_diff) < 1:
             self.status = "05 - Less than two epochs in the file"
             logger.error(
-                "get_sample_rate: less than one interval after removing 0 values %s",
+                "less than one interval after removing 0 values %s",
                 samples_rate_diff,
             )
             return None, None
@@ -809,7 +818,7 @@ class RinexFile:
         ):  # Don't set sample rate to files
             # That have more that 45% of non nominal sample rate
             logger.error(
-                "get_sample_rate: non nominal sample rate >%d%%: %d%% (# epochs: %d)",
+                "non nominal sample rate >%d%%: %d%% (# epochs: %d)",
                 non_nominal_trigger * 100,
                 non_nominal_interval_percent * 100,
                 len(samples_stack),
@@ -1049,7 +1058,7 @@ class RinexFile:
         if self.status:
             return
 
-        if self.version[0] < "3":
+        if self.version_float < 3:
             logger.warn("get_sys_obs_types is only compatible with RINEX3/4")
             return
 
@@ -1625,7 +1634,7 @@ class RinexFile:
         if not any([dict_sys_obs]):
             return
 
-        if self.version[0] < "3":
+        if self.version_float < 3:
             logger.warn("mod_sys_obs_types is only compatible with RINEX3/4")
             return
 
