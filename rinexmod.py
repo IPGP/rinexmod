@@ -49,7 +49,7 @@ if __name__ == "__main__":
         type=str,
         required=True,
         nargs="+",
-        help="Input RINEX file(s). It can be"
+        help="Input RINEX file(s). It can be: "
         "1) a list file of the RINEX paths to process (generated with find or ls command for instance) "
         "2) several RINEX files paths "
         "3) a single RINEX file path (see -a/--alone for a single input file)",

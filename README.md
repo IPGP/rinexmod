@@ -11,7 +11,7 @@ It is available under the GNU license on the following GitHub repository: https:
 v2 - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
 v1 - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-Last version: v3.0.0 - 2024-03-15
+Last version: v3.2.0 - 2024-06-26
 
 ## Tools overview
 
