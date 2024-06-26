@@ -1,8 +1,8 @@
-#  RinexMod
+#  rinexmod
 
 <img src="./logo_rinexmod.png" width="300">
 
-RinexMod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
+_rinexmod_ is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
 It supports Hatanaka-compressed and non-compressed files, RINEX versions 2 and 3/4, and short and long naming conventions.  
 It is developed in Python 3, and can be run from the command line or directly in API mode by calling a python function.  
 The required input metadata can come from a sitelog file, or be manually entered as arguments to the command line or the called function.  
@@ -11,7 +11,7 @@ It is available under the GNU license on the following GitHub repository: https:
 v2 - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
 v1 - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-Last version: v3.1.0 - 2024-06-05
+Last version: v3.2.0 - 2024-06-26
 
 ## Tools overview
 
@@ -58,7 +58,7 @@ You need _pandas_ to for internal low-level data management:
 `pip install pandas`
 
 
-## RinexMod in command lines interface
+## _rinexmod_ in command lines interface
 
 ### rinexmod.py
 
@@ -129,7 +129,7 @@ Three ways of passing parameters to modify headers are possible: `sitelog`, `mod
                         option)
 `--modification_kw` values will orverride the ones obtained with `--sitelog` and `--station_info`/`--lfile_apriori`.
 
-RinexMod will add two comment lines, one indicating the source of the modification
+_rinexmod_ will add two comment lines, one indicating the source of the modification
 (sitelog or arguments) and the other the modification timestamp.
 
 
@@ -252,9 +252,9 @@ https://github.com/IPGP/rinexmod
 ./rinexmod.py (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 ```
 
-## RinexMod in API mode
+## _rinexmod_ in API mode
 
-RinexMod can be launched directly as a Python function:
+_rinexmod_ can be launched directly as a Python function:
 
 ```
 import rinexmod.rinexmod_api as rimo_api
@@ -432,9 +432,9 @@ EXAMPLE:
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 ```
 
-## RinexMod error messages
+## _rinexmod_ error messages
 
-RinexMod will prompt errors when arguments are wrong. Apart from this, it will prompt and save to file errors and waring
+_rinexmod_ will prompt errors when arguments are wrong. Apart from this, it will prompt and save to file errors and waring
 occurring on specific files from the rinex list. Here are the error codes :
 
 `01 - The specified file does not exists`

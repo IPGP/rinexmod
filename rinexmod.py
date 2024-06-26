@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # Parsing Args
     parser = argparse.ArgumentParser(
         description="RinexMod takes RINEX files (v2 or v3/4, compressed or not), "
-                    "rename them and modifiy their headers, and write them back to a destination directory",
+        "rename them and modifiy their headers, and write them back to a destination directory",
         formatter_class=SmartFormatter,
         epilog=textwrap.dedent(
             "RinexMod "
@@ -49,10 +49,10 @@ if __name__ == "__main__":
         type=str,
         required=True,
         nargs="+",
-        help="Input RINEX file(s). It can be"
-             "1) a list file of the RINEX paths to process (generated with find or ls command for instance) "
-             "2) several RINEX files paths "
-             "3) a single RINEX file path (see -a/--alone for a single input file)",
+        help="Input RINEX file(s). It can be: "
+        "1) a list file of the RINEX paths to process (generated with find or ls command for instance) "
+        "2) several RINEX files paths "
+        "3) a single RINEX file path (see -a/--alone for a single input file)",
     )
     required.add_argument(
         "-o",
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         "-s",
         "--sitelog",
         help="Get the RINEX header values from file's site's sitelog."
-             " Provide a single sitelog path or a folder contaning sitelogs.",
+        " Provide a single sitelog path or a folder contaning sitelogs.",
         type=str,
         default="",
     )
@@ -73,14 +73,14 @@ if __name__ == "__main__":
         "-k",
         "--modif_kw",
         help="Modification keywords for RINEX's header fields and/or filename."
-             "Format: -k keyword_1='value1' keyword2='value2'."
-             "Will override the information from the sitelog."
-             "Acceptable keywords: comment, marker_name, marker_number, station (legacy alias for marker_name), "
-             "receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type, "
-             "antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta,"
-             "antenna_E_delta, antenna_N_delta, operator, agency, sat_system, "
-             "observables (legacy alias for sat_system), interval," 
-             "filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)",
+        "Format: -k keyword_1='value1' keyword2='value2'."
+        "Will override the information from the sitelog."
+        "Acceptable keywords: comment, marker_name, marker_number, station (legacy alias for marker_name), "
+        "receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type, "
+        "antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta,"
+        "antenna_E_delta, antenna_N_delta, operator, agency, sat_system, "
+        "observables (legacy alias for sat_system), interval,"
+        "filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)",
         nargs="+",
         metavar="KEY=VALUE",
         action=rimo_api.ParseKwargs,
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         "-m",
         "--marker",
         help="A four or nine-character site code that will be used to rename input files."
-             "(apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)",
+        "(apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)",
         type=str,
         default="",
     )
@@ -98,9 +98,9 @@ if __name__ == "__main__":
         "-co",
         "--country",
         help="A three-character string corresponding to the ISO 3166 Country code "
-             "that will be used to rename input files. "
-             "It overrides other country code sources (sitelog, --marker...). "
-             "List of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes",
+        "that will be used to rename input files. "
+        "It overrides other country code sources (sitelog, --marker...). "
+        "List of ISO country codes: https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes",
         type=str,
         default="",
     )
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         "-lfi",
         "--lfile_apriori",
         help="Path of a GAMIT apriori apr/L-File to obtain GNSS site position "
-             "and DOMES information (needs also -sti option)",
+        "and DOMES information (needs also -sti option)",
         type=str,
         default="",
     )
@@ -130,8 +130,8 @@ if __name__ == "__main__":
         "-r",
         "--relative",
         help="Reconstruct files relative subfolders."
-             "You have to indicate the common parent folder, "
-             "that will be replaced with the output folder",
+        "You have to indicate the common parent folder, "
+        "that will be replaced with the output folder",
         type=str,
         default=0,
     )
@@ -147,7 +147,7 @@ if __name__ == "__main__":
         "--compression",
         type=str,
         help="Set low-level RINEX file compression "
-             "(acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')",
+        "(acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')",
         default="",
     )
     optional.add_argument(
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         "-fs",
         "--force_sitelog",
         help="If a single sitelog is provided, force sitelog-based header values when RINEX's header and sitelog site"
-             " name do not correspond. \n If several sitelogs are provided, skip badly-formated sitelogs.",
+        " name do not correspond. \n If several sitelogs are provided, skip badly-formated sitelogs.",
         action="store_true",
         default=False,
     )
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         "-fc",
         "--force_fake_coords",
         help="When using GAMIT station.info metadata without apriori coordinates in the L-File, "
-             "gives fake coordinates at (0°,0°) to the site",
+        "gives fake coordinates at (0°,0°) to the site",
         action="store_true",
         default=False,
     )
@@ -229,8 +229,8 @@ if __name__ == "__main__":
         "-tol",
         "--tolerant_file_period",
         help="the RINEX file period is tolerant and corresponds to the actual data content,"
-             "but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), "
-             "being compatible with the IGS conventions",
+        "but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), "
+        "being compatible with the IGS conventions",
         action="store_true",
         default=False,
     )
@@ -245,6 +245,14 @@ if __name__ == "__main__":
         "-d",
         "--debug",
         help="Debug mode, stops if something goes wrong (default: %(default)s)",
+        action="store_true",
+        default=False,
+    )
+
+    optional.add_argument(
+        "-rm",
+        "--remove",
+        help="Remove input RINEX file if the output RINEX is correctly written (default: %(default)s)",
         action="store_true",
         default=False,
     )
@@ -278,4 +286,5 @@ if __name__ == "__main__":
         station_info=args.station_info,
         lfile_apriori=args.lfile_apriori,
         force_fake_coords=args.force_fake_coords,
+        remove=args.remove
     )
