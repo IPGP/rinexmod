@@ -75,7 +75,7 @@ class RinexFile:
         # it is accessible wit get_site()
         self._site = self.get_site_from_filename(lower_case=False, only_4char=False)
 
-        self.version = self.get_version()
+        self.version, self.version_float = self.get_version()
         self.start_date, self.end_date = self.get_dates()
         self.sample_rate_string, self.sample_rate_numeric = self.get_sample_rate(
             plot=False
@@ -428,20 +428,27 @@ class RinexFile:
                 rinex_data = None
                 status = "04 - Invalid Compressed RINEX file"
 
-            bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
-            bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
+            if status:
+                logger.error(status)
+
+            if rinex_data:
+                bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
+                bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
+            else:
+                bool_l1_obs = False
+                bool_l1_crx = False
 
             if not force_rnx_load and not (bool_l1_obs or bool_l1_crx):
-                logger.warning(
+                logger.error(
                     "File's 1st line does not match an Observation RINEX: "
                     + os.path.join(self.path)
                 )
-                logger.warning("try to force the loading with force_rnx_load = True")
+                logger.error("try to force the loading with force_rnx_load = True")
                 rinex_data = None
                 status = "02 - Not an observation RINEX file"
 
         if status:
-            logger.warning(status)
+            logger.error(status)
 
         return rinex_data, status
 
@@ -551,9 +558,11 @@ class RinexFile:
         version_header_idx = search_idx_value(self.rinex_data, "RINEX VERSION / TYPE")
         version_header = self.rinex_data[version_header_idx]
         # Parse line
-        rinex_ver_head = version_header[0:9].strip()
+        rinex_ver_head_str = str(version_header[0:9].strip())
+        rinex_ver_head_flt = float(re.search(r"[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)", rinex_ver_head_str)[0])
+        # must fit a regex pattern of a float, because nasty hidder characters can be present
 
-        return rinex_ver_head
+        return rinex_ver_head_str, rinex_ver_head_flt
 
     def get_data_source(self):
         """
@@ -583,7 +592,7 @@ class RinexFile:
             for RINEX2, the year prefix.
         """
         # Date lines pattern
-        if self.version[0] >= "3":
+        if self.version_float >= 3.:
             # Pattern of an observation line containing a date - RINEX 3
             # date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
             date_pattern = re.compile(
@@ -591,13 +600,17 @@ class RinexFile:
             )
             year_prefix = ""  # Prefix of year for date formatting
 
-        elif self.version[0] == "2":
+        elif self.version_float < 3:
             # Pattern of an observation line containing a date - RINEX 2
             date_pattern = re.compile(
                 " (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})"
             )
             year_prefix = "20"  # Prefix of year for date formatting
             ### !!!!!!!!! before 2000 must be implemented !!!!!!
+        else:
+            logger.warning("unable to find right RINEX version")
+            date_pattern = None
+            year_prefix = None
 
         return date_pattern, year_prefix
 
@@ -622,6 +635,7 @@ class RinexFile:
                 datause = rnxobj.rinex_data
 
             # Searching the last one of the file
+            m = None
             for line in datause:
                 m = re.search(date_pattern, line)
                 if m:
@@ -668,6 +682,7 @@ class RinexFile:
             return None, None
 
         def _find_meta_label(meta_label_in):
+            line = None
             line_found = None
             for line in self.rinex_data:
                 if re.search(meta_label_in, line):
@@ -695,15 +710,15 @@ class RinexFile:
         if self.status:
             return None, None
 
-        Samples_stack = []
+        samples_stack = []
 
         date_pattern, _ = self._get_date_patterns()
 
         for line in self.rinex_data:  # We get all the epochs dates
             if re.search(date_pattern, line):
-                Samples_stack.append(re.search(date_pattern, line))
+                samples_stack.append(re.search(date_pattern, line))
 
-        return Samples_stack
+        return samples_stack
 
     def get_sample_rate(self, plot=False):
         """
@@ -722,15 +737,15 @@ class RinexFile:
         if self.status:
             return None, None
 
-        Samples_stack = self.get_dates_all()
+        samples_stack = self.get_dates_all()
         date_pattern, year_prefix = self._get_date_patterns()
 
         # If less than 2 samples, can't get a sample rate
-        if len(Samples_stack) < 2:
+        if len(samples_stack) < 2:
             self.status = "05 - Less than two epochs in the file"
             logger.error(
-                "get_sample_rate: less than 2 samples found, can't get a sample rate %s",
-                Samples_stack,
+                "less than 2 samples found, can't get a sample rate %s",
+                samples_stack,
             )
             return None, None
 
@@ -755,37 +770,37 @@ class RinexFile:
             return date
 
         # Format dates to datetime
-        Samples_stack = [_date_conv(d) for d in Samples_stack]
-        Samples_rate_diff = np.diff(Samples_stack)  # Getting intervals
+        samples_stack = [_date_conv(d) for d in samples_stack]
+        samples_rate_diff = np.diff(np.array(samples_stack))  # Getting intervals
         # Converting timedelta to seconds and removing 0 values (potential doubles in epochs)
-        Samples_rate_diff = [
+        samples_rate_diff = [
             diff.total_seconds()
-            for diff in Samples_rate_diff
+            for diff in samples_rate_diff
             if diff != timedelta(seconds=0)
         ]
 
         # If less than one interval after removing 0 values, can't get a sample rate
-        if len(Samples_rate_diff) < 1:
+        if len(samples_rate_diff) < 1:
             self.status = "05 - Less than two epochs in the file"
             logger.error(
-                "get_sample_rate: less than one interval after removing 0 values %s",
-                Samples_rate_diff,
+                "less than one interval after removing 0 values %s",
+                samples_rate_diff,
             )
             return None, None
 
         # If less than 2 intervals, can't compare intervals
-        if len(Samples_rate_diff) < 2:
+        if len(samples_rate_diff) < 2:
             return "00U", 0.0
 
         # Most frequent
-        sample_rate_num = max(set(Samples_rate_diff), key=Samples_rate_diff.count)
+        sample_rate_num = max(set(samples_rate_diff), key=samples_rate_diff.count)
 
         # Counting the intervals that are not equal to the most frequent
         num_bad_sp = len(
-            [diff for diff in Samples_rate_diff if diff != sample_rate_num]
+            [diff for diff in samples_rate_diff if diff != sample_rate_num]
         )
 
-        non_nominal_interval_percent = num_bad_sp / len(Samples_rate_diff)
+        non_nominal_interval_percent = num_bad_sp / len(samples_rate_diff)
 
         if plot:
             print(
@@ -794,7 +809,7 @@ class RinexFile:
                     str(non_nominal_interval_percent * 100) + " %",
                 )
             )
-            plt.plot(Samples_rate_diff)
+            plt.plot(samples_rate_diff)
             plt.show()
 
         non_nominal_trigger = 0.45
@@ -803,10 +818,10 @@ class RinexFile:
         ):  # Don't set sample rate to files
             # That have more that 45% of non nominal sample rate
             logger.error(
-                "get_sample_rate: non nominal sample rate >%d%%: %d%% (# epochs: %d)",
+                "non nominal sample rate >%d%%: %d%% (# epochs: %d)",
                 non_nominal_trigger * 100,
                 non_nominal_interval_percent * 100,
-                len(Samples_stack),
+                len(samples_stack),
             )
             return "00U", 0.0
 
@@ -1043,7 +1058,7 @@ class RinexFile:
         if self.status:
             return
 
-        if self.version[0] < "3":
+        if self.version_float < 3:
             logger.warn("get_sys_obs_types is only compatible with RINEX3/4")
             return
 
@@ -1071,16 +1086,16 @@ class RinexFile:
         dict_sys_nobs = dict()
 
         for il, l in enumerate(Lines_sys):
-            Sysobs = l.split()
-            sys = Sysobs[0]
-            dict_sys_obs[sys] = Sysobs[2:]
-            dict_sys_nobs[sys] = int(Sysobs[1])
+            sysobs = l.split()
+            sys = sysobs[0]
+            dict_sys_obs[sys] = sysobs[2:]
+            dict_sys_nobs[sys] = int(sysobs[1])
             ## adds the LLI and SSI indicators
-            if len(Sysobs[2:]) != int(Sysobs[1]):
+            if len(sysobs[2:]) != int(sysobs[1]):
                 logger.warn(
                     "difference between theorectical (%d) and actual (%d) obs nbr for sys (%s)",
-                    len(Sysobs[2:]),
-                    int(Sysobs[1]),
+                    len(sysobs[2:]),
+                    int(sysobs[1]),
                     sys,
                 )
 
@@ -1369,13 +1384,13 @@ class RinexFile:
 
     def mod_antenna_delta(self, H=None, E=None, N=None):
         """
-        Modify within the RINEX header the E N U antenna's excentricity
+        Modify within the RINEX header the H E N antenna's excentricity
         (``ANTENNA: DELTA H/E/N`` line).
 
         Parameters
         ----------
-        H,N,U : float, optional
-            H N U position. The default is None.
+        H, E, N: float, optional
+            H E N position. The default is None.
 
         Returns
         -------
@@ -1619,7 +1634,7 @@ class RinexFile:
         if not any([dict_sys_obs]):
             return
 
-        if self.version[0] < "3":
+        if self.version_float < 3:
             logger.warn("mod_sys_obs_types is only compatible with RINEX3/4")
             return
 
@@ -1809,7 +1824,7 @@ class RinexFile:
         if not add_pgm_cmt:
             last_comment_idx = max(Idx)
             new_comment_idx = last_comment_idx + 1
-            new_line = " {} ".format(comment[:60]).center(59, "-") + " COMMENT"
+            new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
 
         else:
             first_comment_idx = min(Idx)
