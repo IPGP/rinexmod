@@ -252,7 +252,8 @@ if __name__ == "__main__":
     optional.add_argument(
         "-rm",
         "--remove",
-        help="Remove input RINEX file if the output RINEX is correctly written (default: %(default)s)",
+        help="Remove input RINEX file if the output RINEX is correctly written. Use it as your own risk."
+             "(default: %(default)s)",
         action="store_true",
         default=False,
     )
