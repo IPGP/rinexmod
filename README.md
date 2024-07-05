@@ -38,24 +38,31 @@ The tool is designed in Python 3, and you must have it installed on your machine
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
 
+To use the front-end functions, you must also add the `rinexmod` folder in your `$PATH` environnement variable, 
+defined in your `.bashrc`.  
+If you used PIP for the installation, your can locate the folder where `rinexmod` has been installed with:
+```
+pip show rinexmod
+```
+at the line `Location:`. Usually, it is `/usr/local/lib/python3.NN/dist-packages/rinexmod` .
+Then edit your `~/.bashrc` and add it to the `$PATH` environnement variable 
+
 ### Required external modules
 
 *NB*: Following the assisted installation procedure above, the required external modules will be automatically installed.
 
-You need _Python Hatanaka_ library from M. Valgur:  
- `pip install hatanaka`
- 
-You need _pycountry_ to associate country names with their ISO abbreviations (facultative but recommended):  
-`pip install pycountry`
+You need:
+ * _Python_ `hatanaka` library from M. Valgur
+ * `pycountry` to associate country names with their ISO abbreviations (facultative but recommended):  
+ * `matplotlib` for plotting samples intervals with crzmeta  
+ * `colorlog` to get the pretty colored log outputs
+ * `pandas` to for internal low-level data management  
 
-You need _matplotlib_ for plotting samples intervals with crzmeta:  
-`pip install matplotlib`
+You can install them with: 
+```
+pip install hatanaka pycountry matplotlib colorlog pandas
+```
 
-You need _colorlog_ to get the pretty colored log outputs:  
-`pip install colorlog`
-
-You need _pandas_ to for internal low-level data management:  
-`pip install pandas`
 
 
 ## _rinexmod_ in command lines interface
