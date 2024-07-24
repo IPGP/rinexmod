@@ -947,12 +947,11 @@ def rinexmod(
         ## modif_marker = rnxobj.get_site(True,False) ### Useless...
         rnxobj.set_site(marker)
 
-    ### load the metadata from sitelog or GAMIT files if any
-
-    if not sitelog and (not station_info or not lfile_apriori):
-        logger.error(
-            "No metadata provided. (sitelog or station.info/lfile **couple**)." 
-            "RINEX header with default rec. values will remain!")
+    ## warning if no metadata at all is not provided
+    if not sitelog and not modif_kw and (not station_info or not lfile_apriori):
+        logger.warning("No sitelog nor keywords nor station.info+lfile provided. "
+                       "Per default rec.'s header will remain & no new "
+                       "metdata will be written!")
 
     ## sitelogs
     if sitelog:
@@ -967,10 +966,7 @@ def rinexmod(
         logger.critical("station_info and lfile_apriori must be provided together")
         raise RinexModInputArgsError
 
-    if not sitelog and (not station_info or not lfile_apriori):
-        logger.warning("No sitelog nor station.info+lfile provided. Per default rec.'s header will remain & no new"
-                       "metdata will be written!")
-    
+    ### load the metadata from sitelog or GAMIT files if any
     if (station_info and lfile_apriori) and not sitelog:
         metadata_obj_list = gamit2metadata_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
