@@ -1195,7 +1195,7 @@ class RinexFile:
 
         # warning
         ### for the receiver, info in te input RINEX should be the correct ones
-        def _mod_receiver_check(field_type, rinex_val, metadata_val):
+        def _mod_rec_check(field_type, rinex_val, metadata_val):
             if rinex_val.strip() != metadata_val.strip():
                 logger.warning(
                     "%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
@@ -1209,9 +1209,9 @@ class RinexFile:
                 )
             return None
 
-        _mod_receiver_check("serial number", serial, serial_head)
-        _mod_receiver_check("model type", type, type_head)
-        _mod_receiver_check("firmware version", firmware, firmware_head)
+        _mod_rec_check("serial number", serial, serial_head)
+        _mod_rec_check("model type", type, type_head)
+        _mod_rec_check("firmware version", firmware, firmware_head)
 
         # Edit line
         if serial:
