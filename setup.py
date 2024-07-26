@@ -5,9 +5,10 @@ https://packaging.python.org/guides/distributing-packages-using-setuptools/
 https://github.com/pypa/sampleproject
 """
 
+import pathlib
+
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
-import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
 
@@ -38,7 +39,7 @@ setup(
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
 
-    version=str('3.0.0'),  # Required ## CHANGE IT ALSO IN __init____ and readme !!!!
+    version=str('3.2.0'),  # Required ## CHANGE IT ALSO IN __init____ and readme !!!!
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
