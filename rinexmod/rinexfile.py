@@ -86,6 +86,30 @@ class RinexFile:
         )
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
 
+    def __repr__(self):
+        """
+        Defines a representation method for the rinex file object. Will print the
+        filename, the site, the start and end date, the sample rate, the file period,
+        the rinex version, the data source, the compression type, the size of the file,
+        and the status of the file.
+        """
+        if self.rinex_data == None:
+            return ""
+
+        return (
+            f"RinexFile: {self.filename}\n"
+            f"Site: {self.get_site()}\n"
+            f"Start date: {self.start_date}\n"
+            f"End date: {self.end_date}\n"
+            f"Sample rate: {self.sample_rate_string}\n"
+            f"File period: {self.file_period}\n"
+            f"Rinex version: {self.version}\n"
+            f"Data source: {self.data_source}\n"
+            f"Compression: {self.compression}\n"
+            f"Size: {self.size} bytes\n"
+            f"Status: {self.status}"
+        )
+
     def __str__(self):
         """
         Defines a print method for the rinex file object. Will print all the
@@ -361,15 +385,22 @@ class RinexFile:
         else:
             file_period_name, session_name = self.get_file_period_round()
 
-        if file_period_name == "01D":
-            timeformat = "%j0.%y" + file_type + compression
-        else:
-            Alphabet = list(map(chr, range(97, 123)))
+        alphabet = list(map(chr, range(97, 123)))
+        if file_period_name[-1] == "H":
             timeformat = (
-                "%j" + Alphabet[self.start_date.hour] + ".%y" + file_type + compression
+                "%j" + alphabet[self.start_date.hour] + ".%y" + file_type + compression
             )
+            start_date_use = self.start_date
 
-        shortname = self.get_site(True, True) + self.start_date.strftime(timeformat)
+        elif file_period_name[-1] == "M":
+            timeformat = "%j" + alphabet[self.start_date.hour] + "%M" + ".%y"  + file_type + compression
+            start_date_use = round_time(self.start_date, timedelta(minutes=5), to='down')
+
+        else: # regular case file_period_name == "01D"
+            timeformat = "%j0.%y" + file_type + compression
+            start_date_use = self.start_date
+
+        shortname = self.get_site(True, True) + start_date_use.strftime(timeformat)
 
         if inplace_set:
             self.filename = shortname
@@ -957,8 +988,8 @@ class RinexFile:
         -------
         file_period_rnd : str
             the file period: '01H', '01D', '00U'...
-        session_rnd : bool
-            RINEX is a hourly session or not.
+        session_rnd : bool or None
+            the RINEX is an hourly session or not.
 
         """
 
@@ -1195,7 +1226,7 @@ class RinexFile:
 
         # warning
         ### for the receiver, info in te input RINEX should be the correct ones
-        def _mod_receiver_check(field_type, rinex_val, metadata_val):
+        def _mod_rec_check(field_type, rinex_val, metadata_val):
             if rinex_val.strip() != metadata_val.strip():
                 logger.warning(
                     "%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
@@ -1209,9 +1240,9 @@ class RinexFile:
                 )
             return None
 
-        _mod_receiver_check("serial number", serial, serial_head)
-        _mod_receiver_check("model type", type, type_head)
-        _mod_receiver_check("firmware version", firmware, firmware_head)
+        _mod_rec_check("serial number", serial, serial_head)
+        _mod_rec_check("model type", type, type_head)
+        _mod_rec_check("firmware version", firmware, firmware_head)
 
         # Edit line
         if serial:
@@ -2043,7 +2074,8 @@ def regex_pattern_rinex_filename():
     return a dictionnary with the different REGEX patterns to describe a RIENX filename
     """
     pattern_dic = dict()
-    pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
+    #pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
+    pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))" ### add subhour starting min
     pattern_dic["longname"] = (
         ".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
     )
@@ -2179,14 +2211,14 @@ def file_period_from_timedelta(start_date, end_date):
     hours = int(delta2.total_seconds() / 3600)
     delta_sec = (end_date - start_date).total_seconds()
 
-    ### first, the special case : N *full* hours
+    # first, the special case : N *full* hours
     if delta <= timedelta(seconds=86400 - 3600) and hours > 0:  ## = 23h max
         # delta2 is a more precise delta (average)
         file_period = str(hours).zfill(2) + "H"
         session = True
-    ### more regular cases : 01H, 01D, nnM, or Unknown
+    # more regular cases : 01H, 01D, nnM, or Unknown
     elif delta <= timedelta(seconds=3600):
-        ### Here we consider sub hourly cases
+        # Here we consider sub hourly cases
         session = True
         file_period = None
         for m in [5, 10, 15, 20, 30]:
@@ -2197,15 +2229,15 @@ def file_period_from_timedelta(start_date, end_date):
             file_period = "01H"
     elif timedelta(seconds=3600) < delta and delta <= timedelta(
         seconds=86400 + 3600
-    ):  ##Note1
+    ):  # Note1
         file_period = "01D"
         session = False
     else:
         file_period = "00U"
         session = False
-    ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs
-    ###        includes the epoch of the next hour/day
-    ###        and then the present delta value reach 25
-    ###        it justify also the necessity of the delta2 variable
+    # Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs
+    #        includes the epoch of the next hour/day
+    #        and then the present delta value reach 25
+    #        it justify also the necessity of the delta2 variable
 
     return file_period, session

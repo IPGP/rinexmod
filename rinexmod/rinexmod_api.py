@@ -383,7 +383,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
             if not force:
                 logger.error(
                     "{:110s} - {}".format(
-                        "33 - RINEX name's site does not correspond to provided metadata -" 
+                        "33 - RINEX name's site does not correspond to provided metadata -"
                         "use -f option to force",
                         err_label,
                     )
@@ -392,7 +392,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
             else:
                 logger.warning(
                     "{:110s} - {}".format(
-                        "34 - RINEX name's site does not correspond to provided metadata," 
+                        "34 - RINEX name's site does not correspond to provided metadata,"
                         "forced processing anyway",
                         err_label,
                     )
@@ -890,7 +890,10 @@ def rinexmod(
     if not modif_kw:
         modif_kw = dict()
 
-    if os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder and not outputfolder == "IDEM":
+    if (
+        os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder
+        and not outputfolder == "IDEM"
+    ):
         logger.error(
             "{:110s} - {}".format(
                 "30 - Input and output folders are the same!", rinexfile
@@ -947,12 +950,13 @@ def rinexmod(
         ## modif_marker = rnxobj.get_site(True,False) ### Useless...
         rnxobj.set_site(marker)
 
-    ### load the metadata from sitelog or GAMIT files if any
-
-    if not sitelog and (not station_info or not lfile_apriori):
-        logger.error(
-            "No metadata provided. (sitelog or station.info/lfile **couple**)." 
-            "RINEX header with default rec. values will remain!")
+    ## warning if no metadata at all is not provided
+    if not sitelog and not modif_kw and (not station_info or not lfile_apriori):
+        logger.warning(
+            "No sitelog nor keywords nor station.info+lfile provided. "
+            "Per default rec.'s header will remain & no new "
+            "metdata will be written!"
+        )
 
     ## sitelogs
     if sitelog:
@@ -967,10 +971,7 @@ def rinexmod(
         logger.critical("station_info and lfile_apriori must be provided together")
         raise RinexModInputArgsError
 
-    if not sitelog and (not station_info or not lfile_apriori):
-        logger.warning("No sitelog nor station.info+lfile provided. Per default rec.'s header will remain & no new"
-                       "metdata will be written!")
-    
+    ### load the metadata from sitelog or GAMIT files if any
     if (station_info and lfile_apriori) and not sitelog:
         metadata_obj_list = gamit2metadata_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
@@ -1192,7 +1193,7 @@ def rinexmod_cli(
     station_info=None,
     lfile_apriori=None,
     force_fake_coords=False,
-    remove=False
+    remove=False,
 ):
     """
     Main function for reading a Rinex list file. It process the list, and apply
@@ -1222,7 +1223,7 @@ def rinexmod_cli(
         and not lfile_apriori
     ):
         logger.critical(
-            "No action asked, provide at least one of the following args:" 
+            "No action asked, provide at least one of the following args:"
             "--sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori"
         )
         raise RinexModInputArgsError
@@ -1361,13 +1362,14 @@ def rinexmod_cli(
             "station_info": station_info,
             "lfile_apriori": lfile_apriori,
             "force_fake_coords": force_fake_coords,
-            "remove": remove
+            "remove": remove,
         }
 
         rinexmod_kwargs_list.append(rnxmod_kwargs)
 
-    global rinexmod_mp_wrapper
-    def rinexmod_mp_wrapper(rnxmod_kwargs_inp):
+    global rinexmod_mpwrap
+
+    def rinexmod_mpwrap(rnxmod_kwargs_inp):
         try:
             return_lists_out = rinexmod(**rnxmod_kwargs_inp)
             return return_lists_out
@@ -1386,7 +1388,7 @@ def rinexmod_cli(
         logger.info("multiprocessing: %d cores used", multi_process)
     pool = mp.Pool(processes=multi_process)
     results_raw = [
-        pool.apply_async(rinexmod_mp_wrapper, args=(x,)) for x in rinexmod_kwargs_list
+        pool.apply_async(rinexmod_mpwrap, args=(x,)) for x in rinexmod_kwargs_list
     ]
     results = [e.get() for e in results_raw]
 
