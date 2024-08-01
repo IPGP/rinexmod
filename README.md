@@ -15,13 +15,17 @@ Last version: v3.2.0 - 2024-06-26
 
 ## Tools overview
 
-This project is composed of 3 programs:
+### Main tool
 
 * `rinexmod.py` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loops the rinex files list to modify the file's headers. It then writes them back to Hatanaka
 compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
+
+### Annex tools
+
+They are stored in `misc_tools` folder.
 
 * `get_m3g_sitelogs.py` will get the last version of site logs from the M3G repository
 and write them in an observatory-dependent subfolder.
