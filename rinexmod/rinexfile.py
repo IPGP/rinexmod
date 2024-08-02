@@ -61,7 +61,7 @@ class RinexFile:
         else:
             logger.error("input rinex_input is not str, Path, or StringIO")
 
-        self.rinex_data, self.status = self._load_rinex_data(
+        self.rinex_data, self.status = self._load_rinexdata(
             force_rnx_load=force_rnx_load
         )
         self.size = self.get_size()
@@ -427,7 +427,7 @@ class RinexFile:
     # *****************************************************************************
     ### internal methods
 
-    def _load_rinex_data(self, force_rnx_load=False):
+    def _load_rinexdata(self, force_rnx_load=False):
         """
         Load the uncompressed rinex data into a list var using hatanaka library.
         Will return a table of lines of the uncompressed file, a 'name_conv' var
