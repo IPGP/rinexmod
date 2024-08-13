@@ -925,7 +925,7 @@ def rinexmod(
         a dictionary of rinexmoded RINEXs for GLASS distribution.
     """
 
-    now = datetime.now()
+    now = datetime.now().astimezone()
 
     if verbose:
         logger = rimo_log.logger_define("DEBUG", logfile=None, level_logfile="DEBUG")
@@ -1147,7 +1147,7 @@ def rinexmod(
     rnxobj.add_comment(("RinexMod " + vers_num, "METADATA UPDATE"), add_pgm_cmt=True)
     rnxobj.add_comment("RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)")
     rnxobj.add_comment(
-        "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M"))
+        "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M%z"))
     )
     if metadataobj:
         rnxobj.add_comment("rinexmoded with {}".format(modif_source_metadata))
@@ -1275,7 +1275,7 @@ def rinexmod_cli(
 
     Parameters
     ----------
-    rinexinput : list
+    rinexinput : Itertable
         a filepath of a textfile containing a RINEX paths list (1-element list)
         or directly a Python list of RINEX paths
     """
