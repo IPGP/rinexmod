@@ -402,7 +402,7 @@ def _mda_find_latest_prep(metadataobjs_inp):
     """
     # We list the available sites to group sitelogs
     metadataobjs = metadataobjs_inp
-    #metadataobjs = sorted(metadataobjs, key=lambda x: x.mm_dic["date prepared"], reverse=True)
+    #metadataobjs = sorted(metadataobjs, key=lambda x: x.misc_meta["date prepared"], reverse=True)
 
     # set the output latest sitelog list
     mdaobjs_latest = []
@@ -413,11 +413,11 @@ def _mda_find_latest_prep(metadataobjs_inp):
         # Grouping by site
         mdaobjs_site = [m for m in metadataobjs if m.site4char == site]
         # Getting dates from basename and parsing 'em
-        mdaobjs_site_dates = [m.mm_dic["date prepared"] for m in mdaobjs_site]
+        mdaobjs_site_dates = [m.misc_meta["date prepared"] for m in mdaobjs_site]
         # We get the max date and put it back to string format.
         maxdate = max(mdaobjs_site_dates)
         # We filter the list with the max date string, and get a one entry list, then transform it to string
-        mdaobj_latest = [md for md in mdaobjs_site if md.mm_dic["date prepared"] == maxdate][0]
+        mdaobj_latest = [md for md in mdaobjs_site if md.misc_meta["date prepared"] == maxdate][0]
 
         mdaobjs_latest.append(mdaobj_latest)
 
