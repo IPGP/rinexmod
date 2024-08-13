@@ -275,10 +275,14 @@ def sitelogs2metadata_objs(
     for sl in all_sitelogs:
         logger.debug(sl)
     # Get last version of sitelogs if multiple available
+    # (1st gross search based on date in filename)
     latest_sitelogs = _slg_find_latest_name(all_sitelogs)
     metadata_obj_list, bad_sitelogs_list = load_sitelogs(latest_sitelogs, force)
     metadata_obj_list = list(metadata_obj_list)
     bad_sitelogs_list = list(bad_sitelogs_list)
+    # Get last version of sitelogs if multiple available
+    # (2nd fine search based on date in "Date Prepared" field)
+    metadata_obj_list = _mda_find_latest_prep(metadata_obj_list)
 
     logger.info("**** %i most recent sitelogs selected", len(metadata_obj_list))
 
@@ -388,13 +392,12 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
 
     return latest_sitelogs_filepaths
 
-
 def _mda_find_latest_prep(metadataobjs_inp):
     """
     Find the latest version of a MetaData object within a list of MetaData objects,
     based on preparation date
 
-    more reliable than _slg_find_latest_name
+    more reliable than _slg_find_latest_name but requires that the metadata objects have been loaded
     """
     # We list the available sites to group sitelogs
     metadataobjs = metadataobjs_inp
