@@ -466,6 +466,8 @@ class MetaData:
         mm_dic["Y coordinate (m)"] = self.raw_content["2."]["Y coordinate (m)"]
         mm_dic["Z coordinate (m)"] = self.raw_content["2."]["Z coordinate (m)"]
 
+        mm_dic["date prepared"] = datetime.strptime(self.raw_content["0."]["Date Prepared"], "%Y-%m-%d")
+
         if (
             "Country/Region" in self.raw_content["2."].keys()
         ):  # now consistent with [IGSMAIL-8458]
