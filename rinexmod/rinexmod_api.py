@@ -51,8 +51,7 @@ class ReturnListError(RinexModError):
 # *****************************************************************************
 # misc functions
 
-
-def listfiles(directory, extension):
+def listfiles(directory, extension, recursive=True):
     # returns list of paths
     liste = []
     extension = extension.lower()
@@ -61,6 +60,8 @@ def listfiles(directory, extension):
             if name.lower().endswith(extension):
                 file = os.path.join(dirpath, name)
                 liste.append(file)
+        if not recursive:
+            break
     return list(sorted(liste))
 
 
@@ -241,24 +242,6 @@ def sitelogs2metadata_objs(
 
     """
 
-    def _load_sitelog(sitelog_filepath, force):
-        # Creating MetaData object
-        try:
-            metadataobj = rimo_mda.MetaData(sitelog_filepath)
-        except Exception as e:
-            # If sitelog is not parsable
-            logger.error(
-                "The sitelog is not parsable: %s (%s)",
-                os.path.basename(sitelog_filepath),
-                str(e),
-            )
-            if not force:
-                raise MetaDataError
-            else:
-                metadataobj = None
-
-        return metadataobj
-
     #### differenciating cases
     # Case of a list of sitelogs
     if type(sitelog_filepath) is list:
@@ -287,24 +270,17 @@ def sitelogs2metadata_objs(
 
     #### Read the sitelogs
     logger.info(
-        "**** %i sitelogs detected: (in %s)", len(all_sitelogs), sitelog_filepath
+        "**** %i sitelogs detected (in %s)", len(all_sitelogs), sitelog_filepath
     )
     for sl in all_sitelogs:
         logger.debug(sl)
     # Get last version of sitelogs if multiple available
-    latest_sitelogs = _sitelog_find_latest_files(all_sitelogs)
+    latest_sitelogs = _slg_find_latest_name(all_sitelogs)
+    metadata_obj_list, bad_sitelogs_list = load_sitelogs(latest_sitelogs, force)
+    metadata_obj_list = list(metadata_obj_list)
+    bad_sitelogs_list = list(bad_sitelogs_list)
 
-    metadata_obj_list = []
-    bad_sitelogs_list = []
-    for sta_sitelog in latest_sitelogs:
-        metadataobj = _load_sitelog(sta_sitelog, force)
-        # Appending to list
-        if metadataobj:
-            metadata_obj_list.append(metadataobj)
-        else:
-            bad_sitelogs_list.append(sta_sitelog)
-
-    logger.info("**** %i most recent sitelogs selected:", len(metadata_obj_list))
+    logger.info("**** %i most recent sitelogs selected", len(metadata_obj_list))
 
     for sl in metadata_obj_list:
         logger.debug(sl.path)
@@ -320,10 +296,62 @@ def sitelogs2metadata_objs(
     return metadata_obj_list
 
 
-def _sitelog_find_latest_files(all_sitelogs_filepaths):
+def load_sitelogs(sitelogs_inp, force=False):
+    """
+    Process a list of sitelogs and return a list of MetaData objects and a list of bad sitelogs.
+
+    Parameters
+    ----------
+    sitelogs_inp : list
+        List of paths to the latest sitelog files.
+    force : bool, optional
+        If True, force processing even if sitelog is not parsable. Default is False.
+
+    Returns
+    -------
+    metadata_obj_list : list
+        List of MetaData objects.
+    bad_sitelogs_list : list
+        List of sitelogs that could not be parsed.
+    """
+
+    def _load_slg(sitelog_filepath, force_load):
+        # Creating MetaData object
+        try:
+            metadataobj_load = rimo_mda.MetaData(sitelog_filepath)
+        except Exception as e:
+            # If sitelog is not parsable
+            logger.error(
+                "The sitelog is not parsable: %s (%s)",
+                os.path.basename(sitelog_filepath),
+                str(e),
+            )
+            if not force_load:
+                raise MetaDataError
+            else:
+                metadataobj_load = None
+
+        return metadataobj_load
+
+    metadata_obj_list = []
+    bad_sitelogs_list = []
+    for sta_sitelog in sitelogs_inp:
+        metadataobj = _load_slg(sta_sitelog, force)
+        # Appending to list
+        if metadataobj:
+            metadata_obj_list.append(metadataobj)
+        else:
+            bad_sitelogs_list.append(sta_sitelog)
+
+    return metadata_obj_list, bad_sitelogs_list
+
+def _slg_find_latest_name(all_sitelogs_filepaths):
     """
     Find the latest version of a sitelog within a list of sitelogs,
-    mainly for time consumption reduction
+    based on date in its filename
+    (mainly for time consumption reduction)
+
+    see also _mda_find_latest_prep (more reliable)
     """
     # We list the available sites to group sitelogs
     bnm = os.path.basename
@@ -360,6 +388,36 @@ def _sitelog_find_latest_files(all_sitelogs_filepaths):
 
     return latest_sitelogs_filepaths
 
+
+def _mda_find_latest_prep(metadataobjs_inp):
+    """
+    Find the latest version of a MetaData object within a list of MetaData objects,
+    based on preparation date
+
+    more reliable than _slg_find_latest_name
+    """
+    # We list the available sites to group sitelogs
+    metadataobjs = metadataobjs_inp
+    #metadataobjs = sorted(metadataobjs, key=lambda x: x.mm_dic["date prepared"], reverse=True)
+
+    # set the output latest sitelog list
+    mdaobjs_latest = []
+
+    sites_all = list(sorted(list(set([md.site4char for md in metadataobjs]))))
+
+    for site in sites_all:
+        # Grouping by site
+        mdaobjs_site = [m for m in metadataobjs if m.site4char == site]
+        # Getting dates from basename and parsing 'em
+        mdaobjs_site_dates = [m.mm_dic["date prepared"] for m in mdaobjs_site]
+        # We get the max date and put it back to string format.
+        maxdate = max(mdaobjs_site_dates)
+        # We filter the list with the max date string, and get a one entry list, then transform it to string
+        mdaobj_latest = [md for md in mdaobjs_site if md.mm_dic["date prepared"] == maxdate][0]
+
+        mdaobjs_latest.append(mdaobj_latest)
+
+    return mdaobjs_latest
 
 def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
     """
@@ -405,8 +463,13 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
             )
             raise RinexModInputArgsError
     else:
-        metadataobj = [md for md in metadata_obj_list if md.site4char == rnx_4char][0]
-        ## we assume the latest sitelog has been found in sitelogs2metadata_objs
+        metadataobjs = [md for md in metadata_obj_list if md.site4char == rnx_4char]
+        if len(metadataobjs) == 1:
+            metadataobj = metadataobjs[0]
+        else:
+            # the assumption that latest sitelog has been found in sitelogs2metadata_objs is wrong!
+            # a second search with the preparation date is performed here
+            metadataobj = _mda_find_latest_prep(metadataobjs)[0]
 
     return metadataobj
 
