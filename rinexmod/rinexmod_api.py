@@ -137,7 +137,7 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
     station_info_inp : str or pd.DataFrame
         Path of a GAMIT station.info file to obtain
         GNSS site metadata information.
-    lfile_inp : TYPE
+    lfile_inp : str or pd.DataFrame
         Path of a GAMIT apriori apr/L-File to obtain
         GNSS site position and DOMES information.
     force_fake_coords : bool, optional
@@ -277,6 +277,7 @@ def sitelogs2metadata_objs(
     # Get last version of sitelogs if multiple available
     # (1st gross search based on date in filename)
     latest_sitelogs = _slg_find_latest_name(all_sitelogs)
+    # load the sitelogs as metadata objects
     metadata_obj_list, bad_sitelogs_list = load_sitelogs(latest_sitelogs, force)
     metadata_obj_list = list(metadata_obj_list)
     bad_sitelogs_list = list(bad_sitelogs_list)
