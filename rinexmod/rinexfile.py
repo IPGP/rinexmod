@@ -93,7 +93,7 @@ class RinexFile:
         the rinex version, the data source, the compression type, the size of the file,
         and the status of the file.
         """
-        if self.rinex_data == None:
+        if not self.rinex_data:
             return ""
 
         return (
@@ -115,7 +115,7 @@ class RinexFile:
         Defines a print method for the rinex file object. Will print all the
         header, plus 20 lines of data, plus the number of not printed lines.
         """
-        if self.rinex_data == None:
+        if not self.rinex_data:
             return ""
 
         # We get header

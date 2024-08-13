@@ -279,8 +279,6 @@ def sitelogs2metadata_objs(
     latest_sitelogs = _slg_find_latest_name(all_sitelogs)
     # load the sitelogs as metadata objects
     metadata_obj_list, bad_sitelogs_list = load_sitelogs(latest_sitelogs, force)
-    metadata_obj_list = list(metadata_obj_list)
-    bad_sitelogs_list = list(bad_sitelogs_list)
     # Get last version of sitelogs if multiple available
     # (2nd fine search based on date in "Date Prepared" field)
     metadata_obj_list = _mda_find_latest_prep(metadata_obj_list)
@@ -314,9 +312,9 @@ def load_sitelogs(sitelogs_inp, force=False):
 
     Returns
     -------
-    metadata_obj_list : list
+    metadata_obj_list : Iterable
         List of MetaData objects.
-    bad_sitelogs_list : list
+    bad_sitelogs_list : Iterable
         List of sitelogs that could not be parsed.
     """
 
