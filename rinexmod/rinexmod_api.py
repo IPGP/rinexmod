@@ -151,14 +151,14 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
         list of MetaData objects.
 
     """
-    if type(station_info_inp) is pd.core.frame.DataFrame:
+    if isinstance(station_info_inp, pd.DataFrame):
         df_stinfo_raw = station_info_inp
         stinfo_name = "station.info"
     else:
         df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp)
         stinfo_name = os.path.basename(station_info_inp)
 
-    if type(lfile_inp) is pd.core.frame.DataFrame:
+    if isinstance(lfile_inp, pd.DataFrame):
         df_apr = lfile_inp
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
