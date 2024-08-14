@@ -1379,7 +1379,8 @@ class RinexFile:
         if self.status:
             return
 
-        if (x is None) and (y is None) and (z is None):
+
+        if (X is None) and (Y is None) and (Z is None):
             return
 
         # Identify line that contains APPROX POSITION XYZ
