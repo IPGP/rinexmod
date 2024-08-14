@@ -437,7 +437,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
 
     logger.debug("Searching corresponding metadata for site: " + rnx_4char)
 
-    metadataobj = []
+    metadataobj = None
     if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
         if len(metadata_obj_list) == 1:
             if not force:
@@ -676,7 +676,7 @@ def _return_lists_maker(rnxobj_or_dict, return_lists=dict()):
 
     return_lists : dict, optional
         A potential pre-exisiting return_lists.
-        Per default it is a brand new return_lists for scratch.
+        Per default it is a brand-new return_lists for scratch.
         The default is dict().
 
     Returns
@@ -730,6 +730,8 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
     if not now_dt:
         now_dt = datetime.now()
 
+    this_outputfile = ""
+
     for rinex_version in return_lists:
         for sample_rate in return_lists[rinex_version]:
             for file_period in return_lists[rinex_version][sample_rate]:
@@ -753,6 +755,7 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
                         ]
                     )
                     logger.debug("Output rinex list written to " + this_outputfile)
+
     return this_outputfile
 
 
@@ -1041,6 +1044,8 @@ def rinexmod(
         metadata_obj_list = gamit2metadata_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
+    else:
+        metadata_obj_list = []
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
@@ -1073,6 +1078,8 @@ def rinexmod(
             logger.warning(
                 "32 - Site's missing in the input 9-char. file: %s", rinexfile
             )
+            monum = "00"
+            cntry = "XXX"
         else:
             monum = nine_char_dict[rnx_4char].upper()[4:6]
             cntry = nine_char_dict[rnx_4char].upper()[6:]
@@ -1114,6 +1121,8 @@ def rinexmod(
         rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=ignore)
         logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_metadata()[0])
         modif_source_metadata = metadataobj.filename
+    else:
+        modif_source_metadata = ""
 
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
@@ -1126,6 +1135,8 @@ def rinexmod(
         logger.debug(
             "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_metadata()[0]
         )
+    else:
+        modif_source_kw = ""
 
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
