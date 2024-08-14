@@ -485,22 +485,22 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    metadata_4char = metadataobj.misc_meta["ID"].lower()[:4]
+    mda_4char = metadataobj.misc_meta["ID"].lower()[:4]
 
-    if rnx_4char != metadata_4char:
+    if rnx_4char != mda_4char:
         logger.warning(
             "RINEX and metadata 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",
             rnx_4char,
-            metadata_4char,
+            mda_4char,
         )
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    metadata_vars, ignored = metadataobj.rinex_metadata_lines(
+    mda_vars, ignored = metadataobj.rinex_metadata_lines(
         rnxobj.start_date, rnxobj.end_date, ignore
     )
 
-    if not metadata_vars:
+    if not mda_vars:
         logger.error(
             "{:110s} - {}".format(
                 "35 - No instrumentation corresponding to the RINEX epoch",
@@ -526,7 +526,7 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
         antenna,
         antenna_pos,
         antenna_delta,
-    ) = metadata_vars
+    ) = mda_vars
 
     # # Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
