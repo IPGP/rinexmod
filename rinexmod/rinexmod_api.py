@@ -436,6 +436,9 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
 
     logger.debug("Searching corresponding metadata for site: " + rnx_4char)
 
+    if len(metadata_obj_list) == 0:
+        logger.error("The list of metadata is empty!")
+
     metadataobj = None
     if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
         if len(metadata_obj_list) == 1:
