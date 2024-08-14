@@ -437,7 +437,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
     logger.debug("Searching corresponding metadata for site: " + rnx_4char)
 
     if len(metadata_obj_list) == 0:
-        logger.error("The list of metadata is empty!")
+        logger.warning("The metadata list provided is empty!")
 
     metadataobj = None
     if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
@@ -1028,6 +1028,8 @@ def rinexmod(
             "metdata will be written!"
         )
 
+    # initialize the metadata object list (to avoid linter warning)
+    metadata_obj_list = []
     ## sitelogs
     if sitelog:
         metadata_obj_list = metadata_input_manage(sitelog, force=force_sitelog)
@@ -1046,8 +1048,6 @@ def rinexmod(
         metadata_obj_list = gamit2metadata_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
-    else:
-        metadata_obj_list = []
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
