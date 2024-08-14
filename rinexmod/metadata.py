@@ -410,19 +410,19 @@ class MetaData:
     def _tryparsedate(self, date):
         # Different date format to test on the string in case of bad standard compliance
         formats = [
-            "%y-%m-%d %h:%M:%S.%f",
-            "%y-%m-%dT%h:%MZ",
-            "%y-%m-%d %h:%M",
-            "%y-%m-%dT%h:%M",
-            "%y/%m/%dT%h:%MZ",
-            "%y-%m-%d %h:%M",
-            "%y-%m-%dT%h:%M",
-            "%d/%m/%YT%h:%MZ",
-            "%d/%m/%y %h:%M",
-            "%d/%m/%YT%h:%M",
-            "%y-%m-%d",
-            "%y/%m/%d",
-            "%d/%m/%y",
+            "%Y-%m-%d %H:%M:%S.%f",
+            "%Y-%m-%dT%H:%MZ",
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%dT%H:%M",
+            "%Y/%m/%dT%H:%MZ",
+            "%Y-%m-%d %H:%M",
+            "%Y-%m-%dT%H:%M",
+            "%d/%m/%YT%H:%MZ",
+            "%d/%m/%Y %H:%M",
+            "%d/%m/%YT%H:%M",
+            "%Y-%m-%d",
+            "%Y/%m/%d",
+            "%d/%m/%Y",
         ]
         if date:
             # Parse to date trying different formats
@@ -434,8 +434,7 @@ class MetaData:
                     pass
         if not isinstance(date, datetime):
             # We set the date to 'infinity' date. If not a date, it's because it's an open border.
-            date = datetime.strptime("9999-01-01", "%y-%m-%d")
-
+            date = datetime.strptime("9999-01-01", "%Y-%m-%d")
         return date
 
     def _get_misc_meta(self):
