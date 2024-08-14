@@ -87,7 +87,7 @@ def read_gamit_apr_lfile(aprfile_inp):
         #     vY = 0.
         #     vZ = 0.
 
-        domes_re = re.search("[0-9]{5}[A-z][0-9]{3}", l)
+        domes_re = re.search("[0-9]{5}[A-Z][0-9]{3}", l)
         if domes_re:
             domes = domes_re.group()
         else:
@@ -135,8 +135,8 @@ def read_gamit_station_info(station_info_inp):
     # c Session Stop  stop    2i4,3i3  0 0 0 0 0  stop time (yr doy hr min sec)
     # c Sessn         sessn   i1       0          session number
     # c Ant Ht        anth    f7.4     0.0        height of antenna ARP above the monument
-    # c Ant n         antn    f7.4     0.0        n offset of ant ARP from the center of the monument
-    # c Ant e         ante    f7.4     0.0        e offset of ant ARP from the center of the monument
+    # c Ant N         antn    f7.4     0.0        N offset of ant ARP from the center of the monument
+    # c Ant E         ante    f7.4     0.0        E offset of ant ARP from the center of the monument
     # c RcvCod        rcvcod  a6                  6-char/acter GAMIT receiver code
     # c Receiver Type rctype  a20                 IGS (RINEX) receiver name
     # c Receiver SN   rcvrsn  a20                 receiver serial number
@@ -147,7 +147,7 @@ def read_gamit_station_info(station_info_inp):
     # c Antenna Type  anttyp  a15                 IGS antenna name, 1st 15 chars of RINEX antenna field
     # c Dome          radome   a5                 IGS radome name, last 5 chars of RINEX antenna field
     # c HtCod         htcod    a5     DHARP       5-char GAMIT code for type of height measurement
-    # c AntDAZ	antdaz  f5.0     0.0        Alignment from True n (deg).  TAH 2020203.
+    # c AntDAZ	antdaz  f5.0     0.0        Alignment from True N (deg).  TAH 2020203.
 
     # colsize = np.array([4,16,4,4,3,3,3,4,4,3,3,3,1,7,7,7,6,20,20,5,20,6,20,15,5,5,5])
     colsize = np.array(
@@ -330,7 +330,7 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
         ant_dic["Marker->ARP Up Ecc. (m)"] = row["ant ht"]
         ant_dic["Marker->ARP North Ecc(m)"] = row["ant n"]
         ant_dic["Marker->ARP East Ecc(m)"] = row["ant e"]
-        ant_dic["Alignment from True n"] = row["antdaz"]
+        ant_dic["Alignment from True N"] = row["antdaz"]
         ant_dic["Antenna Radome Type"] = str(row["dome"])
         ant_dic["Radome Serial Number"] = "none"
         ant_dic["Antenna Cable Type"] = "none"
@@ -371,9 +371,9 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
     mm_dic["operator"] = "OPERATOR"
     mm_dic["agency"] = "AGENCY"
 
-    mm_dic["x coordinate (m)"] = apr_df_site["x"]
-    mm_dic["y coordinate (m)"] = apr_df_site["y"]
-    mm_dic["z coordinate (m)"] = apr_df_site["z"]
+    mm_dic["X coordinate (m)"] = apr_df_site["x"]
+    mm_dic["Y coordinate (m)"] = apr_df_site["y"]
+    mm_dic["Z coordinate (m)"] = apr_df_site["z"]
 
     mm_dic["Country"] = "XXX"
 

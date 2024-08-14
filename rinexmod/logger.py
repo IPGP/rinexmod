@@ -21,15 +21,15 @@ def logger_define(level_prompt, logfile=None, level_logfile=None):
     the other to a logfile defined by 'logfile'.
     """
 
-    logger0 = colorlog.getLogger(__name__)
-    logger0.propagate = False
-    logger0.setLevel(level_prompt)
+    logger = colorlog.getLogger(__name__)
+    logger.propagate = False
+    logger.setLevel(level_prompt)
 
     # This handler is for prompt (console)
     prompthandler = colorlog.StreamHandler()
     promptformatter = colorlog.ColoredFormatter(
         "%(asctime)s.%(msecs)03d|%(log_color)s%(levelname).1s%(reset)s|%(log_color)s%(funcName)-15s%(reset)s|%(message)s",
-        datefmt="%y%m%dT%h:%M:%S",
+        datefmt="%y%m%dT%H:%M:%S",
         log_colors={
             "DEBUG": "cyan",
             "INFO": "green",
@@ -40,8 +40,8 @@ def logger_define(level_prompt, logfile=None, level_logfile=None):
     )
     prompthandler.setFormatter(promptformatter)
     prompthandler.setLevel(level_prompt)
-    if not len(logger0.handlers):
-        logger0.addHandler(prompthandler)
+    if not len(logger.handlers):
+        logger.addHandler(prompthandler)
 
     # This handler will write to a log file
     if logfile:
@@ -50,15 +50,17 @@ def logger_define(level_prompt, logfile=None, level_logfile=None):
         filehandler = logging.FileHandler(logfile, mode="a", encoding="utf-8")
         fileformatter = logging.Formatter(
             "%(asctime)s.%(msecs)03d|%(levelname).1s|%(funcName)-15s|%(message)s",
-            datefmt="%y%m%dT%h:%M:%S",
+            datefmt="%y%m%dT%H:%M:%S",
         )
         filehandler.setFormatter(fileformatter)
         filehandler.setLevel(level_logfile)
-        logger0.addHandler(filehandler)
+        logger.addHandler(filehandler)
 
-    return logger0
+    return logger
+
 
 logger = logger_define("INFO")
+
 
 def logger_tester():
     logger.debug("debug message")
