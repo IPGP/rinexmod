@@ -740,7 +740,7 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
                         "RINEX" + rinex_version,
                         sample_rate,
                         file_period,
-                        datetime.strftime(now_dt, "%y%m%d%h%M"),
+                        datetime.strftime(now_dt, "%Y%m%d%H%M"),
                         "delivery.lst",
                     ]
                 )
@@ -1156,7 +1156,7 @@ def rinexmod(
     rnxobj.add_comment(("RinexMod " + vers_num, "METADATA UPDATE"), add_pgm_cmt=True)
     rnxobj.add_comment("RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)")
     rnxobj.add_comment(
-        "rinexmoded on {}".format(datetime.strftime(now, "%y-%m-%d %h:%M%z"))
+        "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M%z"))
     )
     if metadataobj:
         rnxobj.add_comment("rinexmoded with {}".format(modif_source_metadata))
@@ -1356,7 +1356,7 @@ def rinexmod_cli(
 
     # Creating log file
     now = datetime.now()
-    nowstr = datetime.strftime(now, "%y%m%d%h%M%S")
+    nowstr = datetime.strftime(now, "%Y%m%d%H%M%S")
 
     if output_logs:
         logfolder = output_logs
