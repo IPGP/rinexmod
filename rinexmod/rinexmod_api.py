@@ -380,7 +380,7 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
                 d = datetime.strptime(date_from_fn(sl), "%y%m%d")
                 sitelogs_dates.append(d)
             except ValueError as e:
-                logger.error("bad date in sitelog's filename: %s", sl)
+                logger.error("bad date %s in sitelog's filename: %s", date_from_fn(sl), sl)
                 raise e
         # We get the max date and put it back to string format.
         maxdate = max(sitelogs_dates).strftime("%y%m%d")
