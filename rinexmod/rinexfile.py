@@ -93,7 +93,7 @@ class RinexFile:
         the rinex version, the data source, the compression type, the size of the file,
         and the status of the file.
         """
-        if self.rinex_data == None:
+        if not self.rinex_data:
             return ""
 
         return (
@@ -115,18 +115,18 @@ class RinexFile:
         Defines a print method for the rinex file object. Will print all the
         header, plus 20 lines of data, plus the number of not printed lines.
         """
-        if self.rinex_data == None:
+        if not self.rinex_data:
             return ""
 
         # We get header
         end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
-        str_RinexFile = self.rinex_data[0:end_of_header_idx]
+        str_rinex_file = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
-        str_RinexFile.extend(
+        str_rinex_file.extend(
             self.rinex_data[end_of_header_idx : end_of_header_idx + 20]
         )
         # We add a line that contains the number of lines not to be printed
-        length = len(self.rinex_data) - len(str_RinexFile) - 20
+        length = len(self.rinex_data) - len(str_rinex_file) - 20
         cut_lines_rep = (
             " " * 20
             + "["
@@ -134,9 +134,9 @@ class RinexFile:
             + "]"
             + " " * 20
         )
-        str_RinexFile.append(cut_lines_rep)
+        str_rinex_file.append(cut_lines_rep)
 
-        return "\n".join(str_RinexFile)
+        return "\n".join(str_rinex_file)
 
     # *****************************************************************************
     #### Main methods
@@ -163,7 +163,7 @@ class RinexFile:
             "REC # / TYPE / VERS",
             "ANT # / TYPE",
             "APPROX POSITION XYZ",
-            "ANTENNA: DELTA H/E/N",
+            "ANTENNA: DELTA h/e/n",
             "TIME OF FIRST OBS",
         ]
 
@@ -206,10 +206,10 @@ class RinexFile:
                 metadata["APPROX POSITION XYZ"][14:28].strip(),
                 metadata["APPROX POSITION XYZ"][28:42].strip(),
             ),
-            "Antenna delta (H/E/N)": "{:14} {:14} {:14}".format(
-                metadata["ANTENNA: DELTA H/E/N"][0:14].strip(),
-                metadata["ANTENNA: DELTA H/E/N"][14:28].strip(),
-                metadata["ANTENNA: DELTA H/E/N"][28:42].strip(),
+            "Antenna delta (h/e/n)": "{:14} {:14} {:14}".format(
+                metadata["ANTENNA: DELTA h/e/n"][0:14].strip(),
+                metadata["ANTENNA: DELTA h/e/n"][14:28].strip(),
+                metadata["ANTENNA: DELTA h/e/n"][28:42].strip(),
             ),
             "Start date and time": self.start_date,
             "Final date and time": self.end_date,
@@ -288,7 +288,7 @@ class RinexFile:
             is given without dot as 1st character
 
         compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
+            'auto' (based on the RinexFile attribute) or manual : 'z', 'gz', etc...
             is given without dot as 1st character
         """
 
@@ -320,17 +320,17 @@ class RinexFile:
 
         if file_period_name == "01D":  ## Daily case
             if session_name:
-                timeformat = "%Y%j%H%M"
+                timeformat = "%y%j%h%M"
             else:
-                timeformat = "%Y%j0000"  # Start of the day
+                timeformat = "%y%j0000"  # Start of the day
         elif file_period_name[-1] == "M":  ### Subhourly case
-            timeformat = "%Y%j%H%M"
+            timeformat = "%y%j%h%M"
         elif (
             file_period_name == "00U"
         ):  ## Unknown case: the filename deserves a full description to identify potential bug
-            timeformat = "%Y%j%H%M"
+            timeformat = "%y%j%h%M"
         else:  ## Hourly case
-            timeformat = "%Y%j%H00"  # Start of the hour
+            timeformat = "%y%j%H00"  # Start of the hour
 
         longname = "_".join(
             (
@@ -364,7 +364,7 @@ class RinexFile:
             'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
 
         compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
+            'auto' (based on the RinexFile attribute) or manual : 'z', 'gz', etc...
             is given without dot as 1st character
         """
 
@@ -386,7 +386,7 @@ class RinexFile:
             file_period_name, session_name = self.get_file_period_round()
 
         alphabet = list(map(chr, range(97, 123)))
-        if file_period_name[-1] == "H":
+        if file_period_name[-1] == "h":
             timeformat = (
                 "%j" + alphabet[self.start_date.hour] + ".%y" + file_type + compression
             )
@@ -487,7 +487,7 @@ class RinexFile:
         """
         Get the naming convention based on a regular expression test
         """
-        # Daily or hourly, hatanaka or not, gz or Z compressed file
+        # Daily or hourly, hatanaka or not, gz or z compressed file
         pattern_dic = regex_pattern_rinex_filename()
 
         pattern_shortname = re.compile(pattern_dic["shortname"])
@@ -524,7 +524,7 @@ class RinexFile:
     def get_compression(self):
         """
         get the compression type in a 2-tuple: (compress,hatanaka)
-        compress is None or a string: gz, Z, 7z
+        compress is None or a string: gz, z, 7z
         hatanaka is a bool
         """
 
@@ -545,9 +545,9 @@ class RinexFile:
                 type_letter = basename[-1]
 
             if type_letter == "d":
-                hatanaka = True
+                hatanaka_bool = True
             else:
-                hatanaka = False
+                hatanaka_bool = False
 
         else:  # LONG name
             if compress:
@@ -556,11 +556,11 @@ class RinexFile:
                 type_ext = basename[-3:]
 
             if type_ext == "crx":
-                hatanaka = True
+                hatanaka_bool = True
             else:
-                hatanaka = False
+                hatanaka_bool = False
 
-        return compress, hatanaka
+        return compress, hatanaka_bool
 
     def get_filename(self):
         """
@@ -689,7 +689,7 @@ class RinexFile:
                     + m.group(6)
                 )
 
-                epoc = datetime.strptime(epoc, "%Y %m %d %H %M %S.%f")
+                epoc = datetime.strptime(epoc, "%y %m %d %h %M %S.%f")
             else:
                 epoc = None
 
@@ -725,7 +725,7 @@ class RinexFile:
             else:
                 date_out = line.split()
                 date_out = datetime.strptime(
-                    " ".join(date_out[0:6]), "%Y %m %d %H %M %S.%f0"
+                    " ".join(date_out[0:6]), "%y %m %d %h %M %S.%f0"
                 )
             return date_out
 
@@ -797,7 +797,7 @@ class RinexFile:
                 + sample.group(6)
             )
 
-            date = datetime.strptime(date, "%Y %m %d %H %M %S.%f")
+            date = datetime.strptime(date, "%y %m %d %h %M %S.%f")
             return date
 
         # Format dates to datetime
@@ -870,7 +870,7 @@ class RinexFile:
         elif sample_rate_num < 1:
             # XXZ – Hertz
             sample_rate_num = round(sample_rate_num, 2)
-            sample_rate_str = (str(int(1 / sample_rate_num)) + "Z").rjust(3, "0")
+            sample_rate_str = (str(int(1 / sample_rate_num)) + "z").rjust(3, "0")
         elif sample_rate_num < 60:
             # XXS – Seconds
             sample_rate_num = round(sample_rate_num, 0)
@@ -883,7 +883,7 @@ class RinexFile:
         elif sample_rate_num < 86400:
             # XXH – Hours
             sample_rate_num = round(sample_rate_num, 0)
-            sample_rate_str = (str(int(sample_rate_num / 3600)) + "H").rjust(3, "0")
+            sample_rate_str = (str(int(sample_rate_num / 3600)) + "h").rjust(3, "0")
         elif sample_rate_num <= 8553600:
             # XXD – Days
             sample_rate_num = round(sample_rate_num, 0)
@@ -993,7 +993,7 @@ class RinexFile:
 
         """
 
-        if self.file_period[2] == "H" and int(self.file_period[:2]) > 1:
+        if self.file_period[2] == "h" and int(self.file_period[:2]) > 1:
             file_period_rnd = "01D"
             session_rnd = False
         else:
@@ -1082,7 +1082,7 @@ class RinexFile:
 
         dict_sys_nobs : dict
             a dictionary of integer describing the number of observables per system, e.g.:
-            ``{'C': 8, 'E': 16, 'G': 16, 'I': 4, 'R': 12, 'S': 4}``.
+            ``{'C': 8, 'e': 16, 'G': 16, 'I': 4, 'R': 12, 'S': 4}``.
 
         """
 
@@ -1101,22 +1101,22 @@ class RinexFile:
             sys_obs_idx_fin += 1
 
         #### get the systems and observations
-        Lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
+        lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
 
         ## clean SYS / # / OBS TYPES
-        Lines_sys = [l[:60] for l in Lines_sys]
+        lines_sys = [l[:60] for l in lines_sys]
 
         ## manage the 2 lines systems => they are stacked in one
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             if l[0] == " ":
-                Lines_sys[il - 1] = Lines_sys[il - 1] + l
-                Lines_sys.remove(l)
+                lines_sys[il - 1] = lines_sys[il - 1] + l
+                lines_sys.remove(l)
 
         #### store system and observables in a dictionnary
         dict_sys_obs = dict()
         dict_sys_nobs = dict()
 
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             sysobs = l.split()
             sys = sysobs[0]
             dict_sys_obs[sys] = sysobs[2:]
@@ -1360,14 +1360,14 @@ class RinexFile:
 
         return
 
-    def mod_antenna_pos(self, X=None, Y=None, Z=None):
+    def mod_antenna_pos(self, x=None, y=None, z=None):
         """
         Modify within the RINEX header the X Y Z RINEX's approximative position.
         (``APPROX POSITION XYZ`` line)
 
         Parameters
         ----------
-        X,Y,Z : float, optional
+        x,y,z : float, optional
             X Y Z position. The default is None.
 
         Returns
@@ -1379,7 +1379,7 @@ class RinexFile:
         if self.status:
             return
 
-        if (X is None) and (Y is None) and (X is None):
+        if (x is None) and (y is None) and (z is None):
             return
 
         # Identify line that contains APPROX POSITION XYZ
@@ -1394,17 +1394,17 @@ class RinexFile:
         label = antenna_pos_head[60:]
         # Edit line
         if (
-            X is not None
+            x is not None
         ):  # Format as 14.4 float. Set to zero if too large but should not happen
-            x_head = "{:14.4f}".format(float(X))
+            x_head = "{:14.4f}".format(float(x))
             if len(x_head) > 14:
                 x_head = "{:14.4f}".format(float("0"))
-        if Y is not None:
-            y_head = "{:14.4f}".format(float(Y))
+        if y is not None:
+            y_head = "{:14.4f}".format(float(y))
             if len(y_head) > 14:
                 y_head = "{:14.4f}".format(float("0"))
-        if Z is not None:
-            z_head = "{:14.4f}".format(float(Z))
+        if z is not None:
+            z_head = "{:14.4f}".format(float(z))
             if len(z_head) > 14:
                 z_head = "{:14.4f}".format(float("0"))
         new_line = x_head + y_head + z_head + " " * 18 + label
@@ -1413,14 +1413,14 @@ class RinexFile:
 
         return
 
-    def mod_antenna_delta(self, H=None, E=None, N=None):
+    def mod_antenna_delta(self, h=None, e=None, n=None):
         """
         Modify within the RINEX header the H E N antenna's excentricity
         (``ANTENNA: DELTA H/E/N`` line).
 
         Parameters
         ----------
-        H, E, N: float, optional
+        h, e, n: float, optional
             H E N position. The default is None.
 
         Returns
@@ -1432,12 +1432,12 @@ class RinexFile:
         if self.status:
             return
 
-        if (H is None) and (E is None) and (N is None):
+        if (h is None) and (e is None) and (n is None):
             return
 
-        # Identify line that contains ANTENNA: DELTA H/E/N
+        # Identify line that contains ANTENNA: DELTA h/e/n
         antenna_delta_header_idx = search_idx_value(
-            self.rinex_data, "ANTENNA: DELTA H/E/N"
+            self.rinex_data, "ANTENNA: DELTA h/e/n"
         )
         antenna_delta_head = self.rinex_data[antenna_delta_header_idx]
         # Parse line
@@ -1447,17 +1447,17 @@ class RinexFile:
         label = antenna_delta_head[60:]
         # Edit line
         if (
-            H is not None
+            h is not None
         ):  # Format as 14.4 float. Set to zero if too large but should not happen
-            h_head = "{:14.4f}".format(float(H))
+            h_head = "{:14.4f}".format(float(h))
             if len(h_head) > 14:
                 h_head = "{:14.4f}".format(float("0"))
-        if E is not None:
-            e_head = "{:14.4f}".format(float(E))
+        if e is not None:
+            e_head = "{:14.4f}".format(float(e))
             if len(e_head) > 14:
                 e_head = "{:14.4f}".format(float("0"))
-        if N is not None:
-            n_head = "{:14.4f}".format(float(N))
+        if n is not None:
+            n_head = "{:14.4f}".format(float(n))
             if len(n_head) > 14:
                 n_head = "{:14.4f}".format(float("0"))
         new_line = h_head + e_head + n_head + " " * 18 + label
@@ -1557,7 +1557,7 @@ class RinexFile:
             gnss_codes = {
                 "GPS": "G",
                 "GLO": "R",
-                "GAL": "E",
+                "GAL": "e",
                 "BDS": "C",
                 "QZSS": "J",
                 "IRNSS": "I",
@@ -1760,7 +1760,7 @@ class RinexFile:
             The output directory.
 
         compression : str, optional
-            'gz' (default), 'bz2', 'Z',
+            'gz' (default), 'bz2', 'z',
             'none' (string, compliant with hatanaka module) or
             None (NoneType, compliant with the rinex object initialisation).
             The default is 'gz'.
@@ -1861,7 +1861,7 @@ class RinexFile:
             first_comment_idx = min(Idx)
             new_comment_idx = first_comment_idx
             program, run_by = comment
-            date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+            date = datetime.utcnow().strftime("%y%m%d %h%M%S UTC")
             new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.rinex_data.insert(new_comment_idx, new_line)
@@ -1980,8 +1980,8 @@ class RinexFile:
             "REC # / TYPE / VERS",
             "ANT # / TYPE",
             "APPROX POSITION XYZ",
-            "ANTENNA: DELTA H/E/N",
-            "ANTENNA: DELTA X/Y/Z",
+            "ANTENNA: DELTA h/e/n",
+            "ANTENNA: DELTA x/y/z",
             "ANTENNA: PHASECENTER",
             "ANTENNA: B.SIGHT XYZ",
             "ANTENNA: ZERODIR AZI",
@@ -2074,13 +2074,13 @@ def regex_pattern_rinex_filename():
     return a dictionnary with the different REGEX patterns to describe a RIENX filename
     """
     pattern_dic = dict()
-    #pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
-    pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))" ### add subhour starting min
+    #pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(z|gz))"
+    pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(z|gz))" ### add subhour starting min
     pattern_dic["longname"] = (
         ".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
     )
     pattern_dic["longname_gfz"] = (
-        ".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?"
+        ".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-z]*\.\w{3}(\.gz)?"
     )
 
     return pattern_dic
@@ -2110,7 +2110,7 @@ def dates_from_rinex_filename(rnx_inp):
 
         if peri_unit == "M":
             unit_sec = 60
-        elif peri_unit == "H":
+        elif peri_unit == "h":
             unit_sec = 3600
         elif peri_unit == "D":
             unit_sec = 86400
@@ -2211,10 +2211,10 @@ def file_period_from_timedelta(start_date, end_date):
     hours = int(delta2.total_seconds() / 3600)
     delta_sec = (end_date - start_date).total_seconds()
 
-    # first, the special case : N *full* hours
+    # first, the special case : n *full* hours
     if delta <= timedelta(seconds=86400 - 3600) and hours > 0:  ## = 23h max
         # delta2 is a more precise delta (average)
-        file_period = str(hours).zfill(2) + "H"
+        file_period = str(hours).zfill(2) + "h"
         session = True
     # more regular cases : 01H, 01D, nnM, or Unknown
     elif delta <= timedelta(seconds=3600):
@@ -2222,14 +2222,12 @@ def file_period_from_timedelta(start_date, end_date):
         session = True
         file_period = None
         for m in [5, 10, 15, 20, 30]:
-            if (m * 60 - 1) <= delta_sec and delta_sec <= (m * 60 + 1):
+            if (m * 60 - 1) <= delta_sec <= (m * 60 + 1):
                 file_period = str(m).zfill(2) + "M"
         if not file_period:
             # NB: this test is useless, it is treated by the previous test
             file_period = "01H"
-    elif timedelta(seconds=3600) < delta and delta <= timedelta(
-        seconds=86400 + 3600
-    ):  # Note1
+    elif timedelta(seconds=3600) < delta <= timedelta(seconds=86400 + 3600):  # Note1
         file_period = "01D"
         session = False
     else:

@@ -279,8 +279,6 @@ def sitelogs2metadata_objs(
     latest_sitelogs = _slg_find_latest_name(all_sitelogs)
     # load the sitelogs as metadata objects
     metadata_obj_list, bad_sitelogs_list = load_sitelogs(latest_sitelogs, force)
-    metadata_obj_list = list(metadata_obj_list)
-    bad_sitelogs_list = list(bad_sitelogs_list)
     # Get last version of sitelogs if multiple available
     # (2nd fine search based on date in "Date Prepared" field)
     metadata_obj_list = _mda_find_latest_prep(metadata_obj_list)
@@ -314,9 +312,9 @@ def load_sitelogs(sitelogs_inp, force=False):
 
     Returns
     -------
-    metadata_obj_list : list
+    metadata_obj_list : Iterable
         List of MetaData objects.
-    bad_sitelogs_list : list
+    bad_sitelogs_list : Iterable
         List of sitelogs that could not be parsed.
     """
 
@@ -377,13 +375,13 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
         sitelogs_dates = []
         for sl in sta_sitelogs:
             try:
-                d = datetime.strptime(os.path.splitext(bnm(sl))[0][-8:], "%Y%m%d")
+                d = datetime.strptime(os.path.splitext(bnm(sl))[0][-8:], "%y%m%d")
                 sitelogs_dates.append(d)
             except ValueError as e:
                 logger.error("bad date in sitelog's filename: %s", sl)
                 raise e
         # We get the max date and put it back to string format.
-        maxdate = max(sitelogs_dates).strftime("%Y%m%d")
+        maxdate = max(sitelogs_dates).strftime("%y%m%d")
         # We filter the list with the max date string, and get a one entry list, then transform it to string
         sta_sitelog = [
             sl for sl in sta_sitelogs if maxdate in os.path.splitext(bnm(sl))[0][-8:]
@@ -439,7 +437,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
 
     logger.debug("Searching corresponding metadata for site: " + rnx_4char)
 
-    metadataobj = []
+    metadataobj = None
     if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
         if len(metadata_obj_list) == 1:
             if not force:
@@ -487,22 +485,22 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    metadata_4char = metadataobj.misc_meta["ID"].lower()[:4]
+    mda_4char = metadataobj.misc_meta["ID"].lower()[:4]
 
-    if rnx_4char != metadata_4char:
+    if rnx_4char != mda_4char:
         logger.warning(
             "RINEX and metadata 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",
             rnx_4char,
-            metadata_4char,
+            mda_4char,
         )
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    metadata_vars, ignored = metadataobj.rinex_metadata_lines(
+    mda_vars, ignored = metadataobj.rinex_metadata_lines(
         rnxobj.start_date, rnxobj.end_date, ignore
     )
 
-    if not metadata_vars:
+    if not mda_vars:
         logger.error(
             "{:110s} - {}".format(
                 "35 - No instrumentation corresponding to the RINEX epoch",
@@ -528,7 +526,7 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
         antenna,
         antenna_pos,
         antenna_delta,
-    ) = metadata_vars
+    ) = mda_vars
 
     # # Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
@@ -678,7 +676,7 @@ def _return_lists_maker(rnxobj_or_dict, return_lists=dict()):
 
     return_lists : dict, optional
         A potential pre-exisiting return_lists.
-        Per default it is a brand new return_lists for scratch.
+        Per default it is a brand-new return_lists for scratch.
         The default is dict().
 
     Returns
@@ -732,6 +730,8 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
     if not now_dt:
         now_dt = datetime.now()
 
+    this_outputfile = ""
+
     for rinex_version in return_lists:
         for sample_rate in return_lists[rinex_version]:
             for file_period in return_lists[rinex_version][sample_rate]:
@@ -740,7 +740,7 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
                         "RINEX" + rinex_version,
                         sample_rate,
                         file_period,
-                        datetime.strftime(now_dt, "%Y%m%d%H%M"),
+                        datetime.strftime(now_dt, "%y%m%d%h%M"),
                         "delivery.lst",
                     ]
                 )
@@ -755,6 +755,7 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
                         ]
                     )
                     logger.debug("Output rinex list written to " + this_outputfile)
+
     return this_outputfile
 
 
@@ -825,7 +826,7 @@ def rinexmod(
          * antenna_N_delta
          * operator
          * agency
-         * sat_system (M, G, R, E, C...)
+         * sat_system (M, G, R, e, C...)
          * observables (legacy alias for sat_system)
          * interval
         Acceptable keywords for the filename:
@@ -870,7 +871,7 @@ def rinexmod(
         The default is False.
     compression : str, optional
         Set low-level RINEX file compression.
-        acceptable values : gz (recommended to fit IGS standards), 'Z', None.
+        acceptable values : gz (recommended to fit IGS standards), 'z', None.
         The default is None.
     relative : str, optional
         Reconstruct files relative subfolders.
@@ -925,7 +926,7 @@ def rinexmod(
         a dictionary of rinexmoded RINEXs for GLASS distribution.
     """
 
-    now = datetime.now()
+    now = datetime.now().astimezone()
 
     if verbose:
         logger = rimo_log.logger_define("DEBUG", logfile=None, level_logfile="DEBUG")
@@ -1043,6 +1044,8 @@ def rinexmod(
         metadata_obj_list = gamit2metadata_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
+    else:
+        metadata_obj_list = []
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
@@ -1075,6 +1078,8 @@ def rinexmod(
             logger.warning(
                 "32 - Site's missing in the input 9-char. file: %s", rinexfile
             )
+            monum = "00"
+            cntry = "XXX"
         else:
             monum = nine_char_dict[rnx_4char].upper()[4:6]
             cntry = nine_char_dict[rnx_4char].upper()[6:]
@@ -1116,6 +1121,8 @@ def rinexmod(
         rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=ignore)
         logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_metadata()[0])
         modif_source_metadata = metadataobj.filename
+    else:
+        modif_source_metadata = ""
 
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
@@ -1128,6 +1135,8 @@ def rinexmod(
         logger.debug(
             "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_metadata()[0]
         )
+    else:
+        modif_source_kw = ""
 
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
@@ -1147,7 +1156,7 @@ def rinexmod(
     rnxobj.add_comment(("RinexMod " + vers_num, "METADATA UPDATE"), add_pgm_cmt=True)
     rnxobj.add_comment("RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)")
     rnxobj.add_comment(
-        "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M"))
+        "rinexmoded on {}".format(datetime.strftime(now, "%y-%m-%d %h:%M%z"))
     )
     if metadataobj:
         rnxobj.add_comment("rinexmoded with {}".format(modif_source_metadata))
@@ -1275,7 +1284,7 @@ def rinexmod_cli(
 
     Parameters
     ----------
-    rinexinput : list
+    rinexinput : Itertable
         a filepath of a textfile containing a RINEX paths list (1-element list)
         or directly a Python list of RINEX paths
     """
@@ -1347,7 +1356,7 @@ def rinexmod_cli(
 
     # Creating log file
     now = datetime.now()
-    nowstr = datetime.strftime(now, "%Y%m%d%H%M%S")
+    nowstr = datetime.strftime(now, "%y%m%d%h%M%S")
 
     if output_logs:
         logfolder = output_logs
