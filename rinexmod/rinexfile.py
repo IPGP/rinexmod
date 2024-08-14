@@ -320,17 +320,17 @@ class RinexFile:
 
         if file_period_name == "01D":  ## Daily case
             if session_name:
-                timeformat = "%y%j%h%M"
+                timeformat = "%Y%j%H%M"
             else:
-                timeformat = "%y%j0000"  # Start of the day
+                timeformat = "%Y%j0000"  # Start of the day
         elif file_period_name[-1] == "M":  ### Subhourly case
-            timeformat = "%y%j%h%M"
+            timeformat = "%Y%j%H%M"
         elif (
             file_period_name == "00U"
         ):  ## Unknown case: the filename deserves a full description to identify potential bug
-            timeformat = "%y%j%h%M"
+            timeformat = "%Y%j%H%M"
         else:  ## Hourly case
-            timeformat = "%y%j%H00"  # Start of the hour
+            timeformat = "%Y%j%H00"  # Start of the hour
 
         longname = "_".join(
             (
@@ -689,7 +689,7 @@ class RinexFile:
                     + m.group(6)
                 )
 
-                epoc = datetime.strptime(epoc, "%y %m %d %h %M %S.%f")
+                epoc = datetime.strptime(epoc, "%Y %m %d %H %M %S.%f")
             else:
                 epoc = None
 
@@ -725,7 +725,7 @@ class RinexFile:
             else:
                 date_out = line.split()
                 date_out = datetime.strptime(
-                    " ".join(date_out[0:6]), "%y %m %d %h %M %S.%f0"
+                    " ".join(date_out[0:6]), "%Y %m %d %H %M %S.%f0"
                 )
             return date_out
 
@@ -797,7 +797,7 @@ class RinexFile:
                 + sample.group(6)
             )
 
-            date = datetime.strptime(date, "%y %m %d %h %M %S.%f")
+            date = datetime.strptime(date, "%Y %m %d %H %M %S.%f")
             return date
 
         # Format dates to datetime
@@ -1861,7 +1861,7 @@ class RinexFile:
             first_comment_idx = min(Idx)
             new_comment_idx = first_comment_idx
             program, run_by = comment
-            date = datetime.utcnow().strftime("%y%m%d %h%M%S UTC")
+            date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
             new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.rinex_data.insert(new_comment_idx, new_line)
