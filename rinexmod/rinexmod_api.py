@@ -1510,7 +1510,7 @@ class ParseKwargs(argparse.Action):
                 def _print_kw_tips(values_inp):
                     logger.critical("********************************************")
                     logger.critical("TIP1: be sure you have respected the syntax:")
-                    logger.critical("      -k keyword1='value' keyword2='value'  ")
+                    logger.critical("      -k keyword1='value1' keyword2='value2'")
                     logger.critical("********************************************")
                     logger.critical(values_inp)
                     return None
