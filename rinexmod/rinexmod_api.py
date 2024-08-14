@@ -692,13 +692,13 @@ def _return_lists_maker(rnxobj_or_dict, return_lists=dict()):
 
     """
 
-    if type(rnxobj_or_dict) is rimo_rnx.RinexFile:
+    if isinstance(rnxobj_or_dict, rimo_rnx.RinexFile):
         rnxobj = rnxobj_or_dict
         major_rinex_version = rnxobj.version[0]
         sample_rate_string = rnxobj.sample_rate_string
         file_period = rnxobj.file_period
         path_output = rnxobj.path_output
-    elif type(rnxobj_or_dict) is dict:
+    elif isinstance(rnxobj_or_dict, dict):
         rtrnlst = rnxobj_or_dict
         major_rinex_version = list(rtrnlst.keys())[0]
         sample_rate_string = list(rtrnlst[major_rinex_version].keys())[0]
