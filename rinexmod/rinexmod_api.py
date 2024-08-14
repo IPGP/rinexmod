@@ -372,20 +372,19 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
         # Getting dates from basename
         # sitelogs_dates0 = [os.path.splitext(bnm(sl))[0][-8:] for sl in sta_sitelogs]
         # Getting dates from basename and parsing 'em
+        date_from_fn = lambda x: os.path.splitext(bnm(x))[0][-8:]
         sitelogs_dates = []
         for sl in sta_sitelogs:
             try:
-                d = datetime.strptime(os.path.splitext(bnm(sl))[0][-8:], "%Y%m%d")
+                d = datetime.strptime(date_from_fn(sl), "%Y%m%d")
                 sitelogs_dates.append(d)
             except ValueError as e:
-                logger.error("bad date in sitelog's filename: %s", sl)
+                logger.error("bad date %s in sitelog's filename: %s", date_from_fn(sl), sl)
                 raise e
         # We get the max date and put it back to string format.
         maxdate = max(sitelogs_dates).strftime("%Y%m%d")
         # We filter the list with the max date string, and get a one entry list, then transform it to string
-        sta_sitelog = [
-            sl for sl in sta_sitelogs if maxdate in os.path.splitext(bnm(sl))[0][-8:]
-        ][0]
+        sta_sitelog = [sl for sl in sta_sitelogs if maxdate in date_from_fn(sl)][0]
 
         latest_sitelogs_filepaths.append(sta_sitelog)
 
