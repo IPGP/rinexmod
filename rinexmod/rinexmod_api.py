@@ -375,13 +375,13 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
         sitelogs_dates = []
         for sl in sta_sitelogs:
             try:
-                d = datetime.strptime(os.path.splitext(bnm(sl))[0][-8:], "%Y%m%d")
+                d = datetime.strptime(os.path.splitext(bnm(sl))[0][-8:], "%y%m%d")
                 sitelogs_dates.append(d)
             except ValueError as e:
                 logger.error("bad date in sitelog's filename: %s", sl)
                 raise e
         # We get the max date and put it back to string format.
-        maxdate = max(sitelogs_dates).strftime("%Y%m%d")
+        maxdate = max(sitelogs_dates).strftime("%y%m%d")
         # We filter the list with the max date string, and get a one entry list, then transform it to string
         sta_sitelog = [
             sl for sl in sta_sitelogs if maxdate in os.path.splitext(bnm(sl))[0][-8:]
@@ -740,7 +740,7 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
                         "RINEX" + rinex_version,
                         sample_rate,
                         file_period,
-                        datetime.strftime(now_dt, "%Y%m%d%H%M"),
+                        datetime.strftime(now_dt, "%y%m%d%h%M"),
                         "delivery.lst",
                     ]
                 )
@@ -826,7 +826,7 @@ def rinexmod(
          * antenna_N_delta
          * operator
          * agency
-         * sat_system (M, G, R, E, C...)
+         * sat_system (M, G, R, e, C...)
          * observables (legacy alias for sat_system)
          * interval
         Acceptable keywords for the filename:
@@ -871,7 +871,7 @@ def rinexmod(
         The default is False.
     compression : str, optional
         Set low-level RINEX file compression.
-        acceptable values : gz (recommended to fit IGS standards), 'Z', None.
+        acceptable values : gz (recommended to fit IGS standards), 'z', None.
         The default is None.
     relative : str, optional
         Reconstruct files relative subfolders.
@@ -1156,7 +1156,7 @@ def rinexmod(
     rnxobj.add_comment(("RinexMod " + vers_num, "METADATA UPDATE"), add_pgm_cmt=True)
     rnxobj.add_comment("RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)")
     rnxobj.add_comment(
-        "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M%z"))
+        "rinexmoded on {}".format(datetime.strftime(now, "%y-%m-%d %h:%M%z"))
     )
     if metadataobj:
         rnxobj.add_comment("rinexmoded with {}".format(modif_source_metadata))
@@ -1356,7 +1356,7 @@ def rinexmod_cli(
 
     # Creating log file
     now = datetime.now()
-    nowstr = datetime.strftime(now, "%Y%m%d%H%M%S")
+    nowstr = datetime.strftime(now, "%y%m%d%h%M%S")
 
     if output_logs:
         logfolder = output_logs

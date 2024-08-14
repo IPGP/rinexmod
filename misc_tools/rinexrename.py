@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-This script takes a list of RINEX files (.d.Z or .d.gz or .rnx.gz),
+This script takes a list of RINEX files (.d.z or .d.gz or .rnx.gz),
 and rename them according to the short <> long name convention.
 The script recognize automatically the input convention and convert
 it to the other one

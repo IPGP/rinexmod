@@ -305,7 +305,7 @@ class MetaData:
                       'Marker->ARP Up Ecc. (m)': '0.0000',
                       'Marker->ARP North Ecc(m)': '0.0000',
                       'Marker->ARP East Ecc(m)': '0.0000',
-                      'Alignment from True N': '0 deg',
+                      'Alignment from True n': '0 deg',
                       'Antenna Radome Type': 'NONE',
                       'Radome Serial Number': '',
                       'Antenna Cable Type': 'TNC',
@@ -410,19 +410,19 @@ class MetaData:
     def _tryparsedate(self, date):
         # Different date format to test on the string in case of bad standard compliance
         formats = [
-            "%Y-%m-%d %H:%M:%S.%f",
-            "%Y-%m-%dT%H:%MZ",
-            "%Y-%m-%d %H:%M",
-            "%Y-%m-%dT%H:%M",
-            "%Y/%m/%dT%H:%MZ",
-            "%Y-%m-%d %H:%M",
-            "%Y-%m-%dT%H:%M",
-            "%d/%m/%YT%H:%MZ",
-            "%d/%m/%Y %H:%M",
-            "%d/%m/%YT%H:%M",
-            "%Y-%m-%d",
-            "%Y/%m/%d",
-            "%d/%m/%Y",
+            "%y-%m-%d %h:%M:%S.%f",
+            "%y-%m-%dT%h:%MZ",
+            "%y-%m-%d %h:%M",
+            "%y-%m-%dT%h:%M",
+            "%y/%m/%dT%h:%MZ",
+            "%y-%m-%d %h:%M",
+            "%y-%m-%dT%h:%M",
+            "%d/%m/%YT%h:%MZ",
+            "%d/%m/%y %h:%M",
+            "%d/%m/%YT%h:%M",
+            "%y-%m-%d",
+            "%y/%m/%d",
+            "%d/%m/%y",
         ]
         if date:
             # Parse to date trying different formats
@@ -434,7 +434,7 @@ class MetaData:
                     pass
         if not isinstance(date, datetime):
             # We set the date to 'infinity' date. If not a date, it's because it's an open border.
-            date = datetime.strptime("9999-01-01", "%Y-%m-%d")
+            date = datetime.strptime("9999-01-01", "%y-%m-%d")
 
         return date
 
@@ -462,11 +462,11 @@ class MetaData:
         mm_dic["operator"] = self.raw_content["11."]["Preferred Abbreviation"]
         mm_dic["agency"] = self.raw_content["12."]["Preferred Abbreviation"]
 
-        mm_dic["X coordinate (m)"] = self.raw_content["2."]["X coordinate (m)"]
-        mm_dic["Y coordinate (m)"] = self.raw_content["2."]["Y coordinate (m)"]
-        mm_dic["Z coordinate (m)"] = self.raw_content["2."]["Z coordinate (m)"]
+        mm_dic["x coordinate (m)"] = self.raw_content["2."]["x coordinate (m)"]
+        mm_dic["y coordinate (m)"] = self.raw_content["2."]["y coordinate (m)"]
+        mm_dic["z coordinate (m)"] = self.raw_content["2."]["z coordinate (m)"]
 
-        mm_dic["date prepared"] = datetime.strptime(self.raw_content["0."]["Date Prepared"], "%Y-%m-%d")
+        mm_dic["date prepared"] = datetime.strptime(self.raw_content["0."]["Date Prepared"], "%y-%m-%d")
 
         if (
             "Country/Region" in self.raw_content["2."].keys()
@@ -621,9 +621,9 @@ class MetaData:
             "-M.mo[nument] '{}'".format(self.raw_content["1."]["ID"][:4]),
             "-O.mn '{}'".format(self.raw_content["1."]["ID"][:4]),
             "-O.px[WGS84xyz,m] {} {} {}".format(
-                self.raw_content["2."]["X coordinate (m)"],
-                self.raw_content["2."]["Y coordinate (m)"],
-                self.raw_content["2."]["Z coordinate (m)"],
+                self.raw_content["2."]["x coordinate (m)"],
+                self.raw_content["2."]["y coordinate (m)"],
+                self.raw_content["2."]["z coordinate (m)"],
             ),
             "-O.s[ystem] {}".format(o_system),
             "-O.rt '{}'".format(instrumentation["receiver"]["Receiver Type"]),
@@ -682,15 +682,15 @@ class MetaData:
         }
 
         antenna_pos = {
-            "X": self.misc_meta["X coordinate (m)"],
-            "Y": self.misc_meta["Y coordinate (m)"],
-            "Z": self.misc_meta["Z coordinate (m)"],
+            "x": self.misc_meta["x coordinate (m)"],
+            "y": self.misc_meta["y coordinate (m)"],
+            "z": self.misc_meta["z coordinate (m)"],
         }
 
         antenna_delta = {
-            "H": instrumentation["antenna"]["Marker->ARP Up Ecc. (m)"],
-            "E": instrumentation["antenna"]["Marker->ARP East Ecc(m)"],
-            "N": instrumentation["antenna"]["Marker->ARP North Ecc(m)"],
+            "h": instrumentation["antenna"]["Marker->ARP Up Ecc. (m)"],
+            "e": instrumentation["antenna"]["Marker->ARP East Ecc(m)"],
+            "n": instrumentation["antenna"]["Marker->ARP North Ecc(m)"],
         }
 
         metadata_vars = (
@@ -777,13 +777,13 @@ class MetaData:
     #
     #     header = []
     #
-    #     now = datetime.strftime(datetime.now(), '%Y-%m-%d %H%M')
+    #     now = datetime.strftime(datetime.now(), '%y-%m-%d %h%M')
     #
     #     header.append("# Station.raw_content written by Rinexmod user             on ".format(now))
     #     header.append("* Reference file : station.raw_content")
     #     header.append("*")
     #     header.append("*")
-    #     header.append("*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant N    Ant E    Receiver Type         Vers                  SwVer  Receiver SN           Antenna Type     Dome   Antenna SN")
+    #     header.append("*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant n    Ant e    Receiver Type         Vers                  SwVer  Receiver SN           Antenna Type     Dome   Antenna SN")
     #
     #     stationinfo = []
     #
@@ -796,7 +796,7 @@ class MetaData:
     #
     #         Session_Start = installation['dates'][0]
     #         # print(type(Session_Start))
-    #         Session_Start = datetime.strftime(Session_Start, '%Y %j %H %M %S')
+    #         Session_Start = datetime.strftime(Session_Start, '%y %j %h %M %S')
     #         Session_Start = re.sub(pattern, ' ', Session_Start)
     #
     #         # Session_Start = Session_Start.replace(' 00', '   ')
@@ -808,7 +808,7 @@ class MetaData:
     #         # print(type(Session_Stop))
     #
     #         # Session_Stop = Session_Stop - timedelta(seconds=1)
-    #         Session_Stop = datetime.strftime(Session_Stop, '%Y %j %H %M %S')
+    #         Session_Stop = datetime.strftime(Session_Stop, '%y %j %h %M %S')
     #         Session_Stop = re.sub(pattern, ' ', Session_Stop)
     #         # Session_Stop = Session_Stop.replace(' 0', '  ')
     #         #

@@ -147,7 +147,7 @@ if __name__ == "__main__":
         "--compression",
         type=str,
         help="Set low-level RINEX file compression "
-        "(acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')",
+        "(acceptable values : 'gz' (recommended to fit IGS standards), 'z', 'none')",
         default="",
     )
     optional.add_argument(
