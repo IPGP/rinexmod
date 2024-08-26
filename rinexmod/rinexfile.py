@@ -393,10 +393,19 @@ class RinexFile:
             start_date_use = self.start_date
 
         elif file_period_name[-1] == "M":
-            timeformat = "%j" + alphabet[self.start_date.hour] + "%M" + ".%y"  + file_type + compression
-            start_date_use = round_time(self.start_date, timedelta(minutes=5), to='down')
+            timeformat = (
+                "%j"
+                + alphabet[self.start_date.hour]
+                + "%M"
+                + ".%y"
+                + file_type
+                + compression
+            )
+            start_date_use = round_time(
+                self.start_date, timedelta(minutes=5), to="down"
+            )
 
-        else: # regular case file_period_name == "01D"
+        else:  # regular case file_period_name == "01D"
             timeformat = "%j0.%y" + file_type + compression
             start_date_use = self.start_date
 
@@ -590,7 +599,9 @@ class RinexFile:
         version_header = self.rinex_data[version_header_idx]
         # Parse line
         rinex_ver_head_str = str(version_header[0:9].strip())
-        rinex_ver_head_flt = float(re.search(r"[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)", rinex_ver_head_str)[0])
+        rinex_ver_head_flt = float(
+            re.search(r"[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)", rinex_ver_head_str)[0]
+        )
         # must fit a regex pattern of a float, because nasty hidder characters can be present
 
         return rinex_ver_head_str, rinex_ver_head_flt
@@ -623,7 +634,7 @@ class RinexFile:
             for RINEX2, the year prefix.
         """
         # Date lines pattern
-        if self.version_float >= 3.:
+        if self.version_float >= 3.0:
             # Pattern of an observation line containing a date - RINEX 3
             # date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
             date_pattern = re.compile(
@@ -2074,8 +2085,10 @@ def regex_pattern_rinex_filename():
     return a dictionnary with the different REGEX patterns to describe a RIENX filename
     """
     pattern_dic = dict()
-    #pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
-    pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))" ### add subhour starting min
+    # pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
+    pattern_dic["shortname"] = (
+        "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))"  ### add subhour starting min
+    )
     pattern_dic["longname"] = (
         ".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
     )
@@ -2205,31 +2218,35 @@ def file_period_from_timedelta(start_date, end_date):
     rndtup = lambda x, t: round_time(x, timedelta(minutes=t), "up")
     rndtdown = lambda x, t: round_time(x, timedelta(minutes=t), "down")
     rndtaver = lambda x, t: round_time(x, timedelta(minutes=t), "average")
-    delta = rndtup(end_date, 60) - rndtdown(start_date, 60)
-    delta2 = rndtaver(end_date, 60) - rndtaver(start_date, 60)
+    # rounded at the hour
+    # maximum and average delta between start and end date
+    delta_max = rndtup(end_date, 60) - rndtdown(start_date, 60)
+    delta_ave = rndtaver(end_date, 60) - rndtaver(start_date, 60)
 
-    hours = int(delta2.total_seconds() / 3600)
+    hours_ave = int(delta_ave.total_seconds() / 3600)
     delta_sec = (end_date - start_date).total_seconds()
 
     # first, the special case : N *full* hours
-    if delta <= timedelta(seconds=86400 - 3600) and hours > 0:  ## = 23h max
-        # delta2 is a more precise delta (average)
-        file_period = str(hours).zfill(2) + "H"
+    if delta_max <= timedelta(seconds=86400 - 3600) and hours_ave > 0:  ## = 23h max
+        # delta_ave is a more precise delta than delta_max (average)
+        file_period = str(hours_ave).zfill(2) + "H"
         session = True
     # more regular cases : 01H, 01D, nnM, or Unknown
-    elif delta <= timedelta(seconds=3600):
+    elif delta_max <= timedelta(seconds=3600):
         # Here we consider sub hourly cases
         session = True
         file_period = None
         for m in [5, 10, 15, 20, 30]:
-            if (m * 60 - 1) <= delta_sec and delta_sec <= (m * 60 + 1):
+            if (m * 60 - 1) <= delta_sec <= (m * 60 + 1):
                 file_period = str(m).zfill(2) + "M"
         if not file_period:
             # NB: this test is useless, it is treated by the previous test
             file_period = "01H"
-    elif timedelta(seconds=3600) < delta and delta <= timedelta(
-        seconds=86400 + 3600
-    ):  # Note1
+    elif hours_ave == 0 and delta_max > timedelta(seconds=3600): # Note 2
+        hours_max = int(delta_ave.total_seconds() / 3600)
+        file_period = str(hours_max).zfill(2) + "H"
+        session = True
+    elif timedelta(seconds=3600) < delta_max <= timedelta(seconds=86400 + 3600):  # Note1
         file_period = "01D"
         session = False
     else:
@@ -2237,7 +2254,14 @@ def file_period_from_timedelta(start_date, end_date):
         session = False
     # Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs
     #        includes the epoch of the next hour/day
-    #        and then the present delta value reach 25
-    #        it justify also the necessity of the delta2 variable
+    #        and then the present delta_max value reach 25
+    #        it justifies also the necessity of the delta_ave variable
+
+    # Note 2: very rare (but possible) case --' :
+    #         very short file, riding in between* two hours ("a cheval sur 2 heures")
+    #         met e.g. for "2024-08-13 11:54:00" > "2024-08-13 12:04:00"
+    #         then the delta_max is 2H and the delta_ave is 0
+    #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
+
