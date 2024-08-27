@@ -446,9 +446,11 @@ def _modif_kw_check(modif_kw):
                            'filename_data_freq',
                            'filename_file_period',
                            'filename_data_source',
-                           'comment_[0-9]+'] 
+                           'comment(_[0-9]+)?'] 
                             ### comment is a regex, bc several comments are possible
                             # suffix _N is added by ParseKwargs
+                            # but comment without suffix must remain possible (for API mode)
+
 
     for kw in modif_kw:
         if not any([re.match(akw, kw) for akw in acceptable_keywords]):
