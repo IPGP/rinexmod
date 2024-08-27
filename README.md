@@ -1,8 +1,8 @@
-#  RinexMod
+#  rinexmod
 
 <img src="./logo_rinexmod.png" width="300">
 
-RinexMod is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
+_rinexmod_ is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
 It supports Hatanaka-compressed and non-compressed files, RINEX versions 2 and 3/4, and short and long naming conventions.  
 It is developed in Python 3, and can be run from the command line or directly in API mode by calling a python function.  
 The required input metadata can come from a sitelog file, or be manually entered as arguments to the command line or the called function.  
@@ -11,17 +11,21 @@ It is available under the GNU license on the following GitHub repository: https:
 v2 - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
 v1 - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-Last version: v3.0.0 - 2024-03-15
+Last version: v3.2.0 - 2024-06-26
 
 ## Tools overview
 
-This project is composed of 3 programs:
+### Main tool
 
 * `rinexmod.py` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loops the rinex files list to modify the file's headers. It then writes them back to Hatanaka
 compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
+
+### Annex tools
+
+They are stored in `misc_tools` folder.
 
 * `get_m3g_sitelogs.py` will get the last version of site logs from the M3G repository
 and write them in an observatory-dependent subfolder.
@@ -38,27 +42,34 @@ The tool is designed in Python 3, and you must have it installed on your machine
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
 
+To use the front-end functions, you must also add the `rinexmod` folder in your `$PATH` environnement variable, 
+defined in your `.bashrc`.  
+If you used PIP for the installation, your can locate the folder where `rinexmod` has been installed with:
+```
+pip show rinexmod
+```
+at the line `Location:`. Usually, it is `/usr/local/lib/python3.NN/dist-packages/rinexmod` .
+Then edit your `~/.bashrc` and add it to the `$PATH` environnement variable 
+
 ### Required external modules
 
 *NB*: Following the assisted installation procedure above, the required external modules will be automatically installed.
 
-You need _Python Hatanaka_ library from M. Valgur:  
- `pip install hatanaka`
- 
-You need _pycountry_ to associate country names with their ISO abbreviations (facultative but recommended):  
-`pip install pycountry`
+You need:
+ * _Python_ `hatanaka` library from M. Valgur
+ * `pycountry` to associate country names with their ISO abbreviations (facultative but recommended):  
+ * `matplotlib` for plotting samples intervals with crzmeta  
+ * `colorlog` to get the pretty colored log outputs
+ * `pandas` to for internal low-level data management  
 
-You need _matplotlib_ for plotting samples intervals with crzmeta:  
-`pip install matplotlib`
-
-You need _colorlog_ to get the pretty colored log outputs:  
-`pip install colorlog`
-
-You need _pandas_ to for internal low-level data management:  
-`pip install pandas`
+You can install them with: 
+```
+pip install hatanaka pycountry matplotlib colorlog pandas
+```
 
 
-## RinexMod in command lines interface
+
+## _rinexmod_ in command lines interface
 
 ### rinexmod.py
 
@@ -129,7 +140,7 @@ Three ways of passing parameters to modify headers are possible: `sitelog`, `mod
                         option)
 `--modification_kw` values will orverride the ones obtained with `--sitelog` and `--station_info`/`--lfile_apriori`.
 
-RinexMod will add two comment lines, one indicating the source of the modification
+_rinexmod_ will add two comment lines, one indicating the source of the modification
 (sitelog or arguments) and the other the modification timestamp.
 
 
@@ -239,7 +250,7 @@ optional arguments:
                         parallelization)
   -d, --debug           Debug mode, stops if something goes wrong (default: False)
 
-RinexMod 3.0.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS -
+RinexMod 3.1.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS -
 https://github.com/IPGP/rinexmod
 ```
 
@@ -252,9 +263,9 @@ https://github.com/IPGP/rinexmod
 ./rinexmod.py (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 ```
 
-## RinexMod in API mode
+## _rinexmod_ in API mode
 
-RinexMod can be launched directly as a Python function:
+_rinexmod_ can be launched directly as a Python function:
 
 ```
 import rinexmod.rinexmod_api as rimo_api
@@ -432,9 +443,9 @@ EXAMPLE:
 	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
 ```
 
-## RinexMod error messages
+## _rinexmod_ error messages
 
-RinexMod will prompt errors when arguments are wrong. Apart from this, it will prompt and save to file errors and waring
+_rinexmod_ will prompt errors when arguments are wrong. Apart from this, it will prompt and save to file errors and waring
 occurring on specific files from the rinex list. Here are the error codes :
 
 `01 - The specified file does not exists`
