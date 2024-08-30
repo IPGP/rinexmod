@@ -118,10 +118,13 @@ def metadata_input_manage(sitelog_inp, force=False):
         (can be a singleton)
 
     """
+    # single MetaData object
     if isinstance(sitelog_inp, rimo_mda.MetaData):
         return [sitelog_inp]
-    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0], rimo_mda.MetaData):
+    # list of MetaData objects
+    elif isinstance(sitelog_inp, list) and isinstance(sitelog_inp[0], rimo_mda.MetaData):
         return sitelog_inp
+    # single string or list of string
     else:
         return sitelogs2metadata_objs(
             sitelog_inp, force=force, return_list_even_if_single_input=True
