@@ -120,7 +120,7 @@ def metadata_input_manage(sitelog_inp, force=False):
 
     """
     # single MetaData object
-    print("AAAAAAAAA",sitelog_inp, type(sitelog_inp))
+    print("AAAAAAAAA metadata_input_manage",sitelog_inp, type(sitelog_inp))
 
     if isinstance(sitelog_inp, rimo_mda.MetaData):
         return [sitelog_inp]
@@ -128,7 +128,6 @@ def metadata_input_manage(sitelog_inp, force=False):
     elif isinstance(sitelog_inp, list) and isinstance(
         sitelog_inp[0], rimo_mda.MetaData
     ):
-        print("BBBBBBBBBB")
         return sitelog_inp
     # single string or list of string
     elif isinstance(sitelog_inp, str) or isinstance(sitelog_inp, list):
