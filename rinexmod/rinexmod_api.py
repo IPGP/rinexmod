@@ -556,33 +556,33 @@ def _modif_kw_check(modif_kw):
 
     Raise a RinexModInputArgsError Exception if not
     """
-    acceptable_keywords = [
-        "station",
-        "marker_name",
-        "marker_number",
-        "receiver_serial",
-        "receiver_type",
-        "receiver_fw",
-        "antenna_serial",
-        "antenna_type",
-        "antenna_X_pos",
-        "antenna_Y_pos",
-        "antenna_Z_pos",
-        "antenna_H_delta",
-        "antenna_E_delta",
-        "antenna_N_delta",
-        "operator",
-        "agency",
-        "sat_system",
-        "observables",
-        "interval",
-        "filename_data_freq",
-        "filename_file_period",
-        "filename_data_source",
-        "comment_[0-9]+",
-    ]
-    ### comment is a regex, bc several comments are possible
-    # suffix _N is added by ParseKwargs
+
+    acceptable_keywords = ['station',
+                           'marker_name',
+                           'marker_number',
+                           'receiver_serial',
+                           'receiver_type',
+                           'receiver_fw',
+                           'antenna_serial',
+                           'antenna_type',
+                           'antenna_X_pos',
+                           'antenna_Y_pos',
+                           'antenna_Z_pos',
+                           'antenna_H_delta',
+                           'antenna_E_delta',
+                           'antenna_N_delta',
+                           'operator',
+                           'agency',
+                           'sat_system',
+                           'observables',
+                           'interval',
+                           'filename_data_freq',
+                           'filename_file_period',
+                           'filename_data_source',
+                           'comment(_[0-9]+)?'] 
+                            ### comment is a regex, bc several comments are possible
+                            # suffix _N is added by ParseKwargs
+                            # but comment without suffix must remain possible (for API mode)
 
     for kw in modif_kw:
         if not any([re.match(akw, kw) for akw in acceptable_keywords]):
