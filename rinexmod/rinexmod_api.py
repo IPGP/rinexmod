@@ -120,8 +120,6 @@ def metadata_input_manage(sitelog_inp, force=False):
 
     """
     # single MetaData object
-    print("AAAAAAAAA metadata_input_manage",sitelog_inp, type(sitelog_inp))
-
     if isinstance(sitelog_inp, rimo_mda.MetaData):
         return [sitelog_inp]
     # list of MetaData objects
