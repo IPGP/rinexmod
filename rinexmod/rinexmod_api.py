@@ -226,7 +226,6 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
 
     return metadataobj_lis
 
-
 def sitelogs2metadata_objs(
     sitelog_filepath, force=False, return_list_even_if_single_input=True
 ):
