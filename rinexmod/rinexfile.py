@@ -316,7 +316,7 @@ class RinexFile:
             file_period_name = self.file_period
             session_name = self.session
         else:
-            file_period_name, session_name = self.get_file_period_round()
+            file_period_name, session_name = self.get_strict_file_period()
 
         if file_period_name == "01D":  ## Daily case
             if session_name:
@@ -383,7 +383,7 @@ class RinexFile:
             file_period_name = self.file_period
             session_name = self.session
         else:
-            file_period_name, session_name = self.get_file_period_round()
+            file_period_name, session_name = self.get_strict_file_period()
 
         alphabet = list(map(chr, range(97, 123)))
         if file_period_name[-1] == "H":
@@ -946,7 +946,7 @@ class RinexFile:
         """
         Get the file period from the data themselves.
 
-        see also get_file_period_round()
+        see also get_strict_file_period()
         to round this value to an conventional one
 
         the RINEX file period is tolerant and stick to the actual data content,
@@ -956,7 +956,7 @@ class RinexFile:
         Parameters
         ----------
         tolerant_file_period : bool, optional
-            apply (if True) or not (if False) get_file_period_round.
+            apply (if True) or not (if False) get_strict_file_period.
             The default is False.
         inplace_set : bool, optional
             change the values in the RinexFile object. The default is False.
@@ -979,11 +979,11 @@ class RinexFile:
             self.session = session
 
         if not tolerant_file_period:
-            self.get_file_period_round(inplace_set=True)
+            self.get_strict_file_period(inplace_set=True)
 
         return file_period, session
 
-    def get_file_period_round(self, inplace_set=False):
+    def get_strict_file_period(self, inplace_set=False):
         """
         Round the RINEX file period to a conventional value: 01D, 01H
 

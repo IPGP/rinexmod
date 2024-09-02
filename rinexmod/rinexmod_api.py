@@ -990,7 +990,7 @@ def rinexmod(
 
     # apply tolerant / strict (per default) file period
     if not tolerant_file_period:
-        rnxobj.get_file_period_round(inplace_set=True)
+        rnxobj.get_strict_file_period(inplace_set=True)
 
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
