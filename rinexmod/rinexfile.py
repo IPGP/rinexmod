@@ -981,12 +981,12 @@ class RinexFile:
             self.start_date, self.end_date
         )
 
-        if tolerant_file_period and not inplace_set:
-            logger.warning("inplace_set is False, but it must be True to apply tolerant_file_period")
-
         if inplace_set:
             self.file_period = file_period
             self.session = session
+
+        if not tolerant_file_period and not inplace_set:
+            logger.warning("inplace_set is False, but it must be True to apply a strict file period")
 
         if not tolerant_file_period:
             self.get_strict_file_period(inplace_set=True)
