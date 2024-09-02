@@ -51,6 +51,7 @@ class ReturnListError(RinexModError):
 # *****************************************************************************
 # misc functions
 
+
 def listfiles(directory, extension, recursive=True):
     # returns list of paths
     liste = []
@@ -118,14 +119,27 @@ def metadata_input_manage(sitelog_inp, force=False):
         (can be a singleton)
 
     """
+    # single MetaData object
     if isinstance(sitelog_inp, rimo_mda.MetaData):
         return [sitelog_inp]
-    elif type(sitelog_inp) is list and isinstance(sitelog_inp[0], rimo_mda.MetaData):
+    # list of MetaData objects
+    elif isinstance(sitelog_inp, list) and isinstance(
+        sitelog_inp[0], rimo_mda.MetaData
+    ):
         return sitelog_inp
-    else:
+    # single string or list of string
+    elif isinstance(sitelog_inp, str) or isinstance(sitelog_inp, list):
         return sitelogs2metadata_objs(
             sitelog_inp, force=force, return_list_even_if_single_input=True
         )
+    else:
+        logger.error(
+            "Wrong Input, must be a list of string (path), a single string (path),"
+            "a MetaData object, or a list of MetaData objects. Input given: %s, %s",
+            sitelog_inp,
+            type(sitelog_inp),
+        )
+        raise RinexModInputArgsError
 
 
 def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
@@ -211,7 +225,6 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
     )
 
     return metadataobj_lis
-
 
 def sitelogs2metadata_objs(
     sitelog_filepath, force=False, return_list_even_if_single_input=True
@@ -348,6 +361,7 @@ def load_sitelogs(sitelogs_inp, force=False):
 
     return metadata_obj_list, bad_sitelogs_list
 
+
 def _slg_find_latest_name(all_sitelogs_filepaths):
     """
     Find the latest version of a sitelog within a list of sitelogs,
@@ -379,7 +393,9 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
                 d = datetime.strptime(date_from_fn(sl), "%Y%m%d")
                 sitelogs_dates.append(d)
             except ValueError as e:
-                logger.error("bad date %s in sitelog's filename: %s", date_from_fn(sl), sl)
+                logger.error(
+                    "bad date %s in sitelog's filename: %s", date_from_fn(sl), sl
+                )
                 raise e
         # We get the max date and put it back to string format.
         maxdate = max(sitelogs_dates).strftime("%Y%m%d")
@@ -390,6 +406,7 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
 
     return latest_sitelogs_filepaths
 
+
 def _mda_find_latest_prep(metadataobjs_inp):
     """
     Find the latest version of a MetaData object within a list of MetaData objects,
@@ -399,7 +416,7 @@ def _mda_find_latest_prep(metadataobjs_inp):
     """
     # We list the available sites to group sitelogs
     metadataobjs = metadataobjs_inp
-    #metadataobjs = sorted(metadataobjs, key=lambda x: x.misc_meta["date prepared"], reverse=True)
+    # metadataobjs = sorted(metadataobjs, key=lambda x: x.misc_meta["date prepared"], reverse=True)
 
     # set the output latest sitelog list
     mdaobjs_latest = []
@@ -414,11 +431,14 @@ def _mda_find_latest_prep(metadataobjs_inp):
         # We get the max date and put it back to string format.
         maxdate = max(mdaobjs_site_dates)
         # We filter the list with the max date string, and get a one entry list, then transform it to string
-        mdaobj_latest = [md for md in mdaobjs_site if md.misc_meta["date prepared"] == maxdate][0]
+        mdaobj_latest = [
+            md for md in mdaobjs_site if md.misc_meta["date prepared"] == maxdate
+        ][0]
 
         mdaobjs_latest.append(mdaobj_latest)
 
     return mdaobjs_latest
+
 
 def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
     """
@@ -553,6 +573,7 @@ def _modif_kw_check(modif_kw):
 
     Raise a RinexModInputArgsError Exception if not
     """
+
     acceptable_keywords = [
         "station",
         "marker_name",
@@ -576,10 +597,11 @@ def _modif_kw_check(modif_kw):
         "filename_data_freq",
         "filename_file_period",
         "filename_data_source",
-        "comment_[0-9]+",
+        "comment(_[0-9]+)?",
     ]
     ### comment is a regex, bc several comments are possible
     # suffix _N is added by ParseKwargs
+    # but comment without suffix must remain possible (for API mode)
 
     for kw in modif_kw:
         if not any([re.match(akw, kw) for akw in acceptable_keywords]):

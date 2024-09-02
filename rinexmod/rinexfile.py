@@ -2254,7 +2254,7 @@ def file_period_from_timedelta(start_date, end_date):
             # NB: this test is useless, it is treated by the previous test
             file_period = "01H"
     elif hours_ave == 0 and delta_max > timedelta(seconds=3600): # Note 2
-        hours_max = int(delta_ave.total_seconds() / 3600)
+        hours_max = int(delta_max.total_seconds() / 3600)
         file_period = str(hours_max).zfill(2) + "H"
         session = True
     elif timedelta(seconds=3600) < delta_max <= timedelta(seconds=86400 + 3600):  # Note1
