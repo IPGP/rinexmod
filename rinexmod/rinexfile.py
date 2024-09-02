@@ -312,6 +312,9 @@ class RinexFile:
         else:
             compression = ""
 
+
+        tolerance_level = "M"
+
         if tolerant_file_period:
             file_period_name = self.file_period
             session_name = self.session
@@ -330,7 +333,10 @@ class RinexFile:
         ):  ## Unknown case: the filename deserves a full description to identify potential bug
             timeformat = "%Y%j%H%M"
         else:  ## Hourly case
-            timeformat = "%Y%j%H00"  # Start of the hour
+            if tolerance_level == "M":
+                timeformat = "%Y%j%H%M"  # start of the minute
+            elif tolerance_level == "H":
+                timeformat = "%Y%j%H00"  # Start of the hour
 
         longname = "_".join(
             (
@@ -958,6 +964,7 @@ class RinexFile:
         tolerant_file_period : bool, optional
             apply (if True) or not (if False) get_strict_file_period.
             The default is False.
+            inplace_set must be True
         inplace_set : bool, optional
             change the values in the RinexFile object. The default is False.
 
@@ -973,6 +980,9 @@ class RinexFile:
         file_period, session = file_period_from_timedelta(
             self.start_date, self.end_date
         )
+
+        if tolerant_file_period and not inplace_set:
+            logger.warning("inplace_set is False, but it must be True to apply tolerant_file_period")
 
         if inplace_set:
             self.file_period = file_period
@@ -2198,6 +2208,7 @@ def dates_from_rinex_filename(rnx_inp):
         return None, None, None
 
 
+
 def file_period_from_timedelta(start_date, end_date):
     """
     return the RINEX file period (01H, 01D, 15M...) based on a
@@ -2264,4 +2275,3 @@ def file_period_from_timedelta(start_date, end_date):
     #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
-
