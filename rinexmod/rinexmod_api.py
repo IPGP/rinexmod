@@ -226,6 +226,7 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
 
     return metadataobj_lis
 
+
 def sitelogs2metadata_objs(
     sitelog_filepath, force=False, return_list_even_if_single_input=True
 ):
@@ -804,7 +805,7 @@ def rinexmod(
     relative="",
     verbose=True,
     full_history=False,
-    tolerant_file_period=False,
+    filename_style="basic",
     return_lists=None,
     station_info=None,
     lfile_apriori=None,
@@ -908,12 +909,21 @@ def rinexmod(
     full_history : bool, optional
         Add the full history of the station in
         the RINEX's header as comment.
-    tolerant_file_period : bool, optional
-        If True, the RINEX file period is tolerant and corresponds to
-        the actual data content, but then can be odd (e.g. 07H, 14H...).
-        If False, A strict file period is applied per default (01H or 01D),
+    filename_style : str, optional
+        Set the RINEX filename style.
+        acceptable values : 'basic' (per default), 'flex', 'exact'.
+        * 'basic': a simple mode to apply a strict filename period (01H or 01D),
         being compatible with the IGS conventions.
-        The default is False.
+        e.g.: `FNG000GLP_R_20242220000_01D_30S_MO.crx.gz`
+        * 'flex': the filename period is tolerant and corresponds to
+        the actual data content, but then can be odd (e.g. 07H, 14H...).
+        The filename start time is rounded to the hour.
+        e.g.: `FNG000GLP_R_20242221800_06H_30S_MO.crx.gz`
+        * 'exact': the  filename start time is strictly the one of the
+        first epoch in the RINEX.
+        Useful for some specific cases needing splicing.
+        e.g.: `FNG000GLP_R_20242221829_06H_30S_MO.crx.gz`
+        The default is 'basic'.
     return_lists : dict, optional
         Specific option for file distribution through a GLASS node.
         Store the rinexmoded RINEXs in a dictionary
@@ -1011,8 +1021,8 @@ def rinexmod(
     logger.debug("RINEX Origin Metadata :\n" + rnxobj.get_metadata()[0])
 
     # apply tolerant / strict (per default) file period
-    if not tolerant_file_period:
-        rnxobj.get_file_period_round(inplace_set=True)
+    if filename_style == "basic":
+        rnxobj.mod_file_period_basic()
 
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
@@ -1203,13 +1213,13 @@ def rinexmod(
     ########## we regenerate the filenames
     if rnxobj.name_conv == "SHORT" and not longname:
         rnxobj.get_shortname(
-            inplace_set=True, compression="", tolerant_file_period=tolerant_file_period
+            inplace_set=True, compression="", filename_style=filename_style
         )
     else:
         rnxobj.get_longname(
             inplace_set=True,
             compression="",
-            tolerant_file_period=tolerant_file_period,
+            filename_style=filename_style,
             data_source=rnxobj.data_source,
         )
 
@@ -1287,7 +1297,7 @@ def rinexmod_cli(
     write=False,
     sort=False,
     full_history=False,
-    tolerant_file_period=False,
+    filename_style="basic",
     multi_process=1,
     debug=False,
     station_info=None,
@@ -1296,7 +1306,7 @@ def rinexmod_cli(
     remove=False,
 ):
     """
-    Main function for reading a Rinex list file. It process the list, and apply
+    Main function for reading a Rinex list file. It processes the list, and apply
     file name modification, command line based header modification, or sitelog-based
     header modification.
 
@@ -1458,7 +1468,7 @@ def rinexmod_cli(
             "verbose": verbose,
             "return_lists": return_lists,
             "full_history": full_history,
-            "tolerant_file_period": tolerant_file_period,
+            "filename_style": filename_style,
             "station_info": station_info,
             "lfile_apriori": lfile_apriori,
             "force_fake_coords": force_fake_coords,
