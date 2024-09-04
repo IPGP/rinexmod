@@ -211,9 +211,11 @@ optional arguments:
                         acceptable values : 'basic' (per default), 'flex', 'exact'.
                         * 'basic': a simple mode to apply a strict filename period (01H or 01D), being compatible with the IGS conventions.
                         e.g.: FNG000GLP_R_20242220000_01D_30S_MO.crx.gz
-                        * 'flex': the filename period is tolerant and corresponds tothe actual data content, but then can be odd (e.g. 07H, 14H...). The filename start time is rounded to the hour.
+                        * 'flex': the filename period is tolerant and corresponds tothe actual data content, 
+                        but then can be odd (e.g. 07H, 14H...). The filename start time is rounded to the hour.
                         e.g.: FNG000GLP_R_20242221800_06H_30S_MO.crx.gz
-                        * 'exact': the filename start time is strictly the one of the first epoch in the RINEX. Useful for some specific cases needing splicing.
+                        * 'exact': the filename start time is strictly the one of the first epoch in the RINEX. 
+                        Useful for some specific cases needing splicing.
                         e.g.: FNG000GLP_R_20242221829_06H_30S_MO.crx.gz
                         (default: basic)
   -mp MULTI_PROCESS, --multi_process MULTI_PROCESS
