@@ -15,8 +15,6 @@ from pathlib import Path
 import hatanaka
 import matplotlib.pyplot as plt
 import numpy as np
-from debugpy.common.log import timestamp_format
-from xarray.util.generate_ops import inplace
 
 import rinexmod.logger as rimo_log
 
