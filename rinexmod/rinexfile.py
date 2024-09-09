@@ -591,9 +591,9 @@ class RinexFile:
                 type_letter = basename[-1]
 
             if type_letter == "d":
-                hatanaka = True
+                hatanaka_bool = True
             else:
-                hatanaka = False
+                hatanaka_bool = False
 
         else:  # LONG name
             if compress:
@@ -602,11 +602,11 @@ class RinexFile:
                 type_ext = basename[-3:]
 
             if type_ext == "crx":
-                hatanaka = True
+                hatanaka_bool = True
             else:
-                hatanaka = False
+                hatanaka_bool = False
 
-        return compress, hatanaka
+        return compress, hatanaka_bool
 
     def get_filename(self):
         """
@@ -1906,7 +1906,10 @@ class RinexFile:
             if "COMMENT" in e
         ]
 
-        new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
+        if len(comment) < 60: # if the comment is shorter than 60 characters, we center it with dashes
+            new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
+        else: # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
+            new_line = comment[:59] + " COMMENT"
 
         # regular case: some comments already exist
         if len(idx) > 0:
@@ -1927,7 +1930,7 @@ class RinexFile:
         return
 
 
-    def add_prg_run_date(self, program, run_by):
+    def add_prg_run_date_comment(self, program, run_by):
         """
         Add a COMMENT looking like as a 'PGM / RUN BY / DATE'-like line
         Useful to describe autorino edition, but without erasing the conversion program information
