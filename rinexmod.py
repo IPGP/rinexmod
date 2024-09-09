@@ -16,8 +16,13 @@ v2 - 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 import argparse
 import textwrap
 
+import textwrap
+
+
 import rinexmod
 import rinexmod.rinexmod_api as rimo_api
+
+from argparse import RawTextHelpFormatter
 
 if __name__ == "__main__":
 
@@ -33,7 +38,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="RinexMod takes RINEX files (v2 or v3/4, compressed or not), "
         "rename them and modifiy their headers, and write them back to a destination directory",
-        formatter_class=SmartFormatter,
+        #formatter_class=SmartFormatter,
+        formatter_class=RawTextHelpFormatter,
         epilog=textwrap.dedent(
             "RinexMod "
             + str(rinexmod.__version__)
@@ -49,9 +55,9 @@ if __name__ == "__main__":
         type=str,
         required=True,
         nargs="+",
-        help="Input RINEX file(s). It can be: "
-        "1) a list file of the RINEX paths to process (generated with find or ls command for instance) "
-        "2) several RINEX files paths "
+        help="Input RINEX file(s). It can be: \n"
+        "1) a list file of the RINEX paths to process (generated with find or ls command for instance) \n"
+        "2) several RINEX files paths \n"
         "3) a single RINEX file path (see -a/--alone for a single input file)",
     )
     required.add_argument(
@@ -69,18 +75,19 @@ if __name__ == "__main__":
         type=str,
         default="",
     )
+
     optional.add_argument(
         "-k",
         "--modif_kw",
-        help="Modification keywords for RINEX's header fields and/or filename."
-        "Format: -k keyword_1='value1' keyword2='value2'."
-        "Will override the information from the sitelog."
-        "Acceptable keywords: comment, marker_name, marker_number, station (legacy alias for marker_name), "
-        "receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type, "
-        "antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta,"
-        "antenna_E_delta, antenna_N_delta, operator, agency, sat_system, "
-        "observables (legacy alias for sat_system), interval,"
-        "filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)",
+        help="Modification keywords for RINEX's header fields and/or filename.\n"
+            "Format: -k keyword_1='value1' keyword2='value2'.\n"
+            "Will override the information from the sitelog.\n"
+            "Acceptable keywords: comment, marker_name, marker_number, station (legacy alias for marker_name), "
+            "receiver_serial, receiver_type, receiver_fw, antenna_serial, antenna_type, "
+            "antenna_X_pos, antenna_Y_pos, antenna_Z_pos, antenna_H_delta, "
+            "antenna_E_delta, antenna_N_delta, operator, agency, sat_system, "
+            "observables (legacy alias for sat_system), interval, "
+            "filename_file_period (01H, 01D...), filename_data_freq (30S, 01S...), filename_data_source (R, S, U)",
         nargs="+",
         metavar="KEY=VALUE",
         action=rimo_api.ParseKwargs,
@@ -148,6 +155,7 @@ if __name__ == "__main__":
         type=str,
         help="Set low-level RINEX file compression "
         "(acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')",
+        choices=['gz', 'Z', 'none'],
         default="",
     )
     optional.add_argument(
@@ -226,13 +234,24 @@ if __name__ == "__main__":
         default=False,
     )
     optional.add_argument(
-        "-tol",
-        "--tolerant_file_period",
-        help="the RINEX file period is tolerant and corresponds to the actual data content,"
-        "but then can be odd (e.g. 07H, 14H...). A strict file period is applied per default (01H or 01D), "
-        "being compatible with the IGS conventions",
-        action="store_true",
-        default=False,
+        "-fns",
+        "--filename_style",
+        help="Set the RINEX filename style.\n"
+        "acceptable values : 'basic' (per default), 'flex', 'exact'.\n"
+        "* 'basic': a simple mode to apply a strict filename period (01H or 01D), "
+        "being compatible with the IGS conventions.\n"
+        "e.g.: FNG000GLP_R_20242220000_01D_30S_MO.crx.gz\n"
+        "* 'flex': the filename period is tolerant and corresponds to"
+        "the actual data content, but then can be odd (e.g. 07H, 14H...). "
+        "The filename start time is rounded to the hour.\n"
+        "e.g.: FNG000GLP_R_20242221800_06H_30S_MO.crx.gz\n"
+        "* 'exact': the filename start time is strictly "
+        "the one of the first epoch in the RINEX. "
+        "Useful for some specific cases needing splicing.\n"
+        "e.g.: FNG000GLP_R_20242221829_06H_30S_MO.crx.gz\n"
+        "(default: %(default)s)",
+        choices=['basic', 'flex', 'exact'],
+        default='basic',
     )
     optional.add_argument(
         "-mp",
@@ -252,7 +271,7 @@ if __name__ == "__main__":
     optional.add_argument(
         "-rm",
         "--remove",
-        help="Remove input RINEX file if the output RINEX is correctly written. Use it as your own risk."
+        help="Remove input RINEX file if the output RINEX is correctly written. Use it as your own risk. "
              "(default: %(default)s)",
         action="store_true",
         default=False,
@@ -281,7 +300,7 @@ if __name__ == "__main__":
         write=args.write,
         sort=args.sort,
         full_history=args.full_history,
-        tolerant_file_period=args.tolerant_file_period,
+        filename_style=args.filename_style,
         multi_process=args.multi_process,
         debug=args.debug,
         station_info=args.station_info,

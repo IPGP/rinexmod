@@ -56,6 +56,7 @@ class MetaData:
             self.raw_content = None
             self.instrus = None
             self.misc_meta = None
+            self.raw_content_apr = None
 
     def __repr__(self):
         return "{} metadata, from {}".format(self.site4char, self.filename)
@@ -89,7 +90,7 @@ class MetaData:
 
         self.site4char = site[:4].lower()
 
-        if type(station_info) is pd.core.frame.DataFrame:
+        if isinstance(station_info,pd.DataFrame):
             self.raw_content = station_info
             self.path = None
             self.filename = station_info_name
@@ -98,7 +99,7 @@ class MetaData:
             self.path = station_info
             self.filename = os.path.basename(self.path)
 
-        if type(lfile) is pd.core.frame.DataFrame:
+        if isinstance(lfile,pd.DataFrame):
             self.raw_content_apr = lfile
         else:
             self.raw_content_apr = rimo_gmm.read_gamit_apr_lfile(lfile)
@@ -426,9 +427,9 @@ class MetaData:
         ]
         if date:
             # Parse to date trying different formats
-            for format in formats:
+            for fmt in formats:
                 try:
-                    date = datetime.strptime(date, format)
+                    date = datetime.strptime(date, fmt)
                     break
                 except:
                     pass
@@ -465,6 +466,8 @@ class MetaData:
         mm_dic["X coordinate (m)"] = self.raw_content["2."]["X coordinate (m)"]
         mm_dic["Y coordinate (m)"] = self.raw_content["2."]["Y coordinate (m)"]
         mm_dic["Z coordinate (m)"] = self.raw_content["2."]["Z coordinate (m)"]
+
+        mm_dic["date prepared"] = datetime.strptime(self.raw_content["0."]["Date Prepared"], "%Y-%m-%d")
 
         if (
             "Country/Region" in self.raw_content["2."].keys()

@@ -61,7 +61,7 @@ class RinexFile:
         else:
             logger.error("input rinex_input is not str, Path, or StringIO")
 
-        self.rinex_data, self.status = self._load_rinex_data(
+        self.rinex_data, self.status = self._load_rinexdata(
             force_rnx_load=force_rnx_load
         )
         self.size = self.get_size()
@@ -82,27 +82,51 @@ class RinexFile:
         )
         # self.file_period, self.session = self.get_file_period_from_filename()
         self.file_period, self.session = self.get_file_period_from_data(
-            tolerant_file_period=True, inplace_set=False
+            inplace_set=False
         )
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
+
+    def __repr__(self):
+        """
+        Defines a representation method for the rinex file object. Will print the
+        filename, the site, the start and end date, the sample rate, the file period,
+        the rinex version, the data source, the compression type, the size of the file,
+        and the status of the file.
+        """
+        if not self.rinex_data:
+            return ""
+
+        return (
+            f"RinexFile: {self.filename}\n"
+            f"Site: {self.get_site()}\n"
+            f"Start date: {self.start_date}\n"
+            f"End date: {self.end_date}\n"
+            f"Sample rate: {self.sample_rate_string}\n"
+            f"File period: {self.file_period}\n"
+            f"Rinex version: {self.version}\n"
+            f"Data source: {self.data_source}\n"
+            f"Compression: {self.compression}\n"
+            f"Size: {self.size} bytes\n"
+            f"Status: {self.status}"
+        )
 
     def __str__(self):
         """
         Defines a print method for the rinex file object. Will print all the
         header, plus 20 lines of data, plus the number of not printed lines.
         """
-        if self.rinex_data == None:
+        if not self.rinex_data:
             return ""
 
         # We get header
         end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
-        str_RinexFile = self.rinex_data[0:end_of_header_idx]
+        str_rinex_file = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
-        str_RinexFile.extend(
+        str_rinex_file.extend(
             self.rinex_data[end_of_header_idx : end_of_header_idx + 20]
         )
         # We add a line that contains the number of lines not to be printed
-        length = len(self.rinex_data) - len(str_RinexFile) - 20
+        length = len(self.rinex_data) - len(str_rinex_file) - 20
         cut_lines_rep = (
             " " * 20
             + "["
@@ -110,9 +134,9 @@ class RinexFile:
             + "]"
             + " " * 20
         )
-        str_RinexFile.append(cut_lines_rep)
+        str_rinex_file.append(cut_lines_rep)
 
-        return "\n".join(str_RinexFile)
+        return "\n".join(str_rinex_file)
 
     # *****************************************************************************
     #### Main methods
@@ -252,22 +276,41 @@ class RinexFile:
         obs_type="O",
         ext="auto",
         compression="auto",
-        tolerant_file_period=False,
+        filename_style="basic",
         inplace_set=False,
     ):
         """
-        Generate the long RINEX filename
-        can be stored directly as filename attribute with inplace = True
+        Generate the long RINEX filename.
+        Can be stored directly as filename attribute with inplace=True.
 
-        ext :
-            'auto' (based on the RinexFile attribute) or manual : 'rnx' or 'crx'
-            is given without dot as 1st character
+        Parameters
+        ----------
+        data_source : str, optional
+            The data source identifier. Default is 'R'.
+        obs_type : str, optional
+            The observation type. Default is 'O'.
+        ext : str, optional
+            The file extension. 'auto' to determine based on the RinexFile attribute,
+            or manually specify 'rnx' or 'crx'. Default is 'auto'.
+        compression : str, optional
+            The compression type. 'auto' to determine based on the RinexFile attribute,
+            or manually specify 'Z', 'gz', etc. Default is 'auto'.
+        filename_style : str, optional
+            The style of the filename.
+             Possible values are 'basic', 'flex', 'exact'.
+             See the rinexmod main function's docstring/help for more details.
+             Default is 'basic'.
+        inplace_set : bool, optional
+            If True, stores the generated filename directly as the filename attribute.
+            Default is False.
 
-        compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
-            is given without dot as 1st character
+        Returns
+        -------
+        str
+            The generated long RINEX filename.
         """
 
+        # +++++ set extension
         if ext == "auto" and self.hatanka_input:
             ext = "crx"
         elif ext == "auto" and not self.hatanka_input:
@@ -277,6 +320,7 @@ class RinexFile:
 
         ext = "." + ext
 
+        # +++++ set compression
         if compression == "auto" and self.compression:
             compression = "." + self.compression
         elif compression == "auto" and not self.compression:
@@ -288,11 +332,14 @@ class RinexFile:
         else:
             compression = ""
 
-        if tolerant_file_period:
-            file_period_name = self.file_period
-            session_name = self.session
-        else:
-            file_period_name, session_name = self.get_file_period_round()
+        # +++++ set file period and session
+        self.mod_file_period(filename_style=filename_style)
+        file_period_name = self.file_period
+        session_name = self.session
+
+        # +++++ set time format
+        # default time format
+        timeformat = "%Y%j%H%M"
 
         if file_period_name == "01D":  ## Daily case
             if session_name:
@@ -306,7 +353,10 @@ class RinexFile:
         ):  ## Unknown case: the filename deserves a full description to identify potential bug
             timeformat = "%Y%j%H%M"
         else:  ## Hourly case
-            timeformat = "%Y%j%H00"  # Start of the hour
+            if filename_style in ("basic", "flex"):
+                timeformat = "%Y%j%H00"  # Start of the hour
+            elif filename_style == "exact":
+                timeformat = "%Y%j%H%M"  # start of the minute
 
         longname = "_".join(
             (
@@ -329,19 +379,32 @@ class RinexFile:
         self,
         file_type="auto",
         compression="auto",
-        tolerant_file_period=False,
+        filename_style="basic",
         inplace_set=False,
     ):
         """
-        Generate the short RINEX filename
-        can be stored directly as filename attribute with inplace = True
+        Generate the short RINEX filename.
+        Can be stored directly as filename attribute with inplace=True.
 
-        file_type :
-            'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
+        Parameters
+        ----------
+        file_type : str, optional
+            'auto' (based on the RinexFile attribute) or manual: 'o', 'd', etc. Default is 'auto'.
+        compression : str, optional
+            'auto' (based on the RinexFile attribute) or manual: 'Z', 'gz', etc. Default is 'auto'.
+            The value is given without a dot as the first character.
+        filename_style : str, optional
+            The style of the filename.
+             Possible values are 'basic', 'flex', 'exact'.
+             See the rinexmod main function's docstring/help for more details.
+             Default is 'basic'.
+        inplace_set : bool, optional
+            If True, stores the generated filename directly as the filename attribute. Default is False.
 
-        compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
-            is given without dot as 1st character
+        Returns
+        -------
+        str
+            The generated short RINEX filename.
         """
 
         if file_type == "auto" and self.hatanka_input:
@@ -355,21 +418,35 @@ class RinexFile:
         if compression != "":
             compression = "." + compression
 
-        if tolerant_file_period:
-            file_period_name = self.file_period
-            session_name = self.session
-        else:
-            file_period_name, session_name = self.get_file_period_round()
+        self.mod_file_period(filename_style=filename_style)
+        file_period_name = self.file_period
+        session_name = self.session
 
-        if file_period_name == "01D":
-            timeformat = "%j0.%y" + file_type + compression
-        else:
-            Alphabet = list(map(chr, range(97, 123)))
+        alphabet = list(map(chr, range(97, 123)))
+        if file_period_name[-1] == "H":
             timeformat = (
-                "%j" + Alphabet[self.start_date.hour] + ".%y" + file_type + compression
+                "%j" + alphabet[self.start_date.hour] + ".%y" + file_type + compression
+            )
+            start_date_use = self.start_date
+
+        elif file_period_name[-1] == "M":
+            timeformat = (
+                "%j"
+                + alphabet[self.start_date.hour]
+                + "%M"
+                + ".%y"
+                + file_type
+                + compression
+            )
+            start_date_use = round_time(
+                self.start_date, timedelta(minutes=5), to="down"
             )
 
-        shortname = self.get_site(True, True) + self.start_date.strftime(timeformat)
+        else:  # regular case file_period_name == "01D"
+            timeformat = "%j0.%y" + file_type + compression
+            start_date_use = self.start_date
+
+        shortname = self.get_site(True, True) + start_date_use.strftime(timeformat)
 
         if inplace_set:
             self.filename = shortname
@@ -396,7 +473,7 @@ class RinexFile:
     # *****************************************************************************
     ### internal methods
 
-    def _load_rinex_data(self, force_rnx_load=False):
+    def _load_rinexdata(self, force_rnx_load=False):
         """
         Load the uncompressed rinex data into a list var using hatanaka library.
         Will return a table of lines of the uncompressed file, a 'name_conv' var
@@ -559,7 +636,9 @@ class RinexFile:
         version_header = self.rinex_data[version_header_idx]
         # Parse line
         rinex_ver_head_str = str(version_header[0:9].strip())
-        rinex_ver_head_flt = float(re.search(r"[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)", rinex_ver_head_str)[0])
+        rinex_ver_head_flt = float(
+            re.search(r"[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)", rinex_ver_head_str)[0]
+        )
         # must fit a regex pattern of a float, because nasty hidder characters can be present
 
         return rinex_ver_head_str, rinex_ver_head_flt
@@ -592,7 +671,7 @@ class RinexFile:
             for RINEX2, the year prefix.
         """
         # Date lines pattern
-        if self.version_float >= 3.:
+        if self.version_float >= 3.0:
             # Pattern of an observation line containing a date - RINEX 3
             # date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
             date_pattern = re.compile(
@@ -900,22 +979,19 @@ class RinexFile:
 
         return file_period, session
 
-    def get_file_period_from_data(self, tolerant_file_period=False, inplace_set=False):
+    #         the RINEX file period is tolerant and stick to the actual data content,
+    #         but then can be odd (e.g. 07H, 14H...). A strict file period is applied
+    #         per default (01H or 01D), being compatible with the IGS conventions
+
+    def get_file_period_from_data(self, inplace_set=False):
         """
         Get the file period from the data themselves.
 
-        see also get_file_period_round()
-        to round this value to an conventional one
-
-        the RINEX file period is tolerant and stick to the actual data content,
-        but then can be odd (e.g. 07H, 14H...). A strict file period is applied
-        per default (01H or 01D), being compatible with the IGS conventions
+        see also mod_file_period_basic()
+        to round this value to a conventional one
 
         Parameters
         ----------
-        tolerant_file_period : bool, optional
-            apply (if True) or not (if False) get_file_period_round.
-            The default is False.
         inplace_set : bool, optional
             change the values in the RinexFile object. The default is False.
 
@@ -936,29 +1012,39 @@ class RinexFile:
             self.file_period = file_period
             self.session = session
 
-        if not tolerant_file_period:
-            self.get_file_period_round(inplace_set=True)
-
         return file_period, session
 
-    def get_file_period_round(self, inplace_set=False):
+    def mod_file_period(self, filename_style="basic"):
+
+        self.get_file_period_from_data(inplace_set=True)
+
+        if filename_style == "basic":
+            self.mod_file_period_basic()
+        elif filename_style in ("flex", "exact"):
+            pass  ## it is the same as get_file_period_from_data()
+        else:
+            logger.error(
+                "style %s not recognized. Accepts only 'basic', 'flex', 'exact'",
+                filename_style,
+            )
+
+        return self.file_period, self.session
+
+    def mod_file_period_basic(self):
         """
-        Round the RINEX file period to a conventional value: 01D, 01H
+        Round the RINEX file period to a basic conventional value: 01D, 01H
 
         NB: this method aims to respect the IGS convention and thus uses NOMINAL
         period
 
-        Parameters
-        ----------
-        inplace_set : bool, optional
-            change the values in the RinexFile object. The default is False.
+        For the time beeing, it does not handle the subhourly case
 
         Returns
         -------
         file_period_rnd : str
             the file period: '01H', '01D', '00U'...
-        session_rnd : bool
-            RINEX is a hourly session or not.
+        session_rnd : bool or None
+            the RINEX is an hourly session or not.
 
         """
 
@@ -969,9 +1055,8 @@ class RinexFile:
             file_period_rnd = self.file_period
             session_rnd = self.session
 
-        if inplace_set:
-            self.file_period = file_period_rnd
-            self.session = session_rnd
+        self.file_period = file_period_rnd
+        self.session = session_rnd
 
         return file_period_rnd, session_rnd
 
@@ -1195,7 +1280,7 @@ class RinexFile:
 
         # warning
         ### for the receiver, info in te input RINEX should be the correct ones
-        def _mod_receiver_check(field_type, rinex_val, metadata_val):
+        def _mod_rec_check(field_type, rinex_val, metadata_val):
             if rinex_val.strip() != metadata_val.strip():
                 logger.warning(
                     "%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
@@ -1209,9 +1294,9 @@ class RinexFile:
                 )
             return None
 
-        _mod_receiver_check("serial number", serial, serial_head)
-        _mod_receiver_check("model type", type, type_head)
-        _mod_receiver_check("firmware version", firmware, firmware_head)
+        _mod_rec_check("serial number", serial, serial_head)
+        _mod_rec_check("model type", type, type_head)
+        _mod_rec_check("firmware version", firmware, firmware_head)
 
         # Edit line
         if serial:
@@ -2043,7 +2128,10 @@ def regex_pattern_rinex_filename():
     return a dictionnary with the different REGEX patterns to describe a RIENX filename
     """
     pattern_dic = dict()
-    pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
+    # pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
+    pattern_dic["shortname"] = (
+        "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))"  ### add subhour starting min
+    )
     pattern_dic["longname"] = (
         ".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
     )
@@ -2173,39 +2261,51 @@ def file_period_from_timedelta(start_date, end_date):
     rndtup = lambda x, t: round_time(x, timedelta(minutes=t), "up")
     rndtdown = lambda x, t: round_time(x, timedelta(minutes=t), "down")
     rndtaver = lambda x, t: round_time(x, timedelta(minutes=t), "average")
-    delta = rndtup(end_date, 60) - rndtdown(start_date, 60)
-    delta2 = rndtaver(end_date, 60) - rndtaver(start_date, 60)
+    # rounded at the hour
+    # maximum and average delta between start and end date
+    delta_max = rndtup(end_date, 60) - rndtdown(start_date, 60)
+    delta_ave = rndtaver(end_date, 60) - rndtaver(start_date, 60)
 
-    hours = int(delta2.total_seconds() / 3600)
+    hours_ave = int(delta_ave.total_seconds() / 3600)
     delta_sec = (end_date - start_date).total_seconds()
 
-    ### first, the special case : N *full* hours
-    if delta <= timedelta(seconds=86400 - 3600) and hours > 0:  ## = 23h max
-        # delta2 is a more precise delta (average)
-        file_period = str(hours).zfill(2) + "H"
+    # first, the special case : N *full* hours
+    if delta_max <= timedelta(seconds=86400 - 3600) and hours_ave > 0:  ## = 23h max
+        # delta_ave is a more precise delta than delta_max (average)
+        file_period = str(hours_ave).zfill(2) + "H"
         session = True
-    ### more regular cases : 01H, 01D, nnM, or Unknown
-    elif delta <= timedelta(seconds=3600):
-        ### Here we consider sub hourly cases
+    # more regular cases : 01H, 01D, nnM, or Unknown
+    elif delta_max <= timedelta(seconds=3600):
+        # Here we consider sub hourly cases
         session = True
         file_period = None
         for m in [5, 10, 15, 20, 30]:
-            if (m * 60 - 1) <= delta_sec and delta_sec <= (m * 60 + 1):
+            if (m * 60 - 1) <= delta_sec <= (m * 60 + 1):
                 file_period = str(m).zfill(2) + "M"
         if not file_period:
             # NB: this test is useless, it is treated by the previous test
             file_period = "01H"
-    elif timedelta(seconds=3600) < delta and delta <= timedelta(
-        seconds=86400 + 3600
-    ):  ##Note1
+    elif hours_ave == 0 and delta_max > timedelta(seconds=3600):  # Note 2
+        hours_max = int(delta_max.total_seconds() / 3600)
+        file_period = str(hours_max).zfill(2) + "H"
+        session = True
+    elif (
+        timedelta(seconds=3600) < delta_max <= timedelta(seconds=86400 + 3600)
+    ):  # Note1
         file_period = "01D"
         session = False
     else:
         file_period = "00U"
         session = False
-    ### Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs
-    ###        includes the epoch of the next hour/day
-    ###        and then the present delta value reach 25
-    ###        it justify also the necessity of the delta2 variable
+    # Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs
+    #        includes the epoch of the next hour/day
+    #        and then the present delta_max value reach 25
+    #        it justifies also the necessity of the delta_ave variable
+
+    # Note 2: very rare (but possible) case --' :
+    #         very short file, riding in between* two hours ("a cheval sur 2 heures")
+    #         met e.g. for "2024-08-13 11:54:00" > "2024-08-13 12:04:00"
+    #         then the delta_max is 2H and the delta_ave is 0
+    #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
