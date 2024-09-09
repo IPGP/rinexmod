@@ -1923,12 +1923,11 @@ class RinexFile:
                 new_comment_idx = first_comment_idx
         # no comment in the header, then the first comment is added before the 'END OF HEADER'
         else:
-            new_comment_idx = end_of_header_idx
+            new_comment_idx = end_of_header_idx - 1
 
         self.rinex_data.insert(new_comment_idx, new_line)
 
         return
-
 
     def add_prg_run_date_comment(self, program, run_by):
         """
