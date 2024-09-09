@@ -1887,11 +1887,24 @@ class RinexFile:
 
     def add_comment(self, comment=None, add_as_first=False):
         """
-        We add the argument comment line at the end of the header
-        Append as last per default
+        Add a comment line to the end of the RINEX header.
 
-        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line
-        Then comment is a 2-tuple (program,run_by)
+        Parameters
+        ----------
+        comment : str, optional
+            The comment to be added. If None, the function returns immediately.
+        add_as_first : bool, optional
+            If True, the comment is added as the first comment. Default is False.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        If no comments are in the header, they will be added just before the 'END OF HEADER'.
+        Nevertheless, the sort_header() method executed a bit after will bring them
+        just after PGM '/ RUN BY / DATE'
         """
         if self.status:
             return
@@ -1906,9 +1919,9 @@ class RinexFile:
             if "COMMENT" in e
         ]
 
-        if len(comment) < 60: # if the comment is shorter than 60 characters, we center it with dashes
+        if len(comment) < 60:  # if the comment is shorter than 60 characters, we center it with dashes
             new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
-        else: # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
+        else:  # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
             new_line = comment[:59] + " COMMENT"
 
         # regular case: some comments already exist
@@ -1931,8 +1944,9 @@ class RinexFile:
 
     def add_prg_run_date_comment(self, program, run_by):
         """
-        Add a COMMENT looking like as a 'PGM / RUN BY / DATE'-like line
-        Useful to describe autorino edition, but without erasing the conversion program information
+        Add a COMMENT, looking like as a 'PGM / RUN BY / DATE'-like line
+        Useful to describe autorino edition, but without erasing the conversion
+        program information
         """
         if self.status:
             return
@@ -1941,8 +1955,6 @@ class RinexFile:
         new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.add_comment(new_line, add_as_first=True)
-
-
 
     def add_comments(self, comment_list):
         """
