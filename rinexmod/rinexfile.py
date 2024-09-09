@@ -1885,7 +1885,7 @@ class RinexFile:
 
         return outputfile
 
-    def add_comment(self, comment=None, add_pgm_cmt=False):
+    def add_comment(self, comment=None, add_as_first=False):
         """
         We add the argument comment line at the end of the header
         Append as last per default
@@ -1900,27 +1900,47 @@ class RinexFile:
             return
 
         end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
-        Idx = [
+        idx = [
             i
             for i, e in enumerate(self.rinex_data[0:end_of_header_idx])
             if "COMMENT" in e
         ]
 
-        if not add_pgm_cmt:
-            last_comment_idx = max(Idx)
-            new_comment_idx = last_comment_idx + 1
-            new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
+        new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
 
+        # regular case: some comments already exist
+        if len(idx) > 0:
+            # add the comment as last (default)
+            if not add_as_first:
+                last_comment_idx = max(idx)
+                new_comment_idx = last_comment_idx + 1
+            # add the comment as first
+            else:
+                first_comment_idx = min(idx)
+                new_comment_idx = first_comment_idx
+        # no comment in the header, then the first comment is added before the 'END OF HEADER'
         else:
-            first_comment_idx = min(Idx)
-            new_comment_idx = first_comment_idx
-            program, run_by = comment
-            date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
-            new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
+            new_comment_idx = end_of_header_idx
 
         self.rinex_data.insert(new_comment_idx, new_line)
 
         return
+
+
+    def add_prg_run_date(self, program, run_by):
+        """
+        Add a COMMENT looking like as a 'PGM / RUN BY / DATE'-like line
+        Useful to describe autorino edition, but without erasing the conversion program information
+        """
+        if self.status:
+            return
+
+        date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+        new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
+
+        self.add_comment(new_line, add_as_first=True)
+
+
 
     def add_comments(self, comment_list):
         """
