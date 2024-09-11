@@ -82,7 +82,7 @@ class RinexFile:
         )
         # self.file_period, self.session = self.get_file_period_from_filename()
         self.file_period, self.session = self.get_file_period_from_data(
-            tolerant_file_period=True, inplace_set=False
+            inplace_set=False
         )
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
 
@@ -120,13 +120,13 @@ class RinexFile:
 
         # We get header
         end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
-        str_RinexFile = self.rinex_data[0:end_of_header_idx]
+        str_rinex_file = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
-        str_RinexFile.extend(
+        str_rinex_file.extend(
             self.rinex_data[end_of_header_idx : end_of_header_idx + 20]
         )
         # We add a line that contains the number of lines not to be printed
-        length = len(self.rinex_data) - len(str_RinexFile) - 20
+        length = len(self.rinex_data) - len(str_rinex_file) - 20
         cut_lines_rep = (
             " " * 20
             + "["
@@ -134,9 +134,9 @@ class RinexFile:
             + "]"
             + " " * 20
         )
-        str_RinexFile.append(cut_lines_rep)
+        str_rinex_file.append(cut_lines_rep)
 
-        return "\n".join(str_RinexFile)
+        return "\n".join(str_rinex_file)
 
     # *****************************************************************************
     #### Main methods
@@ -276,22 +276,41 @@ class RinexFile:
         obs_type="O",
         ext="auto",
         compression="auto",
-        tolerant_file_period=False,
+        filename_style="basic",
         inplace_set=False,
     ):
         """
-        Generate the long RINEX filename
-        can be stored directly as filename attribute with inplace = True
+        Generate the long RINEX filename.
+        Can be stored directly as filename attribute with inplace=True.
 
-        ext :
-            'auto' (based on the RinexFile attribute) or manual : 'rnx' or 'crx'
-            is given without dot as 1st character
+        Parameters
+        ----------
+        data_source : str, optional
+            The data source identifier. Default is 'R'.
+        obs_type : str, optional
+            The observation type. Default is 'O'.
+        ext : str, optional
+            The file extension. 'auto' to determine based on the RinexFile attribute,
+            or manually specify 'rnx' or 'crx'. Default is 'auto'.
+        compression : str, optional
+            The compression type. 'auto' to determine based on the RinexFile attribute,
+            or manually specify 'Z', 'gz', etc. Default is 'auto'.
+        filename_style : str, optional
+            The style of the filename.
+             Possible values are 'basic', 'flex', 'exact'.
+             See the rinexmod main function's docstring/help for more details.
+             Default is 'basic'.
+        inplace_set : bool, optional
+            If True, stores the generated filename directly as the filename attribute.
+            Default is False.
 
-        compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
-            is given without dot as 1st character
+        Returns
+        -------
+        str
+            The generated long RINEX filename.
         """
 
+        # +++++ set extension
         if ext == "auto" and self.hatanka_input:
             ext = "crx"
         elif ext == "auto" and not self.hatanka_input:
@@ -301,6 +320,7 @@ class RinexFile:
 
         ext = "." + ext
 
+        # +++++ set compression
         if compression == "auto" and self.compression:
             compression = "." + self.compression
         elif compression == "auto" and not self.compression:
@@ -312,11 +332,14 @@ class RinexFile:
         else:
             compression = ""
 
-        if tolerant_file_period:
-            file_period_name = self.file_period
-            session_name = self.session
-        else:
-            file_period_name, session_name = self.get_file_period_round()
+        # +++++ set file period and session
+        self.mod_file_period(filename_style=filename_style)
+        file_period_name = self.file_period
+        session_name = self.session
+
+        # +++++ set time format
+        # default time format
+        timeformat = "%Y%j%H%M"
 
         if file_period_name == "01D":  ## Daily case
             if session_name:
@@ -330,7 +353,10 @@ class RinexFile:
         ):  ## Unknown case: the filename deserves a full description to identify potential bug
             timeformat = "%Y%j%H%M"
         else:  ## Hourly case
-            timeformat = "%Y%j%H00"  # Start of the hour
+            if filename_style in ("basic", "flex"):
+                timeformat = "%Y%j%H00"  # Start of the hour
+            elif filename_style == "exact":
+                timeformat = "%Y%j%H%M"  # start of the minute
 
         longname = "_".join(
             (
@@ -353,19 +379,32 @@ class RinexFile:
         self,
         file_type="auto",
         compression="auto",
-        tolerant_file_period=False,
+        filename_style="basic",
         inplace_set=False,
     ):
         """
-        Generate the short RINEX filename
-        can be stored directly as filename attribute with inplace = True
+        Generate the short RINEX filename.
+        Can be stored directly as filename attribute with inplace=True.
 
-        file_type :
-            'auto' (based on the RinexFile attribute) or manual : 'o', 'd' etc...
+        Parameters
+        ----------
+        file_type : str, optional
+            'auto' (based on the RinexFile attribute) or manual: 'o', 'd', etc. Default is 'auto'.
+        compression : str, optional
+            'auto' (based on the RinexFile attribute) or manual: 'Z', 'gz', etc. Default is 'auto'.
+            The value is given without a dot as the first character.
+        filename_style : str, optional
+            The style of the filename.
+             Possible values are 'basic', 'flex', 'exact'.
+             See the rinexmod main function's docstring/help for more details.
+             Default is 'basic'.
+        inplace_set : bool, optional
+            If True, stores the generated filename directly as the filename attribute. Default is False.
 
-        compression :
-            'auto' (based on the RinexFile attribute) or manual : 'Z', 'gz', etc...
-            is given without dot as 1st character
+        Returns
+        -------
+        str
+            The generated short RINEX filename.
         """
 
         if file_type == "auto" and self.hatanka_input:
@@ -379,11 +418,9 @@ class RinexFile:
         if compression != "":
             compression = "." + compression
 
-        if tolerant_file_period:
-            file_period_name = self.file_period
-            session_name = self.session
-        else:
-            file_period_name, session_name = self.get_file_period_round()
+        self.mod_file_period(filename_style=filename_style)
+        file_period_name = self.file_period
+        session_name = self.session
 
         alphabet = list(map(chr, range(97, 123)))
         if file_period_name[-1] == "H":
@@ -942,22 +979,19 @@ class RinexFile:
 
         return file_period, session
 
-    def get_file_period_from_data(self, tolerant_file_period=False, inplace_set=False):
+    #         the RINEX file period is tolerant and stick to the actual data content,
+    #         but then can be odd (e.g. 07H, 14H...). A strict file period is applied
+    #         per default (01H or 01D), being compatible with the IGS conventions
+
+    def get_file_period_from_data(self, inplace_set=False):
         """
         Get the file period from the data themselves.
 
-        see also get_file_period_round()
-        to round this value to an conventional one
-
-        the RINEX file period is tolerant and stick to the actual data content,
-        but then can be odd (e.g. 07H, 14H...). A strict file period is applied
-        per default (01H or 01D), being compatible with the IGS conventions
+        see also mod_file_period_basic()
+        to round this value to a conventional one
 
         Parameters
         ----------
-        tolerant_file_period : bool, optional
-            apply (if True) or not (if False) get_file_period_round.
-            The default is False.
         inplace_set : bool, optional
             change the values in the RinexFile object. The default is False.
 
@@ -978,22 +1012,32 @@ class RinexFile:
             self.file_period = file_period
             self.session = session
 
-        if not tolerant_file_period:
-            self.get_file_period_round(inplace_set=True)
-
         return file_period, session
 
-    def get_file_period_round(self, inplace_set=False):
+    def mod_file_period(self, filename_style="basic"):
+
+        self.get_file_period_from_data(inplace_set=True)
+
+        if filename_style == "basic":
+            self.mod_file_period_basic()
+        elif filename_style in ("flex", "exact"):
+            pass  ## it is the same as get_file_period_from_data()
+        else:
+            logger.error(
+                "style %s not recognized. Accepts only 'basic', 'flex', 'exact'",
+                filename_style,
+            )
+
+        return self.file_period, self.session
+
+    def mod_file_period_basic(self):
         """
-        Round the RINEX file period to a conventional value: 01D, 01H
+        Round the RINEX file period to a basic conventional value: 01D, 01H
 
         NB: this method aims to respect the IGS convention and thus uses NOMINAL
         period
 
-        Parameters
-        ----------
-        inplace_set : bool, optional
-            change the values in the RinexFile object. The default is False.
+        For the time beeing, it does not handle the subhourly case
 
         Returns
         -------
@@ -1011,9 +1055,8 @@ class RinexFile:
             file_period_rnd = self.file_period
             session_rnd = self.session
 
-        if inplace_set:
-            self.file_period = file_period_rnd
-            self.session = session_rnd
+        self.file_period = file_period_rnd
+        self.session = session_rnd
 
         return file_period_rnd, session_rnd
 
@@ -2242,11 +2285,13 @@ def file_period_from_timedelta(start_date, end_date):
         if not file_period:
             # NB: this test is useless, it is treated by the previous test
             file_period = "01H"
-    elif hours_ave == 0 and delta_max > timedelta(seconds=3600): # Note 2
+    elif hours_ave == 0 and delta_max > timedelta(seconds=3600):  # Note 2
         hours_max = int(delta_max.total_seconds() / 3600)
         file_period = str(hours_max).zfill(2) + "H"
         session = True
-    elif timedelta(seconds=3600) < delta_max <= timedelta(seconds=86400 + 3600):  # Note1
+    elif (
+        timedelta(seconds=3600) < delta_max <= timedelta(seconds=86400 + 3600)
+    ):  # Note1
         file_period = "01D"
         session = False
     else:
@@ -2264,4 +2309,3 @@ def file_period_from_timedelta(start_date, end_date):
     #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
-
