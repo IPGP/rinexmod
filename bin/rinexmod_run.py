@@ -19,8 +19,8 @@ import textwrap
 import textwrap
 
 
-import rinexmod
-import rinexmod.rinexmod_api as rimo_api
+import rinexmod_run
+import rinexmod_run.rinexmod_api as rimo_api
 
 from argparse import RawTextHelpFormatter
 
