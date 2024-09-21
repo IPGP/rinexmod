@@ -11,13 +11,13 @@ It is available under the GNU license on the following GitHub repository: https:
 v2+ - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
 v1  - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-Last version: v4.0.0 - 2024-09-20
+Last version: v3.4.0 - 2024-09-21
 
 ## Tools overview
 
 ### Main tool
 
-* `rinexmod_run.py` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
+* `rinexmod` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loops the rinex files list to modify the file's headers. It then writes them back to Hatanaka
 compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
@@ -42,8 +42,7 @@ The tool is designed in Python 3, and you must have it installed on your machine
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
 
-Since the version 4.0, the frontend script `rinexmod_run.py` is available directly when you call it in your console.
-(for prior users, note that `rinexmod.py` __has been renamed__ `rinexmod_run.py`)
+Since the version 3.4.0, the frontend program `rinexmod` is available directly when you call it in your console.
 
 ### Required external modules
 
@@ -63,7 +62,7 @@ pip install hatanaka pycountry matplotlib colorlog pandas
 
 ## _rinexmod_ in command lines interface
 
-### rinexmod_run.py
+### rinexmod
 
 This is the main frontend function. It takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loop over the RINEX files list to modify the file's header. It then writes them back to Hatanaka-compressed
@@ -138,13 +137,13 @@ _rinexmod_ will add two comment lines, one indicating the source of the modifica
 
 ### Synopsis
 ```
-rinexmod_run.py [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER
-                      [-s SITELOG] [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER]
-                      [-co COUNTRY] [-n NINECHARFILE] [-sti STATION_INFO]
-                      [-lfi LFILE_APRIORI] [-r RELATIVE] [-nh] [-c {gz,Z,none}]
-                      [-l] [-fs] [-fc] [-fr] [-ig] [-a] [-ol OUTPUT_LOGS] [-w]
-                      [-v] [-t] [-u] [-fns {basic,flex,exact}]
-                      [-mp MULTI_PROCESS] [-d] [-rm]
+rinexmod [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER
+         [-s SITELOG] [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER]
+         [-co COUNTRY] [-n NINECHARFILE] [-sti STATION_INFO]
+         [-lfi LFILE_APRIORI] [-r RELATIVE] [-nh] [-c {gz,Z,none}]
+         [-l] [-fs] [-fc] [-fr] [-ig] [-a] [-ol OUTPUT_LOGS] [-w]
+         [-v] [-t] [-u] [-fns {basic,flex,exact}]
+         [-mp MULTI_PROCESS] [-d] [-rm]
 
 RinexMod takes RINEX files (v2 or v3/4, compressed or not), rename them and modifiy their headers, and write them back to a destination directory
 
@@ -221,10 +220,10 @@ RinexMod 3.3.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS - https://gi
 ### Examples
 
 ```
-./rinexmod_run.py -i RINEXLIST -o OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+./rinexmod -i RINEXLIST -o OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
 ```
 ```
-./rinexmod_run.py (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+./rinexmod (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 ```
 
 ## _rinexmod_ in API mode
@@ -389,17 +388,17 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
 ```
 ## Other command line functions
 
-### crzmeta.py
+### crzmeta
 
 Extract metadata from crz file.
 
 With -p option, will plot the file's samples intervals
 ```
 EXAMPLE:
-./crzmeta.py  RINEXFILE (-p)
+./crzmeta  RINEXFILE (-p)
 ```
 
-### get_m3g_sitelogs.py
+### get_m3g_sitelogs
 
 This script will get the last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
@@ -417,7 +416,7 @@ OPTION :
 
 EXAMPLE:
 
-	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
+	./get_m3g_sitelogs OUTPUTFOLDER (-d)
 ```
 
 ## _rinexmod_ error messages
