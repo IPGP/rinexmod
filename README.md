@@ -8,8 +8,8 @@ It is developed in Python 3, and can be run from the command line or directly in
 The required input metadata can come from a sitelog file, or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
-v2 - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
-v1 - 2022-02-07 - F??lix L??ger  - leger@ipgp.fr  
+v2+ - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
+v1  - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
 Last version: v4.0.0 - 2024-09-20
 
@@ -43,7 +43,7 @@ You can use `pip` to install the last GitHub-hosted version with the following c
 ```pip install git+https://github.com/IPGP/rinexmod```
 
 Since the version 4.0, the frontend script `rinexmod_run.py` is available directly when you call it in your console.
-(for prior users, note that `rinexmod.py` has been renamed `rinexmod_run.py`)
+(for prior users, note that `rinexmod.py` __has been renamed__ `rinexmod_run.py`)
 
 ### Required external modules
 
