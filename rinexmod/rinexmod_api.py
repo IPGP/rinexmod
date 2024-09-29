@@ -796,6 +796,7 @@ def rinexmod(
     marker="",
     country="",
     longname=False,
+    shortname=False,
     force_rnx_load=False,
     force_sitelog=False,
     ignore=False,
@@ -874,7 +875,12 @@ def rinexmod(
         https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
         The default is ''.
     longname : bool, optional
-        Rename file using long name RINEX convention (force gzip compression).
+        Force RINEX file renaming with long name convention (force gzip compression).
+        Mutually exclusive with shortname.
+        The default is False.
+    shortname : bool, optional
+        Force RINEX file renaming with short name convention.
+        Mutually exclusive with longname.
         The default is False.
     force_rnx_load : bool, optional
         Force the loading of the input RINEX. Useful if its name is not standard.
@@ -1009,6 +1015,10 @@ def rinexmod(
     if not os.path.exists(outputfolder):
         logger.warning("the output folder does not exists")
         os.makedirs(outputfolder)
+
+    if longname and shortname:
+        logger.error("longname and shortname are mutually exclusive")
+        raise RinexModInputArgsError
 
     ###########################################################################
     ########## Open the rinex file as an object
@@ -1211,17 +1221,27 @@ def rinexmod(
 
     ###########################################################################
     ########## we regenerate the filenames
-    if rnxobj.name_conv == "SHORT" and not longname:
-        rnxobj.get_shortname(
-            inplace_set=True, compression="", filename_style=filename_style
-        )
+    if shortname or (rnxobj.name_conv == "SHORT" and not longname):
+        apply_longname = False
+    elif longname or (rnxobj.name_conv == "LONG" and not shortname):
+        apply_longname = True
     else:
+        apply_longname = True
+
+    if apply_longname:
         rnxobj.get_longname(
             inplace_set=True,
             compression="",
             filename_style=filename_style,
             data_source=rnxobj.data_source,
         )
+    else:
+        rnxobj.get_shortname(
+            inplace_set=True,
+            compression="",
+            filename_style=filename_style
+        )
+
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step
@@ -1284,6 +1304,7 @@ def rinexmod_cli(
     marker="",
     country="",
     longname=False,
+    shortname=False,
     force_sitelog=False,
     force_rnx_load=False,
     ignore=False,
