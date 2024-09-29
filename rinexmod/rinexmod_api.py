@@ -1479,6 +1479,7 @@ def rinexmod_cli(
             "marker": marker,
             "country": country,
             "longname": longname,
+            "shortname": shortname,
             "force_rnx_load": force_rnx_load,
             "force_sitelog": force_sitelog,
             "ignore": ignore,
