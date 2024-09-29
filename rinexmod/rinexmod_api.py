@@ -1350,12 +1350,13 @@ def rinexmod_cli(
         and not modif_kw
         and not marker
         and not longname
+        and not shortname
         and not station_info
         and not lfile_apriori
     ):
         logger.critical(
             "No action asked, provide at least one of the following args:"
-            "--sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori"
+            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori"
         )
         raise RinexModInputArgsError
 
