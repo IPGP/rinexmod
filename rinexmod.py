@@ -167,7 +167,7 @@ if __name__ == "__main__":
         default=False,
     )
     optional.add_argument(
-        "-s",
+        "-sh",
         "--shortname",
         help="Force RINEX file renaming with short name convention."
         "Mutually exclusive with longname.",
