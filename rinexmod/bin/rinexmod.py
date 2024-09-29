@@ -159,7 +159,16 @@ def main():
     optional.add_argument(
         "-l",
         "--longname",
-        help="Rename file using long name RINEX convention (force gzip compression).",
+        help="Force RINEX file renaming with long name convention (force gzip compression)."
+        "Mutually exclusive with shortname.",
+        action="store_true",
+        default=False,
+    )
+    optional.add_argument(
+        "-sh",
+        "--shortname",
+        help="Force RINEX file renaming with short name convention."
+        "Mutually exclusive with longname.",
         action="store_true",
         default=False,
     )
@@ -285,6 +294,7 @@ def main():
         marker=args.marker,
         country=args.country,
         longname=args.longname,
+        shortname=args.shortname,
         force_sitelog=args.force_sitelog,
         force_rnx_load=args.force_rnx_load,
         ignore=args.ignore,
