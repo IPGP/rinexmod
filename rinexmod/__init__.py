@@ -3,6 +3,7 @@ from . import rinexfile
 from . import metadata
 from . import gamit_meta
 from . import rinexmod_api
+from . import get_m3g
 
-__version__='3.0.0'  ## CHANGE IT ALSO IN setup and readme !!!!
+__version__='3.3.0'  ## CHANGE IT ALSO IN setup and readme !!!!
 
