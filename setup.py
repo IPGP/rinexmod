@@ -39,7 +39,7 @@ setup(
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
 
-    version=str('3.3.0'),  # Required ## CHANGE IT ALSO IN __init____ and readme !!!!
+    version=str('3.4.0'),  # Required ## CHANGE IT ALSO IN __init____ and readme !!!!
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:

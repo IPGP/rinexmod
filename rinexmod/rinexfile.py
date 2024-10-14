@@ -1155,22 +1155,22 @@ class RinexFile:
             sys_obs_idx_fin += 1
 
         #### get the systems and observations
-        Lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
+        lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
 
         ## clean SYS / # / OBS TYPES
-        Lines_sys = [l[:60] for l in Lines_sys]
+        lines_sys = [l[:60] for l in lines_sys]
 
         ## manage the 2 lines systems => they are stacked in one
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             if l[0] == " ":
-                Lines_sys[il - 1] = Lines_sys[il - 1] + l
-                Lines_sys.remove(l)
+                lines_sys[il - 1] = lines_sys[il - 1] + l
+                lines_sys.remove(l)
 
         #### store system and observables in a dictionnary
         dict_sys_obs = dict()
         dict_sys_nobs = dict()
 
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             sysobs = l.split()
             sys = sysobs[0]
             dict_sys_obs[sys] = sysobs[2:]
