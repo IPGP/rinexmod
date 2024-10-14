@@ -58,8 +58,7 @@ def rinexrename(rinexinput, output=None, delete=False, alone=False, country="00X
     return Output_path_list
 
 
-if __name__ == '__main__':
-
+def main():
     import argparse
 
 
@@ -80,3 +79,6 @@ if __name__ == '__main__':
     country = args.country
 
     rinexrename(rinexinput, output, delete, alone, country)
+
+if __name__ == '__main__':
+    main()
