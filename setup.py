@@ -15,6 +15,10 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
+
+# Load the requirements from the requirements.txt file
+# Frederick Brennan answer on stackoverflow
+# https://stackoverflow.com/questions/14399534/reference-requirements-txt-for-the-install-requires-kwarg-in-setuptools-setup-py
 with open(here / 'requirements.txt') as f:
     required = f.read().splitlines()
 
@@ -152,6 +156,9 @@ It is available under the GNU license on the following GitHub repository: https:
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
+
+    # requirements.txt is read at the beginning of the setup.py file
+    # and the required packages are stored in the list 'required'
     install_requires=required,  # Optional
 
     # List additional groups of dependencies here (e.g. development
