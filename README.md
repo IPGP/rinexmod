@@ -62,7 +62,7 @@ pip install hatanaka pycountry matplotlib colorlog pandas
 
 ## _rinexmod_ in command lines interface
 
-### rinexmod
+### rinexmod_run
 
 This is the main frontend function. It takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loop over the RINEX files list to modify the file's header. It then writes them back to Hatanaka-compressed
