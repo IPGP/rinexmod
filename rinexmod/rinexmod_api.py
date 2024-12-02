@@ -18,6 +18,7 @@ from datetime import datetime
 import hatanaka
 import pandas as pd
 
+import rinexmod as rimo
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
 import rinexmod.metadata as rimo_mda
@@ -67,14 +68,13 @@ def listfiles(directory, extension, recursive=True):
 
 
 # get Git hash (to get a version number-equivalent of the RinexMod used)
-def git_get_revision_short_hash():
+def get_git_hash():
     """
     Gives the Git hash to have a tracking of the used version
 
     Returns
     -------
     7 characters Git hash
-
     """
     script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -86,7 +86,6 @@ def git_get_revision_short_hash():
         githash = "xxxxxxx"
 
     ####NB: 2msec to run this fuction
-
     return githash
 
 
@@ -796,6 +795,7 @@ def rinexmod(
     marker="",
     country="",
     longname=False,
+    shortname=False,
     force_rnx_load=False,
     force_sitelog=False,
     ignore=False,
@@ -874,7 +874,12 @@ def rinexmod(
         https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes
         The default is ''.
     longname : bool, optional
-        Rename file using long name RINEX convention (force gzip compression).
+        Force RINEX file renaming with long name convention (force gzip compression).
+        Mutually exclusive with shortname.
+        The default is False.
+    shortname : bool, optional
+        Force RINEX file renaming with short name convention.
+        Mutually exclusive with longname.
         The default is False.
     force_rnx_load : bool, optional
         Force the loading of the input RINEX. Useful if its name is not standard.
@@ -1009,6 +1014,10 @@ def rinexmod(
     if not os.path.exists(outputfolder):
         logger.warning("the output folder does not exists")
         os.makedirs(outputfolder)
+
+    if longname and shortname:
+        logger.error("longname and shortname are mutually exclusive")
+        raise RinexModInputArgsError
 
     ###########################################################################
     ########## Open the rinex file as an object
@@ -1185,9 +1194,10 @@ def rinexmod(
 
     ###########################################################################
     ########## Add comment in the header
-    vers_num = git_get_revision_short_hash()
+    githash = get_git_hash()
+    vers_num = rimo.__version__ + " " + githash[-3:]
     # rnxobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
-    rnxobj.add_comment(("RinexMod " + vers_num, "METADATA UPDATE"), add_pgm_cmt=True)
+    rnxobj.add_prg_run_date_comment("RinexMod " + vers_num, "METADATA UPDATE")
     rnxobj.add_comment("RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)")
     rnxobj.add_comment(
         "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M%z"))
@@ -1211,17 +1221,27 @@ def rinexmod(
 
     ###########################################################################
     ########## we regenerate the filenames
-    if rnxobj.name_conv == "SHORT" and not longname:
-        rnxobj.get_shortname(
-            inplace_set=True, compression="", filename_style=filename_style
-        )
+    if shortname or (rnxobj.name_conv == "SHORT" and not longname):
+        apply_longname = False
+    elif longname or (rnxobj.name_conv == "LONG" and not shortname):
+        apply_longname = True
     else:
+        apply_longname = True
+
+    if apply_longname:
         rnxobj.get_longname(
             inplace_set=True,
             compression="",
             filename_style=filename_style,
             data_source=rnxobj.data_source,
         )
+    else:
+        rnxobj.get_shortname(
+            inplace_set=True,
+            compression="",
+            filename_style=filename_style
+        )
+
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step
@@ -1284,6 +1304,7 @@ def rinexmod_cli(
     marker="",
     country="",
     longname=False,
+    shortname=False,
     force_sitelog=False,
     force_rnx_load=False,
     ignore=False,
@@ -1329,12 +1350,13 @@ def rinexmod_cli(
         and not modif_kw
         and not marker
         and not longname
+        and not shortname
         and not station_info
         and not lfile_apriori
     ):
         logger.critical(
             "No action asked, provide at least one of the following args:"
-            "--sitelog, --modif_kw, --marker, --longname, --station_info, --lfile_apriori"
+            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori"
         )
         raise RinexModInputArgsError
 
@@ -1422,6 +1444,10 @@ def rinexmod_cli(
     else:
         rinexinput_use = rinexinput
 
+    if not rinexinput_use:
+        logger.error("The input file is empty: %s", str(rinexinput))
+        return RinexModInputArgsError
+
     if rinexinput_use[0].endswith("RINEX VERSION / TYPE"):
         logger.error(
             "The input file is not a file list but a RINEX: %s", str(rinexinput[0])
@@ -1458,6 +1484,7 @@ def rinexmod_cli(
             "marker": marker,
             "country": country,
             "longname": longname,
+            "shortname": shortname,
             "force_rnx_load": force_rnx_load,
             "force_sitelog": force_sitelog,
             "ignore": ignore,

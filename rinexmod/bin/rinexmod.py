@@ -16,15 +16,13 @@ v2 - 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 import argparse
 import textwrap
 
-import textwrap
-
-
+import rinexmod
 import rinexmod
 import rinexmod.rinexmod_api as rimo_api
 
 from argparse import RawTextHelpFormatter
 
-if __name__ == "__main__":
+def main():
 
     class SmartFormatter(argparse.HelpFormatter):
         # source: https://stackoverflow.com/a/22157136/3464212
@@ -161,7 +159,16 @@ if __name__ == "__main__":
     optional.add_argument(
         "-l",
         "--longname",
-        help="Rename file using long name RINEX convention (force gzip compression).",
+        help="Force RINEX file renaming with long name convention (force gzip compression)."
+        "Mutually exclusive with shortname.",
+        action="store_true",
+        default=False,
+    )
+    optional.add_argument(
+        "-sh",
+        "--shortname",
+        help="Force RINEX file renaming with short name convention."
+        "Mutually exclusive with longname.",
         action="store_true",
         default=False,
     )
@@ -287,6 +294,7 @@ if __name__ == "__main__":
         marker=args.marker,
         country=args.country,
         longname=args.longname,
+        shortname=args.shortname,
         force_sitelog=args.force_sitelog,
         force_rnx_load=args.force_rnx_load,
         ignore=args.ignore,

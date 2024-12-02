@@ -15,6 +15,13 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
+
+# Load the requirements from the requirements.txt file
+# Frederick Brennan answer on stackoverflow
+# https://stackoverflow.com/questions/14399534/reference-requirements-txt-for-the-install-requires-kwarg-in-setuptools-setup-py
+with open(here / 'requirements.txt') as f:
+    required = f.read().splitlines()
+
 # Arguments marked as "Required" below must be included for upload to PyPI.
 # Fields marked as "Optional" may be commented out.
 
@@ -39,7 +46,7 @@ setup(
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
 
-    version=str('3.3.0'),  # Required ## CHANGE IT ALSO IN __init____ and readme !!!!
+    version=str('3.4.0'),  # Required ## CHANGE IT ALSO IN __init__ and readme !!!!
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
@@ -114,7 +121,6 @@ It is available under the GNU license on the following GitHub repository: https:
         # 'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3 :: Only',
     ],
-
     # This field adds keywords for your project which will appear on the
     # project page. What does your project relate to?
     #
@@ -150,13 +156,10 @@ It is available under the GNU license on the following GitHub repository: https:
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[ 'hatanaka',
-                       'numpy',
-                       'pycountry',
-                       'matplotlib',
-                       'colorlog', 
-                       'pandas',
-                      ],  # Optional
+
+    # requirements.txt is read at the beginning of the setup.py file
+    # and the required packages are stored in the list 'required'
+    install_requires=required,  # Optional
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
@@ -173,7 +176,7 @@ It is available under the GNU license on the following GitHub repository: https:
                   # 'kepler.py',
                   # 'ncompress'],
 
-    }
+    },
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.
@@ -195,11 +198,19 @@ It is available under the GNU license on the following GitHub repository: https:
     #
     # For example, the following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
-    #entry_points={  # Optional
-    #    'console_scripts': [
-    #        'sample=sample:main',
-    #    ],
-    #},
+    entry_points={  # Optional
+       'console_scripts': [
+           'rinexmod=rinexmod.bin.rinexmod:main',
+           'crzmeta=rinexmod.bin.misc_tools.crzmeta:main',
+           'get_m3g_sitelogs=rinexmod.bin.misc_tools.get_m3g_sitelogs:main',
+           'rinexrename=rinexmod.bin.misc_tools.rinexrename:main'
+       ],
+    },
+
+    # scripts = ['bin/rinexmod.py',
+    #            'bin/misc_tools/rinexrename.py',
+    #            'bin/misc_tools/get_m3g_sitelogs.py',
+    #            'bin/misc_tools/crzmeta.py'],
 
     # List additional URLs that are relevant to your project as a dict.
     #

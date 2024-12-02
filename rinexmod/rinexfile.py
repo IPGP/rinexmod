@@ -591,9 +591,9 @@ class RinexFile:
                 type_letter = basename[-1]
 
             if type_letter == "d":
-                hatanaka = True
+                hatanaka_bool = True
             else:
-                hatanaka = False
+                hatanaka_bool = False
 
         else:  # LONG name
             if compress:
@@ -602,11 +602,11 @@ class RinexFile:
                 type_ext = basename[-3:]
 
             if type_ext == "crx":
-                hatanaka = True
+                hatanaka_bool = True
             else:
-                hatanaka = False
+                hatanaka_bool = False
 
-        return compress, hatanaka
+        return compress, hatanaka_bool
 
     def get_filename(self):
         """
@@ -1155,22 +1155,22 @@ class RinexFile:
             sys_obs_idx_fin += 1
 
         #### get the systems and observations
-        Lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
+        lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
 
         ## clean SYS / # / OBS TYPES
-        Lines_sys = [l[:60] for l in Lines_sys]
+        lines_sys = [l[:60] for l in lines_sys]
 
         ## manage the 2 lines systems => they are stacked in one
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             if l[0] == " ":
-                Lines_sys[il - 1] = Lines_sys[il - 1] + l
-                Lines_sys.remove(l)
+                lines_sys[il - 1] = lines_sys[il - 1] + l
+                lines_sys.remove(l)
 
         #### store system and observables in a dictionnary
         dict_sys_obs = dict()
         dict_sys_nobs = dict()
 
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             sysobs = l.split()
             sys = sysobs[0]
             dict_sys_obs[sys] = sysobs[2:]
@@ -1885,13 +1885,26 @@ class RinexFile:
 
         return outputfile
 
-    def add_comment(self, comment=None, add_pgm_cmt=False):
+    def add_comment(self, comment=None, add_as_first=False):
         """
-        We add the argument comment line at the end of the header
-        Append as last per default
+        Add a comment line to the end of the RINEX header.
 
-        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line
-        Then comment is a 2-tuple (program,run_by)
+        Parameters
+        ----------
+        comment : str, optional
+            The comment to be added. If None, the function returns immediately.
+        add_as_first : bool, optional
+            If True, the comment is added as the first comment. Default is False.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        If no comments are in the header, they will be added just before the 'END OF HEADER'.
+        Nevertheless, the sort_header() method executed a bit after will bring them
+        just after PGM '/ RUN BY / DATE'
         """
         if self.status:
             return
@@ -1900,27 +1913,48 @@ class RinexFile:
             return
 
         end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
-        Idx = [
+        idx = [
             i
             for i, e in enumerate(self.rinex_data[0:end_of_header_idx])
             if "COMMENT" in e
         ]
 
-        if not add_pgm_cmt:
-            last_comment_idx = max(Idx)
-            new_comment_idx = last_comment_idx + 1
+        if len(comment) < 60:  # if the comment is shorter than 60 characters, we center it with dashes
             new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
+        else:  # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
+            new_line = comment[:59] + " COMMENT"
 
+        # regular case: some comments already exist
+        if len(idx) > 0:
+            # add the comment as last (default)
+            if not add_as_first:
+                last_comment_idx = max(idx)
+                new_comment_idx = last_comment_idx + 1
+            # add the comment as first
+            else:
+                first_comment_idx = min(idx)
+                new_comment_idx = first_comment_idx
+        # no comment in the header, then the first comment is added before the 'END OF HEADER'
         else:
-            first_comment_idx = min(Idx)
-            new_comment_idx = first_comment_idx
-            program, run_by = comment
-            date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
-            new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
+            new_comment_idx = end_of_header_idx - 1
 
         self.rinex_data.insert(new_comment_idx, new_line)
 
         return
+
+    def add_prg_run_date_comment(self, program, run_by):
+        """
+        Add a COMMENT, looking like as a 'PGM / RUN BY / DATE'-like line
+        Useful to describe autorino edition, but without erasing the conversion
+        program information
+        """
+        if self.status:
+            return
+
+        date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+        new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
+
+        self.add_comment(new_line, add_as_first=True)
 
     def add_comments(self, comment_list):
         """
@@ -1968,9 +2002,9 @@ class RinexFile:
         self.rinex_data = rinex_data_new
         return
 
-    def clean_gfzrnx_comments(self, internal_use_only=True, format_conversion=False):
+    def clean_translation_comments(self, internal_use_only=True, format_conversion=False):
         """
-        clean warning blocks generated by GFZRNX's RINEX 2>3 conversion
+        clean warning blocks generated during RINEX 2>3 translation
 
         Parameters
         ----------
@@ -1987,7 +2021,7 @@ class RinexFile:
 
         """
 
-        def __gfzrnx_cleaner(rinex_data_in, block_title):
+        def __translat_cleaner(rinex_data_in, block_title):
             i_start, i_end = None, None
             inblock = False
             for il, l in enumerate(rinex_data_in):
@@ -2012,11 +2046,11 @@ class RinexFile:
             return rinex_data_out
 
         if internal_use_only:
-            self.rinex_data = __gfzrnx_cleaner(
+            self.rinex_data = __translat_cleaner(
                 self.rinex_data, "WARNING - FOR INTERNAL USE ONLY"
             )
         if format_conversion:
-            self.rinex_data = __gfzrnx_cleaner(
+            self.rinex_data = __translat_cleaner(
                 self.rinex_data, "WARNING - FORMAT CONVERSION"
             )
 
