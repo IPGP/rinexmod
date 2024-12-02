@@ -33,7 +33,7 @@ def main():
 
     # Parsing Args
     parser = argparse.ArgumentParser(
-        description="RinexMod takes RINEX files (v2 or v3/4, compressed or not), "
+        description="rinexmod takes RINEX files (v2 or v3/4, compressed or not), "
         "rename them and modifiy their headers, and write them back to a destination directory",
         #formatter_class=SmartFormatter,
         formatter_class=RawTextHelpFormatter,
@@ -277,7 +277,7 @@ def main():
     optional.add_argument(
         "-rm",
         "--remove",
-        help="Remove input RINEX file if the output RINEX is correctly written. Use it as your own risk. "
+        help="Remove input RINEX file if the output RINEX is correctly written. Use it at your own risk. "
              "(default: %(default)s)",
         action="store_true",
         default=False,
