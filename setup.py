@@ -200,14 +200,14 @@ It is available under the GNU license on the following GitHub repository: https:
     # executes the function `main` from this package when invoked:
     entry_points={  # Optional
        'console_scripts': [
-           'rinexmod=rinexmod.bin.rinexmod:main',
+           'rinexmod_run=rinexmod.bin.rinexmod_run:main',
            'crzmeta=rinexmod.bin.misc_tools.crzmeta:main',
            'get_m3g_sitelogs=rinexmod.bin.misc_tools.get_m3g_sitelogs:main',
            'rinexrename=rinexmod.bin.misc_tools.rinexrename:main'
        ],
     },
 
-    # scripts = ['bin/rinexmod.py',
+    # scripts = ['bin/rinexmod_run.py',
     #            'bin/misc_tools/rinexrename.py',
     #            'bin/misc_tools/get_m3g_sitelogs.py',
     #            'bin/misc_tools/crzmeta.py'],
