@@ -1444,6 +1444,10 @@ def rinexmod_cli(
     else:
         rinexinput_use = rinexinput
 
+    if not rinexinput_use:
+        logger.error("The input file is empty: %s", str(rinexinput))
+        return RinexModInputArgsError
+
     if rinexinput_use[0].endswith("RINEX VERSION / TYPE"):
         logger.error(
             "The input file is not a file list but a RINEX: %s", str(rinexinput[0])
