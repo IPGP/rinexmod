@@ -17,7 +17,7 @@ Last version: v3.4.0 - 2024-09-30
 
 ### Main tool
 
-* `rinexmod` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
+* `rinexmod_run` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loops the rinex files list to modify the file's headers. It then writes them back to Hatanaka
 compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
@@ -42,7 +42,7 @@ The tool is designed in Python 3, and you must have it installed on your machine
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
 
-Since the version 3.4.0, the frontend program `rinexmod` is available directly when you call it in your console.
+Since the version 3.4.0, the frontend program `rinexmod_run` is available directly when you call it in your console.
 
 ### Required external modules
 
@@ -137,13 +137,13 @@ _rinexmod_ will add two comment lines, one indicating the source of the modifica
 
 ### Synopsis
 ```
-rinexmod [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER
-         [-s SITELOG] [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER]
-         [-co COUNTRY] [-n NINECHARFILE] [-sti STATION_INFO]
-         [-lfi LFILE_APRIORI] [-r RELATIVE] [-nh] [-c {gz,Z,none}]
-         [-l] [-fs] [-fc] [-fr] [-ig] [-a] [-ol OUTPUT_LOGS] [-w]
-         [-v] [-t] [-u] [-fns {basic,flex,exact}]
-         [-mp MULTI_PROCESS] [-d] [-rm]
+rinexmod_run [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER
+             [-s SITELOG] [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER]
+             [-co COUNTRY] [-n NINECHARFILE] [-sti STATION_INFO]
+             [-lfi LFILE_APRIORI] [-r RELATIVE] [-nh] [-c {gz,Z,none}]
+             [-l] [-fs] [-fc] [-fr] [-ig] [-a] [-ol OUTPUT_LOGS] [-w]
+             [-v] [-t] [-u] [-fns {basic,flex,exact}]
+             [-mp MULTI_PROCESS] [-d] [-rm]
 
 RinexMod takes RINEX files (v2 or v3/4, compressed or not), rename them and modifiy their headers, and write them back to a destination directory
 
@@ -220,10 +220,10 @@ RinexMod 3.3.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS - https://gi
 ### Examples
 
 ```
-./rinexmod -i RINEXLIST -o OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+./rinexmod_run -i RINEXLIST -o OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
 ```
 ```
-./rinexmod (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+./rinexmod_run (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 ```
 
 ## _rinexmod_ in API mode
