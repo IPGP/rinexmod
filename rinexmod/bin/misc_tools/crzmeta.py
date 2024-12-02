@@ -54,8 +54,7 @@ def crzmeta(rinexfile, plot):
     return
 
 
-if __name__ == '__main__':
-
+def main():
     import argparse
 
     # Parsing Args
@@ -68,3 +67,6 @@ if __name__ == '__main__':
     plot = args.plot
 
     crzmeta(rinexfile, plot)
+
+if __name__ == '__main__':
+    main()

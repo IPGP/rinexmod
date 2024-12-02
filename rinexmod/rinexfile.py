@@ -13,7 +13,7 @@ from io import StringIO
 from pathlib import Path
 
 import hatanaka
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 
 import rinexmod.logger as rimo_log
@@ -675,14 +675,14 @@ class RinexFile:
             # Pattern of an observation line containing a date - RINEX 3
             # date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
             date_pattern = re.compile(
-                "> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})"
+                r"> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})"
             )
             year_prefix = ""  # Prefix of year for date formatting
 
         elif self.version_float < 3:
             # Pattern of an observation line containing a date - RINEX 2
             date_pattern = re.compile(
-                " (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})"
+                r" (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})"
             )
             year_prefix = "20"  # Prefix of year for date formatting
             ### !!!!!!!!! before 2000 must be implemented !!!!!!
@@ -881,7 +881,9 @@ class RinexFile:
 
         non_nominal_interval_percent = num_bad_sp / len(samples_rate_diff)
 
+        plot = False
         if plot:
+            import matplotlib.pyplot as plt
             print(
                 "{:29} : {}".format(
                     "Sample intervals not nominals",
@@ -1155,22 +1157,22 @@ class RinexFile:
             sys_obs_idx_fin += 1
 
         #### get the systems and observations
-        Lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
+        lines_sys = self.rinex_data[sys_obs_idx0:sys_obs_idx_fin]
 
         ## clean SYS / # / OBS TYPES
-        Lines_sys = [l[:60] for l in Lines_sys]
+        lines_sys = [l[:60] for l in lines_sys]
 
         ## manage the 2 lines systems => they are stacked in one
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             if l[0] == " ":
-                Lines_sys[il - 1] = Lines_sys[il - 1] + l
-                Lines_sys.remove(l)
+                lines_sys[il - 1] = lines_sys[il - 1] + l
+                lines_sys.remove(l)
 
         #### store system and observables in a dictionnary
         dict_sys_obs = dict()
         dict_sys_nobs = dict()
 
-        for il, l in enumerate(Lines_sys):
+        for il, l in enumerate(lines_sys):
             sysobs = l.split()
             sys = sysobs[0]
             dict_sys_obs[sys] = sysobs[2:]
@@ -1887,11 +1889,24 @@ class RinexFile:
 
     def add_comment(self, comment=None, add_as_first=False):
         """
-        We add the argument comment line at the end of the header
-        Append as last per default
+        Add a comment line to the end of the RINEX header.
 
-        add_pgm_cmt=True add a 'PGM / RUN BY / DATE'-like line
-        Then comment is a 2-tuple (program,run_by)
+        Parameters
+        ----------
+        comment : str, optional
+            The comment to be added. If None, the function returns immediately.
+        add_as_first : bool, optional
+            If True, the comment is added as the first comment. Default is False.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        If no comments are in the header, they will be added just before the 'END OF HEADER'.
+        Nevertheless, the sort_header() method executed a bit after will bring them
+        just after PGM '/ RUN BY / DATE'
         """
         if self.status:
             return
@@ -1906,9 +1921,9 @@ class RinexFile:
             if "COMMENT" in e
         ]
 
-        if len(comment) < 60: # if the comment is shorter than 60 characters, we center it with dashes
+        if len(comment) < 60:  # if the comment is shorter than 60 characters, we center it with dashes
             new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
-        else: # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
+        else:  # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
             new_line = comment[:59] + " COMMENT"
 
         # regular case: some comments already exist
@@ -1931,8 +1946,9 @@ class RinexFile:
 
     def add_prg_run_date_comment(self, program, run_by):
         """
-        Add a COMMENT looking like as a 'PGM / RUN BY / DATE'-like line
-        Useful to describe autorino edition, but without erasing the conversion program information
+        Add a COMMENT, looking like as a 'PGM / RUN BY / DATE'-like line
+        Useful to describe autorino edition, but without erasing the conversion
+        program information
         """
         if self.status:
             return
@@ -1941,8 +1957,6 @@ class RinexFile:
         new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.add_comment(new_line, add_as_first=True)
-
-
 
     def add_comments(self, comment_list):
         """
@@ -1990,9 +2004,9 @@ class RinexFile:
         self.rinex_data = rinex_data_new
         return
 
-    def clean_gfzrnx_comments(self, internal_use_only=True, format_conversion=False):
+    def clean_translation_comments(self, internal_use_only=True, format_conversion=False):
         """
-        clean warning blocks generated by GFZRNX's RINEX 2>3 conversion
+        clean warning blocks generated during RINEX 2>3 translation
 
         Parameters
         ----------
@@ -2009,7 +2023,7 @@ class RinexFile:
 
         """
 
-        def __gfzrnx_cleaner(rinex_data_in, block_title):
+        def __translat_cleaner(rinex_data_in, block_title):
             i_start, i_end = None, None
             inblock = False
             for il, l in enumerate(rinex_data_in):
@@ -2034,11 +2048,11 @@ class RinexFile:
             return rinex_data_out
 
         if internal_use_only:
-            self.rinex_data = __gfzrnx_cleaner(
+            self.rinex_data = __translat_cleaner(
                 self.rinex_data, "WARNING - FOR INTERNAL USE ONLY"
             )
         if format_conversion:
-            self.rinex_data = __gfzrnx_cleaner(
+            self.rinex_data = __translat_cleaner(
                 self.rinex_data, "WARNING - FORMAT CONVERSION"
             )
 
@@ -2152,13 +2166,13 @@ def regex_pattern_rinex_filename():
     pattern_dic = dict()
     # pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
     pattern_dic["shortname"] = (
-        "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))"  ### add subhour starting min
+        r"....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))"  ### add subhour starting min
     )
     pattern_dic["longname"] = (
-        ".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
+        r".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
     )
     pattern_dic["longname_gfz"] = (
-        ".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?"
+        r".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?"
     )
 
     return pattern_dic
