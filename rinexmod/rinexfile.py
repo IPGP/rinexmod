@@ -13,7 +13,7 @@ from io import StringIO
 from pathlib import Path
 
 import hatanaka
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 
 import rinexmod.logger as rimo_log
@@ -675,14 +675,14 @@ class RinexFile:
             # Pattern of an observation line containing a date - RINEX 3
             # date_pattern = re.compile('> (\d{4}) (\d{2}) (\d{2}) (\d{2}) (\d{2}) ((?: |\d)\d.\d{4})')
             date_pattern = re.compile(
-                "> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})"
+                r"> (\d{4}) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) (\d{2}| \d) ((?: |\d)\d.\d{4})"
             )
             year_prefix = ""  # Prefix of year for date formatting
 
         elif self.version_float < 3:
             # Pattern of an observation line containing a date - RINEX 2
             date_pattern = re.compile(
-                " (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})"
+                r" (\d{2}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}) ((?: |\d)\d{1}.\d{4})"
             )
             year_prefix = "20"  # Prefix of year for date formatting
             ### !!!!!!!!! before 2000 must be implemented !!!!!!
@@ -881,7 +881,9 @@ class RinexFile:
 
         non_nominal_interval_percent = num_bad_sp / len(samples_rate_diff)
 
+        plot = False
         if plot:
+            import matplotlib.pyplot as plt
             print(
                 "{:29} : {}".format(
                     "Sample intervals not nominals",
@@ -2164,13 +2166,13 @@ def regex_pattern_rinex_filename():
     pattern_dic = dict()
     # pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
     pattern_dic["shortname"] = (
-        "....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))"  ### add subhour starting min
+        r"....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))"  ### add subhour starting min
     )
     pattern_dic["longname"] = (
-        ".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
+        r".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
     )
     pattern_dic["longname_gfz"] = (
-        ".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?"
+        r".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?"
     )
 
     return pattern_dic
