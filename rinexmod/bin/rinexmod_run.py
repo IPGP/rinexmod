@@ -315,3 +315,6 @@ def main():
         force_fake_coords=args.force_fake_coords,
         remove=args.remove
     )
+
+if __name__ == '__main__':
+    main()
