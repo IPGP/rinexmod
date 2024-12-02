@@ -16,15 +16,12 @@ v2 - 2023-03-23 Pierre Sakic - sakic@ipgp.fr
 import argparse
 import textwrap
 
-import textwrap
-
-
 import rinexmod
 import rinexmod.rinexmod_api as rimo_api
 
 from argparse import RawTextHelpFormatter
 
-if __name__ == "__main__":
+def main():
 
     class SmartFormatter(argparse.HelpFormatter):
         # source: https://stackoverflow.com/a/22157136/3464212

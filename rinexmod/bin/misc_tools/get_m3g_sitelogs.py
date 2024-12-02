@@ -47,8 +47,7 @@ EXAMPLE:
 
 import rinexmod.get_m3g
 
-if __name__ == "__main__":
-
+def main():
     import argparse
 
     # Parsing Args
@@ -123,3 +122,6 @@ if __name__ == "__main__":
     rinexmod.get_m3g.get_m3g_sitelogs(
         sitelogsfolder, delete, observatory, root, svn, move_folder, force, exclude
     )
+
+if __name__ == '__main__':
+    main()

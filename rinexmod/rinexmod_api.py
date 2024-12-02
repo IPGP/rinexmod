@@ -18,6 +18,7 @@ from datetime import datetime
 import hatanaka
 import pandas as pd
 
+import rinexmod as rimo
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
 import rinexmod.metadata as rimo_mda
@@ -67,14 +68,13 @@ def listfiles(directory, extension, recursive=True):
 
 
 # get Git hash (to get a version number-equivalent of the RinexMod used)
-def git_get_revision_short_hash():
+def get_git_hash():
     """
     Gives the Git hash to have a tracking of the used version
 
     Returns
     -------
     7 characters Git hash
-
     """
     script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -86,7 +86,6 @@ def git_get_revision_short_hash():
         githash = "xxxxxxx"
 
     ####NB: 2msec to run this fuction
-
     return githash
 
 
@@ -269,7 +268,7 @@ def sitelogs2metadata_objs(
         sitelog_extension = ".log"
         all_sitelogs = listfiles(sitelog_filepath, sitelog_extension)
 
-        sitelog_pattern = re.compile("\w{4,9}_\d{8}.log")
+        sitelog_pattern = re.compile(r"\w{4,9}_\d{8}.log")
         all_sitelogs = [
             file
             for file in all_sitelogs
@@ -1195,7 +1194,8 @@ def rinexmod(
 
     ###########################################################################
     ########## Add comment in the header
-    vers_num = git_get_revision_short_hash()
+    githash = get_git_hash()
+    vers_num = rimo.__version__ + " " + githash[-3:]
     # rnxobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
     rnxobj.add_prg_run_date_comment("RinexMod " + vers_num, "METADATA UPDATE")
     rnxobj.add_comment("RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)")
@@ -1443,6 +1443,10 @@ def rinexmod_cli(
             return RinexModInputArgsError
     else:
         rinexinput_use = rinexinput
+
+    if not rinexinput_use:
+        logger.error("The input file is empty: %s", str(rinexinput))
+        return RinexModInputArgsError
 
     if rinexinput_use[0].endswith("RINEX VERSION / TYPE"):
         logger.error(

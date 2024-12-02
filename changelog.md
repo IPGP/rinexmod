@@ -1,5 +1,34 @@
 ## Changelog
 
+### v3.4.0 (Dec, 2024)
+
+- shell programs are now in a `bin` folder and are set as executable in the `setup.py`
+- **the frontend command line interface program has been renamed `rinexmod_run.py` to avoid conflict with the module name**
+- add `shortname` option to force RINEX file renaming with short name convention, and modify `longname` option to force RINEX file renaming with long name convention
+  (Behavior of previous `longname` option was ambiguous.)
+`shortname` is mutually exclusive with `longname`.
+
+### v3.3.0 (Sep 4, 2024)
+
+* `--tolerant_file_period/-tol` is replaced by a more flexible --filename_style/-fns option.
+  * it takes now one string argument with 3 acceptable values: 'basic' (per default), 'flex', and 'exact'.
+        see help for more details 
+  * misc. improvements and bug corrections
+
+### v3.2.0 (Aug 15, 2024)
+
+Misc improvements:
+
+* Enhanced log messages
+* Some exception handling when reading RINEX
+* RINEX version attribute is now also float
+* you can now remove your input RINEXs with -rm, but be carful of what you are doing!
+
+
+### v3.1.0 (Jun 5, 2024)
+
+make rinexmod compliant with IGSMAIL-8458, i.e. nine characters site in sitelogs, and Country or Region field instead of Country.
+
 ### v3.0.0 (Mar 15, 2024)
 
 - **important user interface change**

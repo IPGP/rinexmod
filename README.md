@@ -8,8 +8,8 @@ It is developed in Python 3, and can be run from the command line or directly in
 The required input metadata can come from a sitelog file, or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
-v2 - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
-v1 - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
+v2+ - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
+v1  - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
 Last version: v3.4.0 - 2024-09-30
 
@@ -17,7 +17,7 @@ Last version: v3.4.0 - 2024-09-30
 
 ### Main tool
 
-* `rinexmod.py` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
+* `rinexmod_run` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loops the rinex files list to modify the file's headers. It then writes them back to Hatanaka
 compressed format in an output folder. It also permits to rename the files, changing
 the four first characters of the file name with another station code. It can write
@@ -25,7 +25,7 @@ those files with the long name naming convention with the --longname option.
 
 ### Annex tools
 
-They are stored in `misc_tools` folder.
+They are stored in `bin/misc_tools` folder.
 
 * `get_m3g_sitelogs.py` will get the last version of site logs from the M3G repository
 and write them in an observatory-dependent subfolder.
@@ -42,14 +42,7 @@ The tool is designed in Python 3, and you must have it installed on your machine
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
 
-To use the front-end functions, you must also add the `rinexmod` folder in your `$PATH` environnement variable, 
-defined in your `.bashrc`.  
-If you used PIP for the installation, your can locate the folder where `rinexmod` has been installed with:
-```
-pip show rinexmod
-```
-at the line `Location:`. Usually, it is `/usr/local/lib/python3.NN/dist-packages/rinexmod` .
-Then edit your `~/.bashrc` and add it to the `$PATH` environnement variable 
+Since the version 3.4.0, the frontend program `rinexmod_run` is available directly when you call it in your console.
 
 ### Required external modules
 
@@ -67,11 +60,9 @@ You can install them with:
 pip install hatanaka pycountry matplotlib colorlog pandas
 ```
 
-
-
 ## _rinexmod_ in command lines interface
 
-### rinexmod.py
+### rinexmod_run
 
 This is the main frontend function. It takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loop over the RINEX files list to modify the file's header. It then writes them back to Hatanaka-compressed
@@ -146,13 +137,13 @@ _rinexmod_ will add two comment lines, one indicating the source of the modifica
 
 ### Synopsis
 ```
-rinexmod.py [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER
-                   [-s SITELOG] [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER]
-                   [-co COUNTRY] [-n NINECHARFILE] [-sti STATION_INFO]
-                   [-lfi LFILE_APRIORI] [-r RELATIVE] [-nh] [-c {gz,Z,none}]
-                   [-l] [-fs] [-fc] [-fr] [-ig] [-a] [-ol OUTPUT_LOGS] [-w]
-                   [-v] [-t] [-u] [-fns {basic,flex,exact}]
-                   [-mp MULTI_PROCESS] [-d] [-rm]
+rinexmod_run [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER
+             [-s SITELOG] [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER]
+             [-co COUNTRY] [-n NINECHARFILE] [-sti STATION_INFO]
+             [-lfi LFILE_APRIORI] [-r RELATIVE] [-nh] [-c {gz,Z,none}]
+             [-l] [-fs] [-fc] [-fr] [-ig] [-a] [-ol OUTPUT_LOGS] [-w]
+             [-v] [-t] [-u] [-fns {basic,flex,exact}]
+             [-mp MULTI_PROCESS] [-d] [-rm]
 
 RinexMod takes RINEX files (v2 or v3/4, compressed or not), rename them and modifiy their headers, and write them back to a destination directory
 
@@ -195,7 +186,7 @@ optional arguments:
   -fs, --force_sitelog  If a single sitelog is provided, force sitelog-based header values when RINEX's header and sitelog site name do not correspond. 
                          If several sitelogs are provided, skip badly-formated sitelogs.
   -fc, --force_fake_coords
-                        When using GAMIT station.info metadata without apriori coordinates in the L-File, gives fake coordinates at (0°,0°) to the site
+                        When using GAMIT station.info metadata without apriori coordinates in the L-File, gives fake coordinates at (0??,0??) to the site
   -fr, --force_rnx_load
                         Force the loading of the input RINEX. Useful if its name is not standard
   -ig, --ignore         Ignore firmware changes between instrumentation periods when getting header values info from sitelogs
@@ -229,10 +220,10 @@ RinexMod 3.3.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS - https://gi
 ### Examples
 
 ```
-./rinexmod.py -i RINEXLIST -o OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
+./rinexmod_run -i RINEXLIST -o OUTPUTFOLDER (-k antenna_type='ANT TYPE' antenna_X_pos=9999 agency=AGN) (-m AGAL) (-r ./ROOTFOLDER/) (-f) (-v)
 ```
 ```
-./rinexmod.py (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
+./rinexmod_run (-a) -i RINEXFILE -o OUTPUTFOLDER (-s ./sitelogsfolder/stationsitelog.log) (-i) (-w) (-o ./LOGFOLDER) (-v)
 ```
 
 ## _rinexmod_ in API mode
@@ -373,7 +364,7 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
         position and DOMES information (needs also station_info option)
     force_fake_coords: bool, optional
         When using GAMIT station.info metadata without apriori coordinates
-        in the L-File, gives fake coordinates at (0°,0°) to the site
+        in the L-File, gives fake coordinates at (0??,0??) to the site
     remove: bool, optional
         Remove input RINEX file if the output RINEX is correctly written
         The default is False.
@@ -397,17 +388,17 @@ rimo_api.rinexmod(rinexfile, outputfolder, sitelog=None, modif_kw=dict(), marker
 ```
 ## Other command line functions
 
-### crzmeta.py
+### crzmeta
 
 Extract metadata from crz file.
 
 With -p option, will plot the file's samples intervals
 ```
 EXAMPLE:
-./crzmeta.py  RINEXFILE (-p)
+./crzmeta  RINEXFILE (-p)
 ```
 
-### get_m3g_sitelogs.py
+### get_m3g_sitelogs
 
 This script will get the last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
@@ -425,7 +416,7 @@ OPTION :
 
 EXAMPLE:
 
-	./get_m3g_sitelogs.py OUTPUTFOLDER (-d)
+	./get_m3g_sitelogs OUTPUTFOLDER (-d)
 ```
 
 ## _rinexmod_ error messages
