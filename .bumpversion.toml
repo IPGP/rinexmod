@@ -27,6 +27,12 @@ search = "Last version: v{current_version}"
 replace = "Last version: v{new_version}"
 
 [[tool.bumpversion.files]]
+filename = "README.md"
+search = "Date: \\d{{4}}-\\d{{2}}-\\d{{2}}"
+replace = "Date: {now:%Y-%m-%d}"
+regex = true
+
+[[tool.bumpversion.files]]
 filename = "rinexmod/__init__.py"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
