@@ -23,8 +23,8 @@ post_commit_hooks = []
 filename = "README.md"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
-search = "Last version: v{current_version}"
-replace = "Last version: v{new_version}"
+search = "Version: {current_version}"
+replace = "Version: {new_version}"
 
 [[tool.bumpversion.files]]
 filename = "README.md"
