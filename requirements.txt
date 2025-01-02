@@ -5,3 +5,4 @@ hatanaka
 numpy
 requests
 setuptools
+pycountry
