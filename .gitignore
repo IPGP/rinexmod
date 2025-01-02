@@ -4,4 +4,8 @@ venv/
 rinexmod.egg-info/
 py3rimo4a/
 venvrimo3/
+dist/
+build/
+*.egg-info/
+py3rimo_tests2a/
 
