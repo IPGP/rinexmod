@@ -128,7 +128,7 @@ def metadata_input_manage(sitelog_inp, force=False):
         return sitelog_inp
     # single string or list of string
     elif isinstance(sitelog_inp, str) or isinstance(sitelog_inp, list):
-        return sitelogs2metadata_objs(
+        return sitlgs2mda_objs(
             sitelog_inp, force=force, return_list_even_if_single_input=True
         )
     else:
@@ -141,7 +141,7 @@ def metadata_input_manage(sitelog_inp, force=False):
         raise RinexModInputArgsError
 
 
-def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
+def gamit2mda_objs(station_info_inp, lfile_inp, force_fake_coords=False):
     """
     Read a GAMIT files and convert their content to MetaData objects
 
@@ -226,7 +226,7 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
     return metadataobj_lis
 
 
-def sitelogs2metadata_objs(
+def sitlgs2mda_objs(
     sitelog_filepath, force=False, return_list_even_if_single_input=True
 ):
     """
@@ -491,7 +491,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
         if len(metadataobjs) == 1:
             metadataobj = metadataobjs[0]
         else:
-            # the assumption that latest sitelog has been found in sitelogs2metadata_objs is wrong!
+            # the assumption that latest sitelog has been found in sitlgs2mda_objs is wrong!
             # a second search with the preparation date is performed here
             metadataobj = _mda_find_latest_prep(metadataobjs)[0]
 
@@ -1086,7 +1086,7 @@ def rinexmod(
 
     ### load the metadata from sitelog or GAMIT files if any
     if (station_info and lfile_apriori) and not sitelog:
-        metadata_obj_list = gamit2metadata_objs(
+        metadata_obj_list = gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
@@ -1465,7 +1465,7 @@ def rinexmod_cli(
         sitelogs_list_use = metadata_input_manage(sitelog, force_sitelog)
     # from GAMIT files
     elif station_info and lfile_apriori:
-        sitelogs_list_use = gamit2metadata_objs(
+        sitelogs_list_use = gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
     else:
