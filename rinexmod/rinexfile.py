@@ -1282,8 +1282,7 @@ class RinexFile:
         firmware_head = receiver_head[40:60]
         label_head = receiver_head[60:]
 
-        # warning
-        ### for the receiver, info in te input RINEX should be the correct ones
+        # warning: for the receiver, info in te input RINEX might be the correct ones
         def _mod_rec_check(field_type, rinex_val, metadata_val):
             if rinex_val.strip() != metadata_val.strip():
                 logger.warning(
@@ -1300,7 +1299,9 @@ class RinexFile:
 
         _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
         _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
-        _mod_rec_check("firmware version", rinex_val=firmware_head, metadata_val=firmware)
+        _mod_rec_check(
+            "firmware version", rinex_val=firmware_head, metadata_val=firmware
+        )
 
         # Edit line
         if serial:
