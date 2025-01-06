@@ -13,7 +13,8 @@ from io import StringIO
 from pathlib import Path
 
 import hatanaka
-#import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 import numpy as np
 
 import rinexmod.logger as rimo_log
@@ -884,6 +885,7 @@ class RinexFile:
         plot = False
         if plot:
             import matplotlib.pyplot as plt
+
             print(
                 "{:29} : {}".format(
                     "Sample intervals not nominals",
@@ -1278,10 +1280,9 @@ class RinexFile:
         serial_head = receiver_head[0:20]
         type_head = receiver_head[20:40]
         firmware_head = receiver_head[40:60]
-        label = receiver_head[60:]
+        label_head = receiver_head[60:]
 
-        # warning
-        ### for the receiver, info in te input RINEX should be the correct ones
+        # warning: for the receiver, info in te input RINEX might be the correct ones
         def _mod_rec_check(field_type, rinex_val, metadata_val):
             if rinex_val.strip() != metadata_val.strip():
                 logger.warning(
@@ -1296,9 +1297,11 @@ class RinexFile:
                 )
             return None
 
-        _mod_rec_check("serial number", serial, serial_head)
-        _mod_rec_check("model type", type, type_head)
-        _mod_rec_check("firmware version", firmware, firmware_head)
+        _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
+        _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
+        _mod_rec_check(
+            "firmware version", rinex_val=firmware_head, metadata_val=firmware
+        )
 
         # Edit line
         if serial:
@@ -1307,7 +1310,7 @@ class RinexFile:
             type_head = str(type)[:20].ljust(20)
         if firmware:
             firmware_head = str(firmware)[:20].ljust(20)
-        new_line = serial_head + type_head + firmware_head + label
+        new_line = serial_head + type_head + firmware_head + label_head
         # Set line
         self.rinex_data[receiver_header_idx] = new_line
 
@@ -1921,7 +1924,9 @@ class RinexFile:
             if "COMMENT" in e
         ]
 
-        if len(comment) < 60:  # if the comment is shorter than 60 characters, we center it with dashes
+        if (
+            len(comment) < 60
+        ):  # if the comment is shorter than 60 characters, we center it with dashes
             new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
         else:  # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
             new_line = comment[:59] + " COMMENT"
@@ -2004,7 +2009,9 @@ class RinexFile:
         self.rinex_data = rinex_data_new
         return
 
-    def clean_translation_comments(self, internal_use_only=True, format_conversion=False):
+    def clean_translation_comments(
+        self, internal_use_only=True, format_conversion=False
+    ):
         """
         clean warning blocks generated during RINEX 2>3 translation
 

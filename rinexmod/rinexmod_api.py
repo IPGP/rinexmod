@@ -128,7 +128,7 @@ def metadata_input_manage(sitelog_inp, force=False):
         return sitelog_inp
     # single string or list of string
     elif isinstance(sitelog_inp, str) or isinstance(sitelog_inp, list):
-        return sitelogs2metadata_objs(
+        return sitlgs2mda_objs(
             sitelog_inp, force=force, return_list_even_if_single_input=True
         )
     else:
@@ -141,7 +141,7 @@ def metadata_input_manage(sitelog_inp, force=False):
         raise RinexModInputArgsError
 
 
-def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
+def gamit2mda_objs(station_info_inp, lfile_inp, force_fake_coords=False):
     """
     Read a GAMIT files and convert their content to MetaData objects
 
@@ -226,7 +226,7 @@ def gamit2metadata_objs(station_info_inp, lfile_inp, force_fake_coords=False):
     return metadataobj_lis
 
 
-def sitelogs2metadata_objs(
+def sitlgs2mda_objs(
     sitelog_filepath, force=False, return_list_even_if_single_input=True
 ):
     """
@@ -491,7 +491,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
         if len(metadataobjs) == 1:
             metadataobj = metadataobjs[0]
         else:
-            # the assumption that latest sitelog has been found in sitelogs2metadata_objs is wrong!
+            # the assumption that latest sitelog has been found in sitlgs2mda_objs is wrong!
             # a second search with the preparation date is performed here
             metadataobj = _mda_find_latest_prep(metadataobjs)[0]
 
@@ -801,7 +801,7 @@ def rinexmod(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression=None,
+    compression='gz',
     relative="",
     verbose=True,
     full_history=False,
@@ -901,8 +901,8 @@ def rinexmod(
         The default is False.
     compression : str, optional
         Set low-level RINEX file compression.
-        acceptable values : gz (recommended to fit IGS standards), 'Z', None.
-        The default is None.
+        acceptable values : 'gz' (recommended to fit IGS standards), 'Z', None.
+        The default is 'gz'.
     relative : str, optional
         Reconstruct files relative subfolders.
         You have to indicate the common parent folder,
@@ -1086,7 +1086,7 @@ def rinexmod(
 
     ### load the metadata from sitelog or GAMIT files if any
     if (station_info and lfile_apriori) and not sitelog:
-        metadata_obj_list = gamit2metadata_objs(
+        metadata_obj_list = gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
@@ -1244,19 +1244,22 @@ def rinexmod(
 
 
     # NB: here the compression type must be forced to ''
-    #     it will be added in the next step
-    # (in the block "We convert the file back to Hatanaka Compressed Rinex")
-    # inplace_set = True => rnxobj's filename is updated
+    #     it will be added in the next step in write_to_path
 
     ###########################################################################
     ########## We convert the file back to Hatanaka Compressed Rinex
-    if longname and not compression:
-        # If not specified, we set compression to gz when file changed to longname
-        output_compression = "gz"
-    elif not compression:
-        output_compression = rnxobj.compression
-    else:
-        output_compression = compression
+
+    # NB: this test is complcated, ambiguous and not very useful => disabled 2025-01-05
+
+    # if apply_longname and not compression:
+    #     # If not specified, we set compression to gz when file changed to longname
+    #     output_compression = "gz"
+    # elif not compression:
+    #     output_compression = rnxobj.compression
+    # else:
+    #     output_compression = compression
+
+    output_compression = compression
 
     ###########################################################################
     ########## Writing output file
@@ -1310,7 +1313,7 @@ def rinexmod_cli(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression=None,
+    compression='gz',
     relative="",
     verbose=True,
     alone=False,
@@ -1336,12 +1339,6 @@ def rinexmod_cli(
 
     For a detailed description, check the help of the lower level
     `rinexmod` function or the help of the frontend CLI function in a Terminal
-
-    Parameters
-    ----------
-    rinexinput : Itertable
-        a filepath of a textfile containing a RINEX paths list (1-element list)
-        or directly a Python list of RINEX paths
     """
 
     # If no longname, modif_kw and sitelog, return
@@ -1465,7 +1462,7 @@ def rinexmod_cli(
         sitelogs_list_use = metadata_input_manage(sitelog, force_sitelog)
     # from GAMIT files
     elif station_info and lfile_apriori:
-        sitelogs_list_use = gamit2metadata_objs(
+        sitelogs_list_use = gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
     else:
