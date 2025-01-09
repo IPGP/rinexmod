@@ -1244,22 +1244,19 @@ def rinexmod(
 
 
     # NB: here the compression type must be forced to ''
-    #     it will be added in the next step in write_to_path
+    #     it will be added in the next step
+    # (in the block "We convert the file back to Hatanaka Compressed Rinex")
+    # inplace_set = True => rnxobj's filename is updated
 
     ###########################################################################
     ########## We convert the file back to Hatanaka Compressed Rinex
-
-    # NB: this test is complcated, ambiguous and not very useful => disabled 2025-01-05
-
-    # if apply_longname and not compression:
-    #     # If not specified, we set compression to gz when file changed to longname
-    #     output_compression = "gz"
-    # elif not compression:
-    #     output_compression = rnxobj.compression
-    # else:
-    #     output_compression = compression
-
-    output_compression = compression
+    if longname and not compression:
+        # If not specified, we set compression to gz when file changed to longname
+        output_compression = "gz"
+    elif not compression:
+        output_compression = rnxobj.compression
+    else:
+        output_compression = compression
 
     ###########################################################################
     ########## Writing output file
