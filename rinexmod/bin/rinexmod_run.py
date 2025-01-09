@@ -151,9 +151,9 @@ def main():
         "--compression",
         type=str,
         help="Set low-level RINEX file compression "
-        "(acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none', default: %(default)s)",
+        "(acceptable values : 'gz' (recommended to fit IGS standards), 'Z', 'none')",
         choices=['gz', 'Z', 'none'],
-        default="gz",
+        default="",
     )
     optional.add_argument(
         "-l",
@@ -253,7 +253,7 @@ def main():
         "e.g.: FNG000GLP_R_20242221800_06H_30S_MO.crx.gz\n"
         "* 'exact': the filename start time is strictly "
         "the one of the first epoch in the RINEX. "
-        "Useful for some specific cases like splicing.\n"
+        "Useful for some specific cases needing splicing.\n"
         "e.g.: FNG000GLP_R_20242221829_06H_30S_MO.crx.gz\n"
         "(default: %(default)s)",
         choices=['basic', 'flex', 'exact'],
