@@ -801,7 +801,7 @@ def rinexmod(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression=None,
+    compression='gz',
     relative="",
     verbose=True,
     full_history=False,
@@ -901,8 +901,8 @@ def rinexmod(
         The default is False.
     compression : str, optional
         Set low-level RINEX file compression.
-        acceptable values : gz (recommended to fit IGS standards), 'Z', None.
-        The default is None.
+        acceptable values : 'gz' (recommended to fit IGS standards), 'Z', None.
+        The default is 'gz'.
     relative : str, optional
         Reconstruct files relative subfolders.
         You have to indicate the common parent folder,
@@ -1313,7 +1313,7 @@ def rinexmod_cli(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression=None,
+    compression='gz',
     relative="",
     verbose=True,
     alone=False,
@@ -1339,12 +1339,6 @@ def rinexmod_cli(
 
     For a detailed description, check the help of the lower level
     `rinexmod` function or the help of the frontend CLI function in a Terminal
-
-    Parameters
-    ----------
-    rinexinput : Itertable
-        a filepath of a textfile containing a RINEX paths list (1-element list)
-        or directly a Python list of RINEX paths
     """
 
     # If no longname, modif_kw and sitelog, return
