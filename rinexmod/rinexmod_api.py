@@ -972,7 +972,7 @@ def rinexmod(
     else:
         logger = rimo_log.logger_define("INFO", logfile=None, level_logfile="INFO")
 
-    logger.info("# Input file: %s", rinexfile)
+    logger.info("# Inp. file: %s", rinexfile)
 
     if relative:
         if not relative in rinexfile:
@@ -1267,7 +1267,7 @@ def rinexmod(
         outputfile = rnxobj.write_to_path(
             myoutputfolder, compression=output_compression, no_hatanaka=no_hatanaka
         )
-        logger.info("# Output file: " + outputfile)
+        logger.info("# Out. file: " + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
         logger.error(
             "{:110s} - {}".format(
