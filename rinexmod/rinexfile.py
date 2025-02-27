@@ -1284,7 +1284,7 @@ class RinexFile:
 
         # warning: for the receiver, info in te input RINEX might be the correct ones
         def _mod_rec_check(field_type, rinex_val, metadata_val):
-            if rinex_val.strip() != metadata_val.strip():
+            if metadata_val and rinex_val.strip() != metadata_val.strip():
                 logger.warning(
                     "%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
                     self.get_site(lower_case=False),
