@@ -77,8 +77,9 @@ def get_m3g_sitelogs(
         "MAF": "OVSG",  ### St Martin (no station there for the moment)
         "REU": "OVPF",
         "MYT": "REVOSIMA",
-        "ATF": "REVOSIMA",
-    }  ### TAAF aka Terres Australes
+        "ATF": "REVOSIMA", ### TAAF aka Terres Australes
+        "DJI": "OGA",
+    }  
 
     # If an observatory ID is given, only download its sitelogs
 
