@@ -80,9 +80,9 @@ def get_git_hash():
 
     cmd = ["git", "--git-dir", script_path + "/.git", "rev-parse", "--short", "HEAD"]
     try:
-        githash = subprocess.check_output(cmd).decode("ascii").strip()[:7]
+        githash = subprocess.check_output(cmd,stderr=subprocess.DEVNULL).decode("ascii").strip()[:7]
     except Exception:
-        logger.warn("unable to get the git commit version")
+        #logger.warn("unable to get the git commit version")
         githash = "xxxxxxx"
 
     ####NB: 2msec to run this fuction
