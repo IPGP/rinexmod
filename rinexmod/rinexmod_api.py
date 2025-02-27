@@ -801,7 +801,7 @@ def rinexmod(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression=None,
+    compression='gz',
     relative="",
     verbose=True,
     full_history=False,
@@ -901,8 +901,8 @@ def rinexmod(
         The default is False.
     compression : str, optional
         Set low-level RINEX file compression.
-        acceptable values : gz (recommended to fit IGS standards), 'Z', None.
-        The default is None.
+        acceptable values : 'gz' (recommended to fit IGS standards), 'Z', None.
+        The default is 'gz'.
     relative : str, optional
         Reconstruct files relative subfolders.
         You have to indicate the common parent folder,
@@ -1244,19 +1244,22 @@ def rinexmod(
 
 
     # NB: here the compression type must be forced to ''
-    #     it will be added in the next step
-    # (in the block "We convert the file back to Hatanaka Compressed Rinex")
-    # inplace_set = True => rnxobj's filename is updated
+    #     it will be added in the next step in write_to_path
 
     ###########################################################################
     ########## We convert the file back to Hatanaka Compressed Rinex
-    if longname and not compression:
-        # If not specified, we set compression to gz when file changed to longname
-        output_compression = "gz"
-    elif not compression:
-        output_compression = rnxobj.compression
-    else:
-        output_compression = compression
+
+    # NB: this test is complcated, ambiguous and not very useful => disabled 2025-01-05
+
+    # if apply_longname and not compression:
+    #     # If not specified, we set compression to gz when file changed to longname
+    #     output_compression = "gz"
+    # elif not compression:
+    #     output_compression = rnxobj.compression
+    # else:
+    #     output_compression = compression
+
+    output_compression = compression
 
     ###########################################################################
     ########## Writing output file
@@ -1310,7 +1313,7 @@ def rinexmod_cli(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression=None,
+    compression='gz',
     relative="",
     verbose=True,
     alone=False,
@@ -1336,12 +1339,6 @@ def rinexmod_cli(
 
     For a detailed description, check the help of the lower level
     `rinexmod` function or the help of the frontend CLI function in a Terminal
-
-    Parameters
-    ----------
-    rinexinput : Itertable
-        a filepath of a textfile containing a RINEX paths list (1-element list)
-        or directly a Python list of RINEX paths
     """
 
     # If no longname, modif_kw and sitelog, return
