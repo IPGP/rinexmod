@@ -1215,20 +1215,21 @@ class RinexFile:
             return
 
         ###marker_inp is a mandatory arguement, no None!
-        if not marker_inp:
+        if not marker_inp and not number_inp:
             return
 
         # Identify line that contains MARKER NAME
-        marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
-        # Edit line
-        new_line = "{}".format(marker_inp.ljust(60)) + "MARKER NAME"
-        if marker_name_header_idx:
-            # marker_name_meta = self.rinex_data[marker_name_header_idx]
-            # Set line
-            self.rinex_data[marker_name_header_idx] = new_line
-        else:
-            pgm_header_idx = search_idx_value(self.rinex_data, "PGM / RUN BY / DATE")
-            self.rinex_data.insert(pgm_header_idx, new_line)
+        if marker_inp:
+            marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
+            # Edit line
+            new_line = "{}".format(marker_inp.ljust(60)) + "MARKER NAME"
+            if marker_name_header_idx:
+                # marker_name_meta = self.rinex_data[marker_name_header_idx]
+                # Set line
+                self.rinex_data[marker_name_header_idx] = new_line
+            else:
+                pgm_header_idx = search_idx_value(self.rinex_data, "PGM / RUN BY / DATE")
+                self.rinex_data.insert(pgm_header_idx, new_line)
 
         if number_inp:
             # Identify line that contains MARKER NUMBER
