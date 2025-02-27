@@ -110,18 +110,18 @@ def main():
     )
 
     args = parser.parse_args()
-    sitelogsfolder = args.sitelogsfolder
-    delete = args.delete
-    observatory = args.observatory
-    svn = args.svn
-    root = args.root
-    move_folder = args.move
-    force = args.force
-    exclude = args.exclude
 
     rinexmod.get_m3g.get_m3g_sitelogs(
-        sitelogsfolder, delete, observatory, root, svn, move_folder, force, exclude
+        sitelogsfolder=args.sitelogsfolder,
+        delete=args.delete,
+        observatory=args.observatory,
+        root_folder=args.root,
+        svn_mode=args.svn,
+        move_folder=args.move,
+        force=args.force,
+        exclude=args.exclude
     )
+
 
 if __name__ == '__main__':
     main()
