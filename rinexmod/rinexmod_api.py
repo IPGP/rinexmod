@@ -498,7 +498,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
     return metadataobj
 
 
-def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
+def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=False):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -523,21 +523,11 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
     )
 
     if not mda_vars:
-        logger.error(
-            "{:110s} - {}".format(
-                "35 - No instrumentation corresponding to the RINEX epoch",
-                rnxobj.filename,
-            )
-        )
+        logger.error("35 - No instrumentation corresponding to the RINEX epoch - %s", rnxobj.filename)
         raise MetaDataError
 
     if ignored:
-        logger.warning(
-            "{:110s} - {}".format(
-                "36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway",
-                rnxobj.filename,
-            )
-        )
+        logger.warning("36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s", rnxobj.filename)
 
     (
         fourchar_id,
@@ -550,9 +540,9 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
         antenna_delta,
     ) = mda_vars
 
-    # # Apply the modifications to the RinexFile object
+    ## Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
-    rnxobj.mod_receiver(**receiver)
+    rnxobj.mod_receiver(keep_rnx_rec=keep_rnx_rec, **receiver)
     rnxobj.mod_interval(rnxobj.sample_rate_numeric)
     rnxobj.mod_antenna(**antenna)
     rnxobj.mod_antenna_pos(**antenna_pos)
@@ -811,6 +801,7 @@ def rinexmod(
     lfile_apriori=None,
     force_fake_coords=False,
     remove=False,
+    keep_rnx_rec=False,
 ):
     """
     Parameters
@@ -945,6 +936,10 @@ def rinexmod(
         in the L-File, gives fake coordinates at (0°,0°) to the site
     remove: bool, optional
         Remove input RINEX file if the output RINEX is correctly written
+        The default is False.
+    keep_rnx_rec: bool, optional
+        Keep the RINEX receiver header record in the output RINEX.
+        Metadata from the external source (e.g. sitelogs) will not be modded.
         The default is False.
 
     Raises
@@ -1161,7 +1156,9 @@ def rinexmod(
     ###########################################################################
     ########## Apply the MetaData object on the RinexFile object
     if metadataobj:
-        rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=ignore)
+        rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj,
+                                             ignore=ignore,
+                                             keep_rnx_rec=keep_rnx_rec)
         logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_metadata()[0])
         modif_source_metadata = metadataobj.filename
     else:
@@ -1328,6 +1325,7 @@ def rinexmod_cli(
     lfile_apriori=None,
     force_fake_coords=False,
     remove=False,
+    keep_rnx_rec=False,
 ):
     """
     Main function for reading a Rinex list file. It processes the list, and apply
@@ -1471,7 +1469,7 @@ def rinexmod_cli(
     ### Looping in file list ###
     return_lists = dict()
     ####### Iterate over each RINEX
-    rinexmod_kwargs_list = []
+    rnxmod_kwargs_lis = []
     for rnx in rinexinput_use:
         rnxmod_kwargs = {
             "rinexfile": rnx,
@@ -1497,9 +1495,10 @@ def rinexmod_cli(
             "lfile_apriori": lfile_apriori,
             "force_fake_coords": force_fake_coords,
             "remove": remove,
+            "keep_rnx_rec": keep_rnx_rec,
         }
 
-        rinexmod_kwargs_list.append(rnxmod_kwargs)
+        rnxmod_kwargs_lis.append(rnxmod_kwargs)
 
     global rinexmod_mpwrap
 
@@ -1521,10 +1520,8 @@ def rinexmod_cli(
     if multi_process > 1:
         logger.info("multiprocessing: %d cores used", multi_process)
     pool = mp.Pool(processes=multi_process)
-    results_raw = [
-        pool.apply_async(rinexmod_mpwrap, args=(x,)) for x in rinexmod_kwargs_list
-    ]
-    results = [e.get() for e in results_raw]
+    res_raw = [pool.apply_async(rinexmod_mpwrap, args=(x,)) for x in rnxmod_kwargs_lis]
+    results = [e.get() for e in res_raw]
 
     for return_lists_mono in results:
         try:

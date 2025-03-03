@@ -283,6 +283,15 @@ def main():
         default=False,
     )
 
+    optional.add_argument(
+        "-krr",
+        "--keep_rnx_rec",
+        help="Keep the RINEX receiver header record in the output RINEX. "
+             "Metadata from the external source (e.g. sitelogs) will not be modded. "
+             "(default: %(default)s)",
+
+    )
+
     args = parser.parse_args()
 
     rimo_api.rinexmod_cli(
@@ -313,7 +322,8 @@ def main():
         station_info=args.station_info,
         lfile_apriori=args.lfile_apriori,
         force_fake_coords=args.force_fake_coords,
-        remove=args.remove
+        remove=args.remove,
+        keep_rnx_rec=args.keep_rnx_rec
     )
 
 if __name__ == '__main__':
