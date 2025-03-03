@@ -79,6 +79,7 @@ def get_m3g_sitelogs(
     #     "REU": "OVPF",
     #     "MYT": "REVOSIMA",
     #     "ATF": "REVOSIMA",
+    #     "DJI": "OGA",
     # }  ### TAAF aka Terres Australes
 
     #(No more country but network 2025-03)
@@ -87,6 +88,7 @@ def get_m3g_sitelogs(
         "GL": "OVSG",
         "PF": "OVPF",
         "QM": "REVOSIMA",
+        "DJ": "OGA",
     }
 
 
