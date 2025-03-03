@@ -67,18 +67,28 @@ def get_m3g_sitelogs(
 
     # M3G country webservice. We use countries to filter IPGP's obs stations.
     country_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?country="
+    country_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?network="
 
-    # Observatories. First field is the counrty code in M3G's webservice.
-    # Second field is the name of the observatory and is used to build the subfolder
+    # # Observatories. First field is the counrty code in M3G's webservice.
+    # # Second field is the name of the observatory and is used to build the subfolder
+    # observatories = {
+    #     "MTQ": "OVSM",
+    #     "GLP": "OVSG",
+    #     "BLM": "OVSG",  ### St Barthelemy
+    #     "MAF": "OVSG",  ### St Martin (no station there for the moment)
+    #     "REU": "OVPF",
+    #     "MYT": "REVOSIMA",
+    #     "ATF": "REVOSIMA",
+    # }  ### TAAF aka Terres Australes
+
+    #(No more country but network 2025-03)
     observatories = {
-        "MTQ": "OVSM",
-        "GLP": "OVSG",
-        "BLM": "OVSG",  ### St Barthelemy
-        "MAF": "OVSG",  ### St Martin (no station there for the moment)
-        "REU": "OVPF",
-        "MYT": "REVOSIMA",
-        "ATF": "REVOSIMA",
-    }  ### TAAF aka Terres Australes
+        "MQ": "OVSM",
+        "GL": "OVSG",
+        "PF": "OVPF",
+        "QM": "REVOSIMA",
+    }
+
 
     # If an observatory ID is given, only download its sitelogs
 
