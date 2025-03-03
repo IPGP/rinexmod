@@ -518,27 +518,18 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    mda_vars, ignored = metadataobj.rinex_metadata_lines(
-        rnxobj.start_date, rnxobj.end_date, ignore
-    )
+    mda_vars, ignored = metadataobj.rinex_metadata_lines(rnxobj.start_date, rnxobj.end_date, ignore)
 
     if not mda_vars:
         logger.error("35 - No instrumentation corresponding to the RINEX epoch - %s", rnxobj.filename)
         raise MetaDataError
 
     if ignored:
-        logger.warning("36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s", rnxobj.filename)
+        logger.warning(
+            "36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s",
+            rnxobj.filename)
 
-    (
-        fourchar_id,
-        domes_id,
-        sat_system_long_fmt,
-        agencies,
-        receiver,
-        antenna,
-        antenna_pos,
-        antenna_delta,
-    ) = mda_vars
+    fourchar_id, domes_id, sat_system_long_fmt, agencies, receiver, antenna, antenna_pos, antenna_delta = mda_vars
 
     ## Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
@@ -1295,6 +1286,19 @@ def rinexmod(
 # *****************************************************************************
 # Upper level rinexmod for a Console run
 
+def rinexmod_mpwrap(rnxmod_kwargs_inp):
+    try:
+        return_lists_out = rinexmod(**rnxmod_kwargs_inp)
+        return return_lists_out
+    except Exception as e:
+        if debug:  ### set as True for debug mode
+            raise e
+        else:
+            logger.error(
+                "%s raised, RINEX is skiped: %s. Use -d/--debug option for more details",
+                type(e).__name__,
+                rnxmod_kwargs_inp["rinexfile"],
+            )
 
 def rinexmod_cli(
     rinexinput,
@@ -1499,22 +1503,6 @@ def rinexmod_cli(
         }
 
         rnxmod_kwargs_lis.append(rnxmod_kwargs)
-
-    global rinexmod_mpwrap
-
-    def rinexmod_mpwrap(rnxmod_kwargs_inp):
-        try:
-            return_lists_out = rinexmod(**rnxmod_kwargs_inp)
-            return return_lists_out
-        except Exception as e:
-            if debug:  ### set as True for debug mode
-                raise e
-            else:
-                logger.error(
-                    "%s raised, RINEX is skiped: %s. Use -d/--debug option for more details",
-                    type(e).__name__,
-                    rnxmod_kwargs_inp["rinexfile"],
-                )
 
     # number of parallel processing
     if multi_process > 1:
