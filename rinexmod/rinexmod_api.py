@@ -497,7 +497,6 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
 
     return metadataobj
 
-
 def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=False):
     """
     apply a MetaData object on a RinexFile object
@@ -511,7 +510,8 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=
 
     if rnx_4char != mda_4char:
         logger.warning(
-            "RINEX and metadata 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",
+            "RINEX and metadata 4 char. codes do not correspond, "
+            "but I assume you know what you are doing (%s,%s)",
             rnx_4char,
             mda_4char,
         )
