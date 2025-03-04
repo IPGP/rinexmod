@@ -11,8 +11,8 @@ It is available under the GNU license on the following GitHub repository: https:
 v2+ - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
 v1  - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-Version: 3.4.1 
-Date: 2025-02-27
+Version: 3.5.0 
+Date: 2025-03-04
 
 ## Tools overview
 
@@ -38,12 +38,17 @@ It's a teqc-free equivalent of teqc +meta.
 ## Installation
 
 ### Assisted installation 
-The tool is designed in Python 3, and you must have it installed on your machine.
+The tool is designed in Python 3, and you must have it installed on your machine.  
 
+Since the version 3.4.0, the frontend program `rinexmod_run` is available directly when you call it in your console.
+
+#### Install the last *stable* version from the Python Package Index (PyPI)
+```pip install rinexmod```
+
+#### Install the latest *developpement* version:
 You can use `pip` to install the last GitHub-hosted version with the following command:  
 ```pip install git+https://github.com/IPGP/rinexmod```
 
-Since the version 3.4.0, the frontend program `rinexmod_run` is available directly when you call it in your console.
 
 ### Required external modules
 

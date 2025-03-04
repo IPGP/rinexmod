@@ -758,7 +758,7 @@ class RinexFile:
         the data.
         """
 
-        if self.status != 0:
+        if self.status:
             return None, None
 
         def _find_meta_label(meta_label_in):
@@ -1218,9 +1218,9 @@ class RinexFile:
         if not marker_inp and not number_inp:
             return
 
+        marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
         # Identify line that contains MARKER NAME
         if marker_inp:
-            marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
             # Edit line
             new_line = "{}".format(marker_inp.ljust(60)) + "MARKER NAME"
             if marker_name_header_idx:
@@ -1248,7 +1248,7 @@ class RinexFile:
 
         return
 
-    def mod_receiver(self, serial=None, type=None, firmware=None):
+    def mod_receiver(self, serial=None, type=None, firmware=None, keep_rnx_rec=False):
         """
         Modify within the RINEX header the receiver information
         (``REC # / TYPE / VERS`` line)
@@ -1261,6 +1261,9 @@ class RinexFile:
             Receiver model. The default is None.
         firmware : str, optional
             Firmware version. The default is None.
+        keep_rnx_rec : bool, optional
+            Keep the RINEX receiver header record in the output RINEX.
+            Metadata from the external source (e.g. sitelogs) will not be modded.
 
         Returns
         -------
@@ -1296,13 +1299,20 @@ class RinexFile:
                 logger.warning(
                     "The RINEX value might be the correct one, double-check your metadata source."
                 )
-            return None
+                return True
+                # True if the check fails: counter-intuitive, but makes sense for the test below
+            else:
+                return False
 
-        _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
-        _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
-        _mod_rec_check(
+        rec_chk_sn = _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
+        rec_chk_mt = _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
+        rec_chk_fw = _mod_rec_check(
             "firmware version", rinex_val=firmware_head, metadata_val=firmware
         )
+
+        if keep_rnx_rec and (rec_chk_sn or rec_chk_fw or rec_chk_fw):
+            logger.info("RINEX & metadata are different, but receiver values are kept (keep_rnx_rec = True)")
+            return
 
         # Edit line
         if serial:

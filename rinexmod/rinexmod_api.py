@@ -497,8 +497,7 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
 
     return metadataobj
 
-
-def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
+def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=False):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -511,48 +510,30 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False):
 
     if rnx_4char != mda_4char:
         logger.warning(
-            "RINEX and metadata 4 char. codes do not correspond, but I assume you know what you are doing (%s,%s)",
+            "RINEX and metadata 4 char. codes do not correspond, "
+            "but I assume you know what you are doing (%s,%s)",
             rnx_4char,
             mda_4char,
         )
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    mda_vars, ignored = metadataobj.rinex_metadata_lines(
-        rnxobj.start_date, rnxobj.end_date, ignore
-    )
+    mda_vars, ignored = metadataobj.rinex_metadata_lines(rnxobj.start_date, rnxobj.end_date, ignore)
 
     if not mda_vars:
-        logger.error(
-            "{:110s} - {}".format(
-                "35 - No instrumentation corresponding to the RINEX epoch",
-                rnxobj.filename,
-            )
-        )
+        logger.error("35 - No instrumentation corresponding to the RINEX epoch - %s", rnxobj.filename)
         raise MetaDataError
 
     if ignored:
         logger.warning(
-            "{:110s} - {}".format(
-                "36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway",
-                rnxobj.filename,
-            )
-        )
+            "36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s",
+            rnxobj.filename)
 
-    (
-        fourchar_id,
-        domes_id,
-        sat_system_long_fmt,
-        agencies,
-        receiver,
-        antenna,
-        antenna_pos,
-        antenna_delta,
-    ) = mda_vars
+    fourchar_id, domes_id, sat_system_long_fmt, agencies, receiver, antenna, antenna_pos, antenna_delta = mda_vars
 
-    # # Apply the modifications to the RinexFile object
+    ## Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
-    rnxobj.mod_receiver(**receiver)
+    rnxobj.mod_receiver(keep_rnx_rec=keep_rnx_rec, **receiver)
     rnxobj.mod_interval(rnxobj.sample_rate_numeric)
     rnxobj.mod_antenna(**antenna)
     rnxobj.mod_antenna_pos(**antenna_pos)
@@ -811,6 +792,7 @@ def rinexmod(
     lfile_apriori=None,
     force_fake_coords=False,
     remove=False,
+    keep_rnx_rec=False,
 ):
     """
     Parameters
@@ -945,6 +927,10 @@ def rinexmod(
         in the L-File, gives fake coordinates at (0°,0°) to the site
     remove: bool, optional
         Remove input RINEX file if the output RINEX is correctly written
+        The default is False.
+    keep_rnx_rec: bool, optional
+        Keep the RINEX receiver header record in the output RINEX.
+        Metadata from the external source (e.g. sitelogs) will not be modded.
         The default is False.
 
     Raises
@@ -1161,7 +1147,9 @@ def rinexmod(
     ###########################################################################
     ########## Apply the MetaData object on the RinexFile object
     if metadataobj:
-        rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=ignore)
+        rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj,
+                                             ignore=ignore,
+                                             keep_rnx_rec=keep_rnx_rec)
         logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_metadata()[0])
         modif_source_metadata = metadataobj.filename
     else:
@@ -1298,7 +1286,6 @@ def rinexmod(
 # *****************************************************************************
 # Upper level rinexmod for a Console run
 
-
 def rinexmod_cli(
     rinexinput,
     outputfolder,
@@ -1328,6 +1315,7 @@ def rinexmod_cli(
     lfile_apriori=None,
     force_fake_coords=False,
     remove=False,
+    keep_rnx_rec=False,
 ):
     """
     Main function for reading a Rinex list file. It processes the list, and apply
@@ -1355,52 +1343,52 @@ def rinexmod_cli(
             "No action asked, provide at least one of the following args:"
             "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori"
         )
-        raise RinexModInputArgsError
+        return None
 
     # If force option provided, check if sitelog option too, if not, not relevant.
     if force_sitelog and not sitelog:
         logger.critical(
             "--force option is relevant only when --sitelog option with a **single** sitelog is also provided"
         )
-        raise RinexModInputArgsError
+        return None
 
     # If ignore option provided, check if sitelog option too, if not, not relevant.
     if ignore and not sitelog:
         logger.critical(
             "--ignore option is relevant only when using also --sitelog option"
         )
-        raise RinexModInputArgsError
+        return None
 
     if ninecharfile and not longname:
         logger.critical(
             "--ninecharfile option is relevant only when using also --longname option"
         )
-        raise RinexModInputArgsError
+        return None
 
     if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
         logger.critical("--station_info and --lfile_apriori must be provided together")
-        raise RinexModInputArgsError
+        return None
 
     if station_info and lfile_apriori and sitelog:
         logger.critical(
             "both sitelogs and GAMIT files given as metadata input. Managing both is not implemented yet"
         )
-        raise RinexModInputArgsError
+        return None
 
     # If inputfile doesn't exists, return
     if len(rinexinput) == 1 and not os.path.isfile(rinexinput[0]):
         logger.critical("The input file doesn't exist: %s", rinexinput)
-        raise RinexModInputArgsError
+        return None
 
     if len(rinexinput) > 1 and alone:
         logger.critical("several inputs are given while -a/--alone option is set")
-        raise RinexModInputArgsError
+        return None
 
     if output_logs and not os.path.isdir(output_logs):
         logger.critical(
             "The specified output folder for logs doesn't exist : " + output_logs
         )
-        raise RinexModInputArgsError
+        return None
 
     outputfolder = os.path.abspath(outputfolder)
     if not os.path.isdir(outputfolder):
@@ -1471,7 +1459,7 @@ def rinexmod_cli(
     ### Looping in file list ###
     return_lists = dict()
     ####### Iterate over each RINEX
-    rinexmod_kwargs_list = []
+    rnxmod_kwargs_lis = []
     for rnx in rinexinput_use:
         rnxmod_kwargs = {
             "rinexfile": rnx,
@@ -1497,9 +1485,10 @@ def rinexmod_cli(
             "lfile_apriori": lfile_apriori,
             "force_fake_coords": force_fake_coords,
             "remove": remove,
+            "keep_rnx_rec": keep_rnx_rec,
         }
 
-        rinexmod_kwargs_list.append(rnxmod_kwargs)
+        rnxmod_kwargs_lis.append(rnxmod_kwargs)
 
     global rinexmod_mpwrap
 
@@ -1521,10 +1510,8 @@ def rinexmod_cli(
     if multi_process > 1:
         logger.info("multiprocessing: %d cores used", multi_process)
     pool = mp.Pool(processes=multi_process)
-    results_raw = [
-        pool.apply_async(rinexmod_mpwrap, args=(x,)) for x in rinexmod_kwargs_list
-    ]
-    results = [e.get() for e in results_raw]
+    res_raw = [pool.apply_async(rinexmod_mpwrap, args=(x,)) for x in rnxmod_kwargs_lis]
+    results = [e.get() for e in res_raw]
 
     for return_lists_mono in results:
         try:
