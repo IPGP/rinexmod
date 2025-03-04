@@ -88,7 +88,7 @@ It is available under the GNU license on the following GitHub repository: https:
 
     # This should be your name or the name of the organization which owns the
     # project.
-    author='Pierre Sakic & Félix Leger',  # Optional
+    author='Pierre Sakic',  # Optional
 
     # This should be a valid email address corresponding to the author listed
     # above.
