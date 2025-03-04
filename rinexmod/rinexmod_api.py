@@ -1286,20 +1286,6 @@ def rinexmod(
 # *****************************************************************************
 # Upper level rinexmod for a Console run
 
-def rinexmod_mpwrap(rnxmod_kwargs_inp):
-    try:
-        return_lists_out = rinexmod(**rnxmod_kwargs_inp)
-        return return_lists_out
-    except Exception as e:
-        if debug:  ### set as True for debug mode
-            raise e
-        else:
-            logger.error(
-                "%s raised, RINEX is skiped: %s. Use -d/--debug option for more details",
-                type(e).__name__,
-                rnxmod_kwargs_inp["rinexfile"],
-            )
-
 def rinexmod_cli(
     rinexinput,
     outputfolder,
@@ -1357,52 +1343,52 @@ def rinexmod_cli(
             "No action asked, provide at least one of the following args:"
             "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori"
         )
-        raise RinexModInputArgsError
+        return None
 
     # If force option provided, check if sitelog option too, if not, not relevant.
     if force_sitelog and not sitelog:
         logger.critical(
             "--force option is relevant only when --sitelog option with a **single** sitelog is also provided"
         )
-        raise RinexModInputArgsError
+        return None
 
     # If ignore option provided, check if sitelog option too, if not, not relevant.
     if ignore and not sitelog:
         logger.critical(
             "--ignore option is relevant only when using also --sitelog option"
         )
-        raise RinexModInputArgsError
+        return None
 
     if ninecharfile and not longname:
         logger.critical(
             "--ninecharfile option is relevant only when using also --longname option"
         )
-        raise RinexModInputArgsError
+        return None
 
     if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
         logger.critical("--station_info and --lfile_apriori must be provided together")
-        raise RinexModInputArgsError
+        return None
 
     if station_info and lfile_apriori and sitelog:
         logger.critical(
             "both sitelogs and GAMIT files given as metadata input. Managing both is not implemented yet"
         )
-        raise RinexModInputArgsError
+        return None
 
     # If inputfile doesn't exists, return
     if len(rinexinput) == 1 and not os.path.isfile(rinexinput[0]):
         logger.critical("The input file doesn't exist: %s", rinexinput)
-        raise RinexModInputArgsError
+        return None
 
     if len(rinexinput) > 1 and alone:
         logger.critical("several inputs are given while -a/--alone option is set")
-        raise RinexModInputArgsError
+        return None
 
     if output_logs and not os.path.isdir(output_logs):
         logger.critical(
             "The specified output folder for logs doesn't exist : " + output_logs
         )
-        raise RinexModInputArgsError
+        return None
 
     outputfolder = os.path.abspath(outputfolder)
     if not os.path.isdir(outputfolder):
@@ -1503,6 +1489,22 @@ def rinexmod_cli(
         }
 
         rnxmod_kwargs_lis.append(rnxmod_kwargs)
+
+    global rinexmod_mpwrap
+
+    def rinexmod_mpwrap(rnxmod_kwargs_inp):
+        try:
+            return_lists_out = rinexmod(**rnxmod_kwargs_inp)
+            return return_lists_out
+        except Exception as e:
+            if debug:  ### set as True for debug mode
+                raise e
+            else:
+                logger.error(
+                    "%s raised, RINEX is skiped: %s. Use -d/--debug option for more details",
+                    type(e).__name__,
+                    rnxmod_kwargs_inp["rinexfile"],
+                )
 
     # number of parallel processing
     if multi_process > 1:

@@ -1300,6 +1300,7 @@ class RinexFile:
                     "The RINEX value might be the correct one, double-check your metadata source."
                 )
                 return True
+                # True if the check fails: counter-intuitive, but makes sense for the test below
             else:
                 return False
 
@@ -1310,7 +1311,7 @@ class RinexFile:
         )
 
         if keep_rnx_rec and (rec_chk_sn or rec_chk_fw or rec_chk_fw):
-            logger.info("RINEX and metadata are different, receiver values are kept (keep_rnx_rec = True)")
+            logger.info("RINEX & metadata are different, but receiver values are kept (keep_rnx_rec = True)")
             return
 
         # Edit line

@@ -289,7 +289,8 @@ def main():
         help="Keep the RINEX receiver header record in the output RINEX. "
              "Metadata from the external source (e.g. sitelogs) will not be modded. "
              "(default: %(default)s)",
-
+        action="store_true",
+        default=False,
     )
 
     args = parser.parse_args()
