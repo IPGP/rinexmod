@@ -46,7 +46,7 @@ setup(
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
 
-    version=str('3.4.1'),  # Required ## CHANGE IT ALSO IN __init__ and readme !!!!
+    version=str('3.4.2'),  # Required ## CHANGE IT ALSO IN __init__ and readme !!!!
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
@@ -108,7 +108,7 @@ It is available under the GNU license on the following GitHub repository: https:
         'Intended Audience :: Science/Research',
 
         # Pick your license as you wish
-        'License :: OSI Approved ::  GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate you support Python 3. These classifiers are *not*
