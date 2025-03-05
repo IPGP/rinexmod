@@ -529,6 +529,13 @@ class RinexFile:
             logger.error(status)
 
         return rinex_data, status
+ #   _____      _     __  __      _   _               _
+ #  / ____|    | |   |  \/  |    | | | |             | |
+ # | |  __  ___| |_  | \  / | ___| |_| |__   ___   __| |___
+ # | | |_ |/ _ \ __| | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+ # | |__| |  __/ |_  | |  | |  __/ |_| | | | (_) | (_| \__ \
+ #  \_____|\___|\__| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
+ #
 
     def get_naming_convention(self):
         """
@@ -1190,6 +1197,14 @@ class RinexFile:
 
         return dict_sys_obs, dict_sys_nobs
 
+     #  __  __           _   __  __      _   _               _
+     # |  \/  |         | | |  \/  |    | | | |             | |
+     # | \  / | ___   __| | | \  / | ___| |_| |__   ___   __| |___
+     # | |\/| |/ _ \ / _` | | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+     # | |  | | (_) | (_| | | |  | |  __/ |_| | | | (_) | (_| \__ \
+     # |_|  |_|\___/ \__,_| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
+
+
     ### ***************************************************************************
     ### mod methods. change the content of the RINEX header
 
@@ -1609,21 +1624,10 @@ class RinexFile:
         if not sat_system:
             return
 
-        # Identify line that contains RINEX VERSION / TYPE
-        sat_system_header_idx = search_idx_value(
-            self.rinex_data, "RINEX VERSION / TYPE"
-        )
-        sat_system_head = self.rinex_data[sat_system_header_idx]
-        # Parse line
-        rinex_ver_head = sat_system_head[0:9]
-        type_of_rinex_file_head = sat_system_head[20:40]
-        # sat_system_head = sat_system_head[40:60]
-        label = sat_system_head[60:]
-        # Edit line
-        if "+" in sat_system:
+        if "+" in sat_system: ### case MIXED system
             sat_system = "MIXED"
             sat_system_code = "M"
-        else:
+        else: ### case single system
             gnss_codes = {
                 "GPS": "G",
                 "GLO": "R",
@@ -1639,6 +1643,19 @@ class RinexFile:
             if not sat_system_code:
                 sat_system_code = sat_system
                 sat_system = ""
+
+        ### rewrite the RINEX header line
+
+        # Identify line that contains RINEX VERSION / TYPE
+        sat_system_header_idx = search_idx_value(
+            self.rinex_data, "RINEX VERSION / TYPE"
+        )
+        sat_system_head = self.rinex_data[sat_system_header_idx]
+        # Parse line
+        rinex_ver_head = sat_system_head[0:9]
+        type_of_rinex_file_head = sat_system_head[20:40]
+        # sat_system_head = sat_system_head[40:60]
+        label = sat_system_head[60:]
 
         sat_system_head = sat_system_code[0] + " : " + sat_system[:16].ljust(16)
         new_line = (

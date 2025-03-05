@@ -529,17 +529,19 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=
             "36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s",
             rnxobj.filename)
 
-    fourchar_id, domes_id, sat_system_long_fmt, agencies, receiver, antenna, antenna_pos, antenna_delta = mda_vars
+    fourchar_id, domes_id, sat_sys_long_fmt, agencies, rec, antenna, ant_pos, ant_delta = mda_vars
 
     ## Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
-    rnxobj.mod_receiver(keep_rnx_rec=keep_rnx_rec, **receiver)
+    rnxobj.mod_receiver(keep_rnx_rec=keep_rnx_rec, **rec)
     rnxobj.mod_interval(rnxobj.sample_rate_numeric)
     rnxobj.mod_antenna(**antenna)
-    rnxobj.mod_antenna_pos(**antenna_pos)
-    rnxobj.mod_antenna_delta(**antenna_delta)
+    rnxobj.mod_antenna_pos(**ant_pos)
+    rnxobj.mod_antenna_delta(**ant_delta)
     rnxobj.mod_agencies(**agencies)
-    rnxobj.mod_sat_system(sat_system_long_fmt)
+    if not keep_rnx_rec:
+        ### if keep_rnx_rec is active, we keep the sat system in the header
+        rnxobj.mod_sat_system(sat_sys_long_fmt)
 
     return rnxobj
 
