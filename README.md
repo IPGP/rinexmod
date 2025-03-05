@@ -11,8 +11,8 @@ It is available under the GNU license on the following GitHub repository: https:
 v2+ - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
 v1  - 2022-02-07 - Félix Léger  - leger@ipgp.fr  
 
-Version: 3.5.0  
-Date: 2025-03-04
+Version: 3.6.0  
+Date: 2025-03-05
 
 **GitHub repository:** [https://github.com/IPGP/rinexmod](https://github.com/IPGP/rinexmod)  
 **PyPi project:** [https://pypi.org/project/rinexmod](https://pypi.org/project/rinexmod)
