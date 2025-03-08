@@ -146,7 +146,7 @@ class MetaData:
         return install_dict
 
     def set_meta(
-        self, id_site, domes, operator, agency, x, y, z, date_prepared, country
+        self, site_id, domes, operator, agency, x, y, z, date_prepared, country
     ):
         """
 
@@ -166,7 +166,7 @@ class MetaData:
 
         """
 
-        self.misc_meta["ID"] = id_site
+        self.misc_meta["ID"] = site_id
         self.misc_meta["IERS DOMES Number"] = domes
         self.misc_meta["operator"] = operator
         self.misc_meta["agency"] = agency
@@ -532,9 +532,9 @@ class MetaData:
         if (
             "Nine Character ID" in self.raw_content["1."].keys()
         ):  # now consistent with [IGSMAIL-8458]
-            id_site = self.raw_content["1."]["Nine Character ID"]
+            site_id = self.raw_content["1."]["Nine Character ID"]
         else:
-            id_site = self.raw_content["1."]["Four Character ID"]
+            site_id = self.raw_content["1."]["Four Character ID"]
 
         domes = self.raw_content["1."]["IERS DOMES Number"]
 
@@ -561,7 +561,7 @@ class MetaData:
             country = self.raw_content["2."]["Country"]
 
         mm_dic = self.set_meta(
-            id_site=id_site,
+            site_id=site_id,
             domes=domes,
             operator=operator,
             agency=agency,
