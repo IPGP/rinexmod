@@ -210,7 +210,7 @@ def gamit2mda_objs(station_info_inp, lfile_inp, force_fake_coords=False):
     for site, site_info in df_stinfo_grp:
         logger.debug("extract %s from %s", site, stinfo_name)
         metadataobj = rimo_mda.MetaData(sitelogfile=None)
-        metadataobj.set_from_gamit_meta(
+        metadataobj.set_from_gamit(
             site,
             df_stinfo,
             df_apr,

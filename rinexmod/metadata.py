@@ -12,6 +12,7 @@ import json
 import os
 import re
 from datetime import datetime
+import pycountry
 
 import pandas as pd
 
@@ -48,35 +49,38 @@ class MetaData:
 
     def __init__(self, sitelogfile=None):
         if sitelogfile:
-            self.set_from_sitelogfile(sitelogfile)
+            ### usual case. read from a sitelog file
+            self.set_from_sitelog(sitelogfile)
         else:
+            ### more generic and flexible case. empty object
             self.path = None
             self.filename = None
             self.site4char = None
             self.raw_content = None
-            self.instrus = None
+            self.instrus = []
             self.misc_meta = None
             self.raw_content_apr = None
 
     def __repr__(self):
         return "{} metadata, from {}".format(self.site4char, self.filename)
 
-    def set_from_sitelogfile(self, sitelogfile):
+    def set_from_sitelog(self, sitelogfile):
         """
         initialization method for metadata import from sitelog
         """
         self.path = sitelogfile
         self.filename = os.path.basename(self.path)
         self.site4char = self.filename[:4].lower()
-        self.raw_content = self._sitelog2raw_content_dict()
+        self.raw_content = self.slg_file2raw()
+
         if self.raw_content:
-            self.instrus = self._get_instru_dicts()
+            self.instrus = self.slg_raw2instrus()
+            self.misc_meta = self.slg_raw2misc_meta()
         else:
             self.instrus = None
+            self.misc_meta = None
 
-        self.misc_meta = self._get_misc_meta()
-
-    def set_from_gamit_meta(
+    def set_from_gamit(
         self,
         site,
         station_info,
@@ -90,7 +94,7 @@ class MetaData:
 
         self.site4char = site[:4].lower()
 
-        if isinstance(station_info,pd.DataFrame):
+        if isinstance(station_info, pd.DataFrame):
             self.raw_content = station_info
             self.path = None
             self.filename = station_info_name
@@ -99,7 +103,7 @@ class MetaData:
             self.path = station_info
             self.filename = os.path.basename(self.path)
 
-        if isinstance(lfile,pd.DataFrame):
+        if isinstance(lfile, pd.DataFrame):
             self.raw_content_apr = lfile
         else:
             self.raw_content_apr = rimo_gmm.read_gamit_apr_lfile(lfile)
@@ -116,6 +120,64 @@ class MetaData:
         else:
             self.instrus, self.misc_meta = None, None
 
+    def add_instru(self, rec_dic: dict, ant_dic: dict, date_srt=None, date_end=None):
+        """
+        Add an instrumentation period to instrus attribute the metadata object.
+        """
+
+        date_srt = date_srt or datetime(1, 1, 1980)
+        date_end = date_end or datetime(1, 1, 2099)
+
+        install_dict = dict()
+
+        ### dates
+        install_dict["dates"] = [date_srt, date_end]
+        ### receiver
+        install_dict["receiver"] = rec_dic
+        install_dict["receiver"]["Date Installed"] = date_srt
+        install_dict["receiver"]["Date Removed"] = date_end
+        ### antenna
+        install_dict["antenna"] = ant_dic
+        install_dict["antenna"]["Date Installed"] = date_srt
+        install_dict["antenna"]["Date Removed"] = date_end
+
+        ### append to instrus
+        self.instrus.append(install_dict)
+        return install_dict
+
+    def set_meta(
+        self, id_site, domes, operator, agency, x, y, z, date_prepared, country
+    ):
+        """
+
+        Exemple of misc meta dict:
+
+        {
+         'ID': 'PMZI00MYT',
+         'IERS DOMES Number': '90109M001',
+         'operator': 'OVPF-IPGP',
+         'agency': 'IPGP',
+         'X coordinate (m)': 4377557.000,
+         'Y coordinate (m)': 4419689.300,
+         'Z coordinate (m)': -1403760.500,
+         'date prepared': datetime.datetime(2024, 9, 13, 0, 0),
+         'Country': 'Mayotte'
+        }
+
+        """
+
+        self.misc_meta["ID"] = id_site
+        self.misc_meta["IERS DOMES Number"] = domes
+        self.misc_meta["operator"] = operator
+        self.misc_meta["agency"] = agency
+        self.misc_meta["X coordinate (m)"] = float(x)
+        self.misc_meta["Y coordinate (m)"] = float(y)
+        self.misc_meta["Z coordinate (m)"] = float(z)
+        self.misc_meta["date prepared"] = date_prepared
+        self.misc_meta["Country"] = country
+
+        return self.misc_meta
+
     #  _____               _                __                  _   _
     # |  __ \             (_)              / _|                | | (_)
     # | |__) |_ _ _ __ ___ _ _ __   __ _  | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
@@ -125,9 +187,10 @@ class MetaData:
     #                               __/ |
     #                              |___/
 
-    def _sitelog2raw_content_dict(self, keys_float=False):
+    def slg_file2raw(self, keys_float=False):
         """
-        Main function for reading a Sitelog file. From the sitelog file,
+        First function for reading a Sitelog file.
+        From the sitelog file,
         returns a dict with all readed values.
         """
         ###### Input and output file tests #######
@@ -275,15 +338,16 @@ class MetaData:
 
         return sitelogdict
 
-    def _get_instru_dicts(self):
+    def slg_raw2instrus(self):
         """
         This function identifies the different complete installations from the
-        antenna and receiver change dates, then returns a table with only
-        instrumented periods.
+        antenna and receiver change dates, then returns a list of dictionnaries
+         with only instrumented periods.
 
-        It uses the raw_content attribute (dictionary)
+        It uses the raw_content attribute (dictionary), generated with
+        gen_raw_content_dict method.
 
-        This "table" a list containing one or several dictionaries with 3 keys
+        The output is a list containing one or several dictionaries with 3 keys
         'dates' 'receiver' 'antenna' and the following structure:
 
          {
@@ -327,11 +391,13 @@ class MetaData:
         listdates = []
 
         # We extract dates for blocs 3. and 4. (reveiver, antenna)
-        for key in [
-            key
-            for key in self.raw_content.keys()
-            if key.startswith("3.") or key.startswith("4.")
-        ]:
+        keys = [
+            k
+            for k in self.raw_content.keys()
+            if k.startswith("3.") or k.startswith("4.")
+        ]
+
+        for key in keys:
             # Formating parsed dates - set empty to 'infinity' date. If not a date, it's because it's an open border.
             self.raw_content[key]["Date Installed"] = self._tryparsedate(
                 self.raw_content[key]["Date Installed"]
@@ -353,16 +419,16 @@ class MetaData:
         listdates.sort()
 
         # List of installations. An installation is a date interval, a receiver and an antena
-        installations = []
+        installs = []
 
         # Constructing the installations list - date intervals
         for i in range(0, len(listdates) - 1):
             # Construct interval from listdates
             dates = [listdates[i], listdates[i + 1]]
             # Setting date interval in Dict of installation
-            installation = dict(dates=dates, receiver=None, antenna=None, metpack=None)
+            install = dict(dates=dates, receiver=None, antenna=None, metpack=None)
             # Append it to list of installations
-            installations.append(installation)
+            installs.append(install)
 
         ##### Getting Receiver info for each interval #####
 
@@ -373,13 +439,13 @@ class MetaData:
         ]
 
         # Constructing the installations list - Receivers
-        for installation in installations:
+        for install in installs:
             # We get the receiver corresponding to the date interval
             for receiver in receivers:
-                if (receiver["Date Installed"] <= installation["dates"][0]) and (
-                    receiver["Date Removed"] >= installation["dates"][1]
+                if (receiver["Date Installed"] <= install["dates"][0]) and (
+                    receiver["Date Removed"] >= install["dates"][1]
                 ):
-                    installation["receiver"] = receiver
+                    install["receiver"] = receiver
                     # Once found, we quit the loop
                     break
 
@@ -392,23 +458,24 @@ class MetaData:
         ]
 
         # Constructing the installations list - Antennas
-        for installation in installations:
+        for install in installs:
             # We get the antenna corresponding to the date interval
             for antenna in antennas:
-                if (antenna["Date Installed"] <= installation["dates"][0]) and (
-                    antenna["Date Removed"] >= installation["dates"][1]
+                if (antenna["Date Installed"] <= install["dates"][0]) and (
+                    antenna["Date Removed"] >= install["dates"][1]
                 ):
-                    installation["antenna"] = antenna
+                    install["antenna"] = antenna
                     # Once found, we quit the loop
                     break
 
         ##### Removing from installation list periods without antenna or receiver
 
-        installations = [i for i in installations if i["receiver"] and i["antenna"]]
+        installs = [i for i in installs if i["receiver"] and i["antenna"]]
 
-        return installations
+        return installs
 
-    def _tryparsedate(self, date):
+    @staticmethod
+    def _tryparsedate(date):
         # Different date format to test on the string in case of bad standard compliance
         formats = [
             "%Y-%m-%d %H:%M:%S.%f",
@@ -439,46 +506,71 @@ class MetaData:
 
         return date
 
-    def _get_misc_meta(self):
+    def slg_raw2misc_meta(self):
         """
         This function generates the "misc meta" dictionary, i.e. a
         dictionary containing all the useful metadata information which are not
         stored in the instrumentation dictionary
-        (see _get_instru_dicts )
+        (see slg_raw2instrus )
 
         Consistent with [IGSMAIL-8458] (2024-06-01)
-        """
 
-        mm_dic = {}
+        Exemple of misc meta dict:
+        {
+         'ID': 'PMZI00MYT',
+         'IERS DOMES Number': '90109M001',
+         'operator': 'OVPF-IPGP',
+         'agency': 'IPGP',
+         'X coordinate (m)': '4377557.000',
+         'Y coordinate (m)': '4419689.300',
+         'Z coordinate (m)': '-1403760.500',
+         'date prepared': datetime.datetime(2024, 9, 13, 0, 0),
+         'Country': 'Mayotte'
+        }
+        """
 
         if (
             "Nine Character ID" in self.raw_content["1."].keys()
         ):  # now consistent with [IGSMAIL-8458]
-            mm_dic["ID"] = self.raw_content["1."]["Nine Character ID"]
+            id_site = self.raw_content["1."]["Nine Character ID"]
         else:
-            mm_dic["ID"] = self.raw_content["1."]["Four Character ID"]
+            id_site = self.raw_content["1."]["Four Character ID"]
 
-        mm_dic["IERS DOMES Number"] = self.raw_content["1."]["IERS DOMES Number"]
+        domes = self.raw_content["1."]["IERS DOMES Number"]
 
-        mm_dic["operator"] = self.raw_content["11."]["Preferred Abbreviation"]
-        mm_dic["agency"] = self.raw_content["12."]["Preferred Abbreviation"]
+        operator = self.raw_content["11."]["Preferred Abbreviation"]
+        agency = self.raw_content["12."]["Preferred Abbreviation"]
 
-        mm_dic["X coordinate (m)"] = self.raw_content["2."]["X coordinate (m)"]
-        mm_dic["Y coordinate (m)"] = self.raw_content["2."]["Y coordinate (m)"]
-        mm_dic["Z coordinate (m)"] = self.raw_content["2."]["Z coordinate (m)"]
+        x = self.raw_content["2."]["X coordinate (m)"]
+        y = self.raw_content["2."]["Y coordinate (m)"]
+        z = self.raw_content["2."]["Z coordinate (m)"]
 
-        mm_dic["date prepared"] = datetime.strptime(self.raw_content["0."]["Date Prepared"], "%Y-%m-%d")
+        date_prepared = datetime.strptime(
+            self.raw_content["0."]["Date Prepared"], "%Y-%m-%d"
+        )
 
         if (
             "Country/Region" in self.raw_content["2."].keys()
         ):  # now consistent with [IGSMAIL-8458]
-            mm_dic["Country"] = self.raw_content["2."]["Country/Region"]
+            country = self.raw_content["2."]["Country/Region"]
         elif (
             "Country or Region" in self.raw_content["2."].keys()
         ):  # now consistent with [IGSMAIL-8458]
-            mm_dic["Country"] = self.raw_content["2."]["Country or Region"]
+            country = self.raw_content["2."]["Country or Region"]
         else:
-            mm_dic["Country"] = self.raw_content["2."]["Country"]
+            country = self.raw_content["2."]["Country"]
+
+        mm_dic = self.set_meta(
+            id_site=id_site,
+            domes=domes,
+            operator=operator,
+            agency=agency,
+            x=x,
+            y=y,
+            z=z,
+            date_prepared=date_prepared,
+            country=country,
+        )
 
         return mm_dic
 
@@ -499,21 +591,20 @@ class MetaData:
         """
 
         # We get the installation corresponding to the starttime and endtime
-        thisinstall = None
+        found_install = None
         ignored = False
 
-        for installation in self.instrus:
-            if (
-                installation["dates"][0] <= starttime
-                and installation["dates"][1] >= endtime
-            ):
-                thisinstall = installation
+        # REGULAR CASE
+        for install in self.instrus:
+            if install["dates"][0] <= starttime and install["dates"][1] >= endtime:
+                found_install = install
                 break
 
+        # BACKUP CASE
         # If we can't find a corresponding installation period and we use the force
         # option, we will force ignoring the firmware version modification and
         # consider only the other parameters
-        if not thisinstall and ignore:
+        if not found_install and ignore:
             # We work with consecutive instrumentation periods
             for i in range(0, len(self.instrus) - 1):
                 if (
@@ -522,33 +613,33 @@ class MetaData:
                 ):
 
                     # we copy the two instrumentation periods dictionnary to remove firmware info
-                    nofirmware_instrumentation_i = copy.deepcopy(self.instrus[i])
-                    nofirmware_instrumentation_i1 = copy.deepcopy(self.instrus[i + 1])
+                    nofirmware_instru_i = copy.deepcopy(self.instrus[i])
+                    nofirmware_instru_i1 = copy.deepcopy(self.instrus[i + 1])
 
                     # We remove date infos
-                    nofirmware_instrumentation_i.pop("dates")
-                    nofirmware_instrumentation_i1.pop("dates")
+                    nofirmware_instru_i.pop("dates")
+                    nofirmware_instru_i1.pop("dates")
                     for e in [
                         "Date Removed",
                         "Date Installed",
                         "Additional Information",
                     ]:
-                        nofirmware_instrumentation_i["antenna"].pop(e)
-                        nofirmware_instrumentation_i["receiver"].pop(e)
-                        nofirmware_instrumentation_i1["antenna"].pop(e)
-                        nofirmware_instrumentation_i1["receiver"].pop(e)
+                        nofirmware_instru_i["antenna"].pop(e)
+                        nofirmware_instru_i["receiver"].pop(e)
+                        nofirmware_instru_i1["antenna"].pop(e)
+                        nofirmware_instru_i1["receiver"].pop(e)
 
                     # We remove Firmware info
-                    nofirmware_instrumentation_i["receiver"].pop("Firmware Version")
-                    nofirmware_instrumentation_i1["receiver"].pop("Firmware Version")
+                    nofirmware_instru_i["receiver"].pop("Firmware Version")
+                    nofirmware_instru_i1["receiver"].pop("Firmware Version")
 
                     # If, except dates and firmware version, the dicts are equls, we set
                     # instrumentation to the first one of the two.
-                    if nofirmware_instrumentation_i == nofirmware_instrumentation_i1:
-                        thisinstall = self.instrus[i]
+                    if nofirmware_instru_i == nofirmware_instru_i1:
+                        found_install = self.instrus[i]
                         ignored = True
 
-        return thisinstall, ignored
+        return found_install, ignored
 
     def get_country(self, iso_code=True):
         """
@@ -557,13 +648,6 @@ class MetaData:
 
         Consistent with [IGSMAIL-8458] (2024-06-01)
         """
-
-        try:
-            import pycountry
-        except ModuleNotFoundError:
-            logger.warning(
-                "Python's module 'pycountry' is recommended to recover the Country name automatically"
-            )
 
         raw_country = self.misc_meta["Country"]
 
@@ -597,20 +681,20 @@ class MetaData:
         modification between two periods and consider only the other parameters.
         """
 
-        instrumentation, ignored = self.find_instru(starttime, endtime, ignore)
+        instru, ignored = self.find_instru(starttime, endtime, ignore)
 
-        if not instrumentation:
+        if not instru:
             return "", ignored
 
         ########### GNSS one-letter codes ###########
 
         # From https://www.unavco.org/software/data-processing/teqc/tutorial/tutorial.html
         gnss_codes = dict(
-            GPS="G", GLO="­R", GAL="­E", BDS="­C", QZSS="­J", IRNSS="I", SBAS="S"
+            GPS="G", GLO="R", GAL="E", BDS="C", QZSS="J", IRNSS="I", SBAS="S"
         )
 
         # GNSS system. M if multiple, else, one letter code from gnss_codes dict.
-        o_system = instrumentation["receiver"]["Satellite System"]
+        o_system = instru["receiver"]["Satellite System"]
         if "+" in o_system:
             o_system = "M"
         else:
@@ -627,15 +711,15 @@ class MetaData:
                 self.raw_content["2."]["Z coordinate (m)"],
             ),
             "-O.s[ystem] {}".format(o_system),
-            "-O.rt '{}'".format(instrumentation["receiver"]["Receiver Type"]),
-            "-O.rn '{}'".format(instrumentation["receiver"]["Serial Number"]),
-            "-O.rv '{}'".format(instrumentation["receiver"]["Firmware Version"]),
-            "-O.at '{}'".format(instrumentation["antenna"]["Antenna Type"]),
-            "-O.an '{}'".format(instrumentation["antenna"]["Serial Number"]),
+            "-O.rt '{}'".format(instru["receiver"]["Receiver Type"]),
+            "-O.rn '{}'".format(instru["receiver"]["Serial Number"]),
+            "-O.rv '{}'".format(instru["receiver"]["Firmware Version"]),
+            "-O.at '{}'".format(instru["antenna"]["Antenna Type"]),
+            "-O.an '{}'".format(instru["antenna"]["Serial Number"]),
             "-O.pe[hEN,m] {} {} {}".format(
-                instrumentation["antenna"]["Marker->ARP Up Ecc. (m)"].zfill(8),
-                instrumentation["antenna"]["Marker->ARP East Ecc(m)"].zfill(8),
-                instrumentation["antenna"]["Marker->ARP North Ecc(m)"].zfill(8),
+                instru["antenna"]["Marker->ARP Up Ecc. (m)"].zfill(8),
+                instru["antenna"]["Marker->ARP East Ecc(m)"].zfill(8),
+                instru["antenna"]["Marker->ARP North Ecc(m)"].zfill(8),
             ),
             "-O.o[perator] '{}'".format(
                 self.raw_content["11."]["Preferred Abbreviation"]
@@ -656,15 +740,15 @@ class MetaData:
         fitted for RinexFile modification methods.
         """
 
-        instrumentation, ignored = self.find_instru(starttime, endtime, ignore)
+        instru, ignored = self.find_instru(starttime, endtime, ignore)
 
-        if not instrumentation:
+        if not instru:
             return None, ignored
 
         fourchar_id = self.misc_meta["ID"][:4]
         domes_id = self.misc_meta["IERS DOMES Number"]
 
-        observable_type = instrumentation["receiver"]["Satellite System"]
+        observable_type = instru["receiver"]["Satellite System"]
 
         agencies = {
             "operator": self.misc_meta["operator"],
@@ -672,14 +756,14 @@ class MetaData:
         }
 
         receiver = {
-            "serial": instrumentation["receiver"]["Serial Number"],
-            "type": instrumentation["receiver"]["Receiver Type"],
-            "firmware": instrumentation["receiver"]["Firmware Version"],
+            "serial": instru["receiver"]["Serial Number"],
+            "type": instru["receiver"]["Receiver Type"],
+            "firmware": instru["receiver"]["Firmware Version"],
         }
 
         antenna = {
-            "serial": instrumentation["antenna"]["Serial Number"],
-            "type": instrumentation["antenna"]["Antenna Type"],
+            "serial": instru["antenna"]["Serial Number"],
+            "type": instru["antenna"]["Antenna Type"],
         }
 
         antenna_pos = {
@@ -689,9 +773,9 @@ class MetaData:
         }
 
         antenna_delta = {
-            "H": instrumentation["antenna"]["Marker->ARP Up Ecc. (m)"],
-            "E": instrumentation["antenna"]["Marker->ARP East Ecc(m)"],
-            "N": instrumentation["antenna"]["Marker->ARP North Ecc(m)"],
+            "H": instru["antenna"]["Marker->ARP Up Ecc. (m)"],
+            "E": instru["antenna"]["Marker->ARP East Ecc(m)"],
+            "N": instru["antenna"]["Marker->ARP North Ecc(m)"],
         }
 
         metadata_vars = (
