@@ -111,9 +111,9 @@ class MetaData:
         if self.raw_content is not None:
             conv_fct = rimo_gmm.gamit_df2instru_miscmeta
             self.instrus, self.misc_meta = conv_fct(
-                self.site4char,
-                self.raw_content,
-                self.raw_content_apr,
+                site=self.site4char,
+                stinfo_df_inp=self.raw_content,
+                apr_df_inp=self.raw_content_apr,
                 force_fake_coords=force_fake_coords,
             )
 
@@ -140,7 +140,6 @@ class MetaData:
         install_dict["antenna"] = ant_dic
         install_dict["antenna"]["Date Installed"] = date_srt
         install_dict["antenna"]["Date Removed"] = date_end
-
         ### append to instrus
         self.instrus.append(install_dict)
         return install_dict
@@ -149,7 +148,6 @@ class MetaData:
         self, site_id, domes, operator, agency, x, y, z, date_prepared, country
     ):
         """
-
         Exemple of misc meta dict:
 
         {
@@ -163,7 +161,6 @@ class MetaData:
          'date prepared': datetime.datetime(2024, 9, 13, 0, 0),
          'Country': 'Mayotte'
         }
-
         """
 
         self.misc_meta["ID"] = site_id
@@ -237,7 +234,7 @@ class MetaData:
         # List of formated blocs
         formatedblocs = []
         # Final dict to store values
-        sitelogdict = {}
+        slgdic = {}
 
         # We split the file into major blocs (reading the '4.'' type pattern)
         itr = re.finditer(r"\d{1,2}\. +.+\n", sitelog)
@@ -312,31 +309,29 @@ class MetaData:
                 # We append the bloc dict to the global dict
                 if keys_float:
                     keys_contact = [11.0, 12.0]
-                    sitelogdict[float(index)] = blocdict
+                    slgdic[float(index)] = blocdict
                 else:
                     keys_contact = ["11.", "12."]
-                    sitelogdict[index] = blocdict
+                    slgdic[index] = blocdict
 
         # Contact corrections - putting the field 'Additional Information' in the right level dict
         # and removing network information
-        for key in [key for key in sitelogdict.keys() if key in keys_contact]:
-            if "network" in sitelogdict[key]["Agency"].lower():
-                index_network = sitelogdict[key]["Agency"].lower().index("network")
-                sitelogdict[key]["Agency"] = sitelogdict[key]["Agency"][:index_network]
+        for key in [key for key in slgdic.keys() if key in keys_contact]:
+            if "network" in slgdic[key]["Agency"].lower():
+                index_network = slgdic[key]["Agency"].lower().index("network")
+                slgdic[key]["Agency"] = slgdic[key]["Agency"][:index_network]
             # Removing extra spaces
-            sitelogdict[key]["Agency"] = sitelogdict[key]["Agency"].strip()
-            sitelogdict[key]["Agency"] = " ".join(sitelogdict[key]["Agency"].split())
-            if sitelogdict[key]["Secondary Contact"]["Additional Information"]:
+            slgdic[key]["Agency"] = slgdic[key]["Agency"].strip()
+            slgdic[key]["Agency"] = " ".join(slgdic[key]["Agency"].split())
+            if slgdic[key]["Secondary Contact"]["Additional Information"]:
                 # Putting the 'Additional Information' in the lower level dict
-                sitelogdict[key]["Additional Information"] = sitelogdict[key][
+                slgdic[key]["Additional Information"] = slgdic[key][
                     "Secondary Contact"
                 ]["Additional Information"]
                 # Removing it from the incorrect dict level
-                sitelogdict[key]["Secondary Contact"].pop(
-                    "Additional Information", None
-                )
+                slgdic[key]["Secondary Contact"].pop("Additional Information", None)
 
-        return sitelogdict
+        return slgdic
 
     def slg_raw2instrus(self):
         """
@@ -560,6 +555,9 @@ class MetaData:
         else:
             country = self.raw_content["2."]["Country"]
 
+        self.misc_meta = dict()
+        # We must initialize the misc_meta here
+        # not initialized before (we are in the sitelog case)
         mm_dic = self.set_meta(
             site_id=site_id,
             domes=domes,
