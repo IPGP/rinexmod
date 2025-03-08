@@ -58,7 +58,7 @@ class MetaData:
             self.site4char = None
             self.raw_content = None
             self.instrus = []
-            self.misc_meta = None
+            self.misc_meta = {} 
             self.raw_content_apr = None
 
     def __repr__(self):
@@ -125,8 +125,8 @@ class MetaData:
         Add an instrumentation period to instrus attribute the metadata object.
         """
 
-        date_srt = date_srt or datetime(1, 1, 1980)
-        date_end = date_end or datetime(1, 1, 2099)
+        date_srt = date_srt or datetime(1980,1,1)
+        date_end = date_end or datetime(2099,1,1)
 
         install_dict = dict()
 
