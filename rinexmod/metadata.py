@@ -56,10 +56,21 @@ class MetaData:
             self.path = None
             self.filename = None
             self.site4char = None
+            # site9char is a more complex property bellow
             self.raw_content = None
             self.instrus = []
-            self.misc_meta = {} 
+            self.misc_meta = {}
             self.raw_content_apr = None
+
+    @property
+    def site9char(self):
+        if len(self.misc_meta["ID"]) == 9:
+            return self.misc_meta["ID"]
+        elif len(self.filename.split("_")[0]) == 9:
+            return self.filename.split("_")[0].upper()
+        else:
+            return self.site4char + "00XXX"
+
 
     def __repr__(self):
         return "{} metadata, from {}".format(self.site4char, self.filename)
@@ -123,10 +134,43 @@ class MetaData:
     def add_instru(self, rec_dic: dict, ant_dic: dict, date_srt=None, date_end=None):
         """
         Add an instrumentation period to instrus attribute the metadata object.
+
+        Example of an install dict:
+
+         {
+        'dates': [datetime.datetime(2008, 7, 8, 4, 48),
+                  datetime.datetime(2009, 1, 1, 0, 0)],
+
+        'receiver': {'Receiver Type': 'TPS GB-1000',
+                     'Satellite System': 'GPS+GLO',
+                     'Serial Number': 'T225373',
+                     'Firmware Version': '3.32',
+                     'Elevation Cutoff Setting': '15 deg',
+                     'Date Installed': datetime.datetime(2008, 7, 8, 4, 48),
+                     'Date Removed': datetime.datetime(2010, 3, 16, 5, 0),
+                     'Temperature Stabiliz.': 'none',
+                     'Additional Information': '(multiple lines)'},
+
+          'antenna': {'Antenna Type': 'ASH701975.01A   NONE',
+                      'Serial Number': '8279',
+                      'Antenna Reference Point': 'TOP',
+                      'Marker->ARP Up Ecc. (m)': '0.0000',
+                      'Marker->ARP North Ecc(m)': '0.0000',
+                      'Marker->ARP East Ecc(m)': '0.0000',
+                      'Alignment from True N': '0 deg',
+                      'Antenna Radome Type': 'NONE',
+                      'Radome Serial Number': '',
+                      'Antenna Cable Type': 'TNC',
+                      'Antenna Cable Length': '4 m',
+                      'Date Installed': datetime.datetime(2008, 3, 14, 0, 0),
+                      'Date Removed': datetime.datetime(2009, 1, 1, 0, 0),
+                      'Additional Information': 'La date de desinstallation est inconnue'},
+                      'metpack': None
+          }
         """
 
-        date_srt = date_srt or datetime(1980,1,1)
-        date_end = date_end or datetime(2099,1,1)
+        date_srt = date_srt or datetime(1980, 1, 1)
+        date_end = date_end or datetime(2099, 1, 1)
 
         install_dict = dict()
 
@@ -138,6 +182,11 @@ class MetaData:
         install_dict["receiver"]["Date Removed"] = date_end
         ### antenna
         install_dict["antenna"] = ant_dic
+        if (
+            "Antenna Type" in ant_dic.keys()
+            and not "Antenna Radome Type" in ant_dic.keys()
+        ):
+            ant_dic["Antenna Radome Type"] = ant_dic["Antenna Radome Type"][-4:]
         install_dict["antenna"]["Date Installed"] = date_srt
         install_dict["antenna"]["Date Removed"] = date_end
         ### append to instrus
@@ -345,6 +394,8 @@ class MetaData:
         The output is a list containing one or several dictionaries with 3 keys
         'dates' 'receiver' 'antenna' and the following structure:
 
+        Example of an install dict:
+
          {
         'dates': [datetime.datetime(2008, 7, 8, 4, 48),
                   datetime.datetime(2009, 1, 1, 0, 0)],
@@ -378,7 +429,7 @@ class MetaData:
 
         Returns
         -------
-        installations : list
+        installs : list
         """
 
         ##### Constructing a list of date intervals from all changes dates #####
