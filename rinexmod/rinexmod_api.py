@@ -80,9 +80,13 @@ def get_git_hash():
 
     cmd = ["git", "--git-dir", script_path + "/.git", "rev-parse", "--short", "HEAD"]
     try:
-        githash = subprocess.check_output(cmd,stderr=subprocess.DEVNULL).decode("ascii").strip()[:7]
+        githash = (
+            subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+            .decode("ascii")
+            .strip()[:7]
+        )
     except Exception:
-        #logger.warn("unable to get the git commit version")
+        # logger.warn("unable to get the git commit version")
         githash = "xxxxxxx"
 
     ####NB: 2msec to run this fuction
@@ -160,7 +164,7 @@ def gamit2mda_objs(station_info_inp, lfile_inp, force_fake_coords=False):
 
     Returns
     -------
-    metadataobj_lis : list
+    mdaobjs_lis : list
         list of MetaData objects.
 
     """
@@ -203,27 +207,25 @@ def gamit2mda_objs(station_info_inp, lfile_inp, force_fake_coords=False):
 
     df_stinfo_grp = df_stinfo.groupby("site")
 
-    metadataobj_lis = []
+    mdaobjs_lis = []
 
     logger.info("%i sites will be extracted from %s", len(df_stinfo_grp), stinfo_name)
 
     for site, site_info in df_stinfo_grp:
         logger.debug("extract %s from %s", site, stinfo_name)
-        metadataobj = rimo_mda.MetaData(sitelogfile=None)
-        metadataobj.set_from_gamit(
+        mdaobj = rimo_mda.MetaData(sitelogfile=None)
+        mdaobj.set_from_gamit(
             site,
             df_stinfo,
             df_apr,
             force_fake_coords=force_fake_coords,
             station_info_name=stinfo_name,
         )
-        metadataobj_lis.append(metadataobj)
+        mdaobjs_lis.append(mdaobj)
 
-    logger.info(
-        "%i sites have been extracted from %s", len(metadataobj_lis), stinfo_name
-    )
+    logger.info("%i sites have been extracted from %s", len(mdaobjs_lis), stinfo_name)
 
-    return metadataobj_lis
+    return mdaobjs_lis
 
 
 def sitlgs2mda_objs(
@@ -250,7 +252,7 @@ def sitlgs2mda_objs(
 
     Returns
     -------
-    metadata_obj_list : list
+    mdaobjs_lis : list
         list of MetaData objects.
 
     """
@@ -258,22 +260,18 @@ def sitlgs2mda_objs(
     #### differenciating cases
     # Case of a list of sitelogs
     if type(sitelog_filepath) is list:
-        all_sitelogs = sitelog_filepath
+        slgs_all = sitelog_filepath
         sitelog_filepath = "input sitelog list"
     # Case of one single sitelog
     elif os.path.isfile(sitelog_filepath):
-        all_sitelogs = [sitelog_filepath]
+        slgs_all = [sitelog_filepath]
     # Case of a folder
     elif os.path.isdir(sitelog_filepath):
         sitelog_extension = ".log"
-        all_sitelogs = listfiles(sitelog_filepath, sitelog_extension)
+        slgs_all = listfiles(sitelog_filepath, sitelog_extension)
 
         sitelog_pattern = re.compile(r"\w{4,9}_\d{8}.log")
-        all_sitelogs = [
-            file
-            for file in all_sitelogs
-            if sitelog_pattern.match(os.path.basename(file))
-        ]
+        slgs_all = [f for f in slgs_all if sitelog_pattern.match(os.path.basename(f))]
     ### case of no file nor folder
     else:
         logger.error(
@@ -282,34 +280,30 @@ def sitlgs2mda_objs(
         raise RinexModInputArgsError
 
     #### Read the sitelogs
-    logger.info(
-        "**** %i sitelogs detected (in %s)", len(all_sitelogs), sitelog_filepath
-    )
-    for sl in all_sitelogs:
+    logger.info("**** %i sitelogs detected (in %s)", len(slgs_all), sitelog_filepath)
+    for sl in slgs_all:
         logger.debug(sl)
     # Get last version of sitelogs if multiple available
     # (1st gross search based on date in filename)
-    latest_sitelogs = _slg_find_latest_name(all_sitelogs)
+    slgs_latest = _slg_find_latest_name(slgs_all)
     # load the sitelogs as metadata objects
-    metadata_obj_list, bad_sitelogs_list = load_sitelogs(latest_sitelogs, force)
+    mdaobjs_lis, slgs_bad_lis = load_sitelogs(slgs_latest, force)
     # Get last version of sitelogs if multiple available
     # (2nd fine search based on date in "Date Prepared" field)
-    metadata_obj_list = _mda_find_latest_prep(metadata_obj_list)
+    mdaobjs_lis = _mda_find_latest_prep(mdaobjs_lis)
 
-    logger.info("**** %i most recent sitelogs selected", len(metadata_obj_list))
+    logger.info("**** %i most recent sitelogs selected", len(mdaobjs_lis))
 
-    for sl in metadata_obj_list:
+    for sl in mdaobjs_lis:
         logger.debug(sl.path)
 
-    if len(bad_sitelogs_list) > 0:
-        logger.warning(
-            "**** %i badly-parsed & ignored sitelogs", len(bad_sitelogs_list)
-        )
+    if len(slgs_bad_lis) > 0:
+        logger.warning("**** %i badly-parsed & ignored sitelogs", len(slgs_bad_lis))
 
-    if len(metadata_obj_list) <= 1 and not return_list_even_if_single_input:
-        metadata_obj_list = metadata_obj_list[0]
+    if len(mdaobjs_lis) <= 1 and not return_list_even_if_single_input:
+        mdaobjs_lis = mdaobjs_lis[0]
 
-    return metadata_obj_list
+    return mdaobjs_lis
 
 
 def load_sitelogs(sitelogs_inp, force=False):
@@ -325,16 +319,16 @@ def load_sitelogs(sitelogs_inp, force=False):
 
     Returns
     -------
-    metadata_obj_list : Iterable
+    mdaobjs_lis : Iterable
         List of MetaData objects.
-    bad_sitelogs_list : Iterable
+    bad_sitelogs_lis : Iterable
         List of sitelogs that could not be parsed.
     """
 
     def _load_slg(sitelog_filepath, force_load):
         # Creating MetaData object
         try:
-            metadataobj_load = rimo_mda.MetaData(sitelog_filepath)
+            mdaobj_load = rimo_mda.MetaData(sitelog_filepath)
         except Exception as e:
             # If sitelog is not parsable
             logger.error(
@@ -345,21 +339,21 @@ def load_sitelogs(sitelogs_inp, force=False):
             if not force_load:
                 raise MetaDataError
             else:
-                metadataobj_load = None
+                mdaobj_load = None
 
-        return metadataobj_load
+        return mdaobj_load
 
-    metadata_obj_list = []
-    bad_sitelogs_list = []
+    mdaobjs_lis = []
+    bad_sitelogs_lis = []
     for sta_sitelog in sitelogs_inp:
-        metadataobj = _load_slg(sta_sitelog, force)
+        mdaobj = _load_slg(sta_sitelog, force)
         # Appending to list
-        if metadataobj:
-            metadata_obj_list.append(metadataobj)
+        if mdaobj:
+            mdaobjs_lis.append(mdaobj)
         else:
-            bad_sitelogs_list.append(sta_sitelog)
+            bad_sitelogs_lis.append(sta_sitelog)
 
-    return metadata_obj_list, bad_sitelogs_list
+    return mdaobjs_lis, bad_sitelogs_lis
 
 
 def _slg_find_latest_name(all_sitelogs_filepaths):
@@ -407,7 +401,7 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
     return latest_sitelogs_filepaths
 
 
-def _mda_find_latest_prep(metadataobjs_inp):
+def _mda_find_latest_prep(mdaobjs_inp):
     """
     Find the latest version of a MetaData object within a list of MetaData objects,
     based on preparation date
@@ -415,17 +409,17 @@ def _mda_find_latest_prep(metadataobjs_inp):
     more reliable than _slg_find_latest_name but requires that the metadata objects have been loaded
     """
     # We list the available sites to group sitelogs
-    metadataobjs = metadataobjs_inp
-    # metadataobjs = sorted(metadataobjs, key=lambda x: x.misc_meta["date prepared"], reverse=True)
+    mdaobjs_lis = mdaobjs_inp
+    # mdaobjs_lis = sorted(mdaobjs_lis, key=lambda x: x.misc_meta["date prepared"], reverse=True)
 
     # set the output latest sitelog list
     mdaobjs_latest = []
 
-    sites_all = list(sorted(list(set([md.site4char for md in metadataobjs]))))
+    sites_all = list(sorted(list(set([md.site4char for md in mdaobjs_lis]))))
 
     for site in sites_all:
         # Grouping by site
-        mdaobjs_site = [m for m in metadataobjs if m.site4char == site]
+        mdaobjs_site = [m for m in mdaobjs_lis if m.site4char == site]
         # Getting dates from basename and parsing 'em
         mdaobjs_site_dates = [m.misc_meta["date prepared"] for m in mdaobjs_site]
         # We get the max date and put it back to string format.
@@ -440,7 +434,7 @@ def _mda_find_latest_prep(metadataobjs_inp):
     return mdaobjs_latest
 
 
-def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
+def metadata_find_site(rnxobj_or_site4char, mdaobjs_lis, force):
     """
     Finding the right MetaData object
 
@@ -456,12 +450,12 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
 
     logger.debug("Searching corresponding metadata for site: " + rnx_4char)
 
-    if len(metadata_obj_list) == 0:
+    if len(mdaobjs_lis) == 0:
         logger.warning("The metadata list provided is empty!")
 
-    metadataobj = None
-    if rnx_4char not in [sl.site4char for sl in metadata_obj_list]:
-        if len(metadata_obj_list) == 1:
+    mdaobj = None
+    if rnx_4char not in [sl.site4char for sl in mdaobjs_lis]:
+        if len(mdaobjs_lis) == 1:
             if not force:
                 logger.error(
                     "{:110s} - {}".format(
@@ -487,17 +481,18 @@ def metadata_find_site(rnxobj_or_site4char, metadata_obj_list, force):
             )
             raise RinexModInputArgsError
     else:
-        metadataobjs = [md for md in metadata_obj_list if md.site4char == rnx_4char]
-        if len(metadataobjs) == 1:
-            metadataobj = metadataobjs[0]
+        mdaobjs_site = [md for md in mdaobjs_lis if md.site4char == rnx_4char]
+        if len(mdaobjs_site) == 1:
+            mdaobj = mdaobjs_site[0]
         else:
             # the assumption that latest sitelog has been found in sitlgs2mda_objs is wrong!
             # a second search with the preparation date is performed here
-            metadataobj = _mda_find_latest_prep(metadataobjs)[0]
+            mdaobj = _mda_find_latest_prep(mdaobjs_site)[0]
 
-    return metadataobj
+    return mdaobj
 
-def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=False):
+
+def mdaobj_apply_on_rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -506,7 +501,7 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=
     ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    mda_4char = metadataobj.misc_meta["ID"].lower()[:4]
+    mda_4char = mdaobj.misc_meta["ID"].lower()[:4]
 
     if rnx_4char != mda_4char:
         logger.warning(
@@ -518,18 +513,33 @@ def metadataobj_apply_on_rnxobj(rnxobj, metadataobj, ignore=False, keep_rnx_rec=
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    mda_vars, ignored = metadataobj.rinex_metadata_lines(rnxobj.start_date, rnxobj.end_date, ignore)
+    mda_vars, ignored = mdaobj.rinex_metadata_lines(
+        rnxobj.start_date, rnxobj.end_date, ignore
+    )
 
     if not mda_vars:
-        logger.error("35 - No instrumentation corresponding to the RINEX epoch - %s", rnxobj.filename)
+        logger.error(
+            "35 - No instrumentation corresponding to the RINEX epoch - %s",
+            rnxobj.filename,
+        )
         raise MetaDataError
 
     if ignored:
         logger.warning(
             "36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s",
-            rnxobj.filename)
+            rnxobj.filename,
+        )
 
-    fourchar_id, domes_id, sat_sys_long_fmt, agencies, rec, antenna, ant_pos, ant_delta = mda_vars
+    (
+        fourchar_id,
+        domes_id,
+        sat_sys_long_fmt,
+        agencies,
+        rec,
+        antenna,
+        ant_pos,
+        ant_delta,
+    ) = mda_vars
 
     ## Apply the modifications to the RinexFile object
     rnxobj.mod_marker(fourchar_id, domes_id)
@@ -596,7 +606,7 @@ def _modif_kw_check(modif_kw):
     return None
 
 
-def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
+def modif_kw_apply_on_rnxobj(rnxobj, modif_kw):
     """
     apply a modification keywords on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -605,54 +615,52 @@ def modif_kw_apply_on_rnxobj(rinexfileobj, modif_kw):
     def __keys_in_modif_kw(keys_in):
         return all([e in modif_kw.keys() for e in keys_in])
 
-    rinexfileobj.mod_marker(modif_kw.get("marker_name"), modif_kw.get("marker_number"))
+    rnxobj.mod_marker(modif_kw.get("marker_name"), modif_kw.get("marker_number"))
 
     # legacy keyword, 'marker_name' should be used instead
-    rinexfileobj.mod_marker(modif_kw.get("station"))
+    rnxobj.mod_marker(modif_kw.get("station"))
 
-    rinexfileobj.mod_receiver(
+    rnxobj.mod_receiver(
         modif_kw.get("receiver_serial"),
         modif_kw.get("receiver_type"),
         modif_kw.get("receiver_fw"),
     )
 
-    rinexfileobj.mod_antenna(
-        modif_kw.get("antenna_serial"), modif_kw.get("antenna_type")
-    )
+    rnxobj.mod_antenna(modif_kw.get("antenna_serial"), modif_kw.get("antenna_type"))
 
-    rinexfileobj.mod_antenna_pos(
+    rnxobj.mod_antenna_pos(
         modif_kw.get("antenna_X_pos"),
         modif_kw.get("antenna_Y_pos"),
         modif_kw.get("antenna_Z_pos"),
     )
 
-    rinexfileobj.mod_antenna_delta(
+    rnxobj.mod_antenna_delta(
         modif_kw.get("antenna_H_delta"),
         modif_kw.get("antenna_E_delta"),
         modif_kw.get("antenna_N_delta"),
     )
 
-    rinexfileobj.mod_agencies(modif_kw.get("operator"), modif_kw.get("agency"))
+    rnxobj.mod_agencies(modif_kw.get("operator"), modif_kw.get("agency"))
 
-    rinexfileobj.mod_sat_system(modif_kw.get("sat_system"))
+    rnxobj.mod_sat_system(modif_kw.get("sat_system"))
     # legacy keyword, 'sat_system' should be used instead
-    rinexfileobj.mod_sat_system(modif_kw.get("observables"))
+    rnxobj.mod_sat_system(modif_kw.get("observables"))
 
-    rinexfileobj.mod_interval(modif_kw.get("interval"))
+    rnxobj.mod_interval(modif_kw.get("interval"))
 
     # for the filename
-    rinexfileobj.mod_filename_file_period(modif_kw.get("filename_file_period"))
-    rinexfileobj.mod_filename_data_freq(modif_kw.get("filename_data_freq"))
-    rinexfileobj.mod_filename_data_source(modif_kw.get("filename_data_source"))
+    rnxobj.mod_filename_file_period(modif_kw.get("filename_file_period"))
+    rnxobj.mod_filename_data_freq(modif_kw.get("filename_data_freq"))
+    rnxobj.mod_filename_data_source(modif_kw.get("filename_data_source"))
 
     # comment
     # special case: several keys comment_1, comment_2, comment_N are possible
     # number are added automatically by ParseKwargs
     comment_keys = [k for k in modif_kw.keys() if "comment" in k]
     for ck in comment_keys:
-        rinexfileobj.add_comment(modif_kw.get(ck).split("_")[0])
+        rnxobj.add_comment(modif_kw.get(ck).split("_")[0])
 
-    return rinexfileobj
+    return rnxobj
 
 
 # *****************************************************************************
@@ -784,7 +792,7 @@ def rinexmod(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression='gz',
+    compression="gz",
     relative="",
     verbose=True,
     full_history=False,
@@ -1058,10 +1066,10 @@ def rinexmod(
         )
 
     # initialize the metadata object list (to avoid linter warning)
-    metadata_obj_list = []
+    mdaobjs_lis = []
     ## sitelogs
     if sitelog:
-        metadata_obj_list = metadata_input_manage(sitelog, force=force_sitelog)
+        mdaobjs_lis = metadata_input_manage(sitelog, force=force_sitelog)
     ## GAMIT files
     # We read the GAMIT files only if no input 'sitelog' variable is given.
     # Indeed, the GAMIT files might have been read outside this function
@@ -1074,16 +1082,16 @@ def rinexmod(
 
     ### load the metadata from sitelog or GAMIT files if any
     if (station_info and lfile_apriori) and not sitelog:
-        metadata_obj_list = gamit2mda_objs(
+        mdaobjs_lis = gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
-        metadataobj = metadata_find_site(rnxobj, metadata_obj_list, force=force_sitelog)
-        logger.debug("metadata used: %s", metadataobj)
+        mdaobj = metadata_find_site(rnxobj, mdaobjs_lis, force=force_sitelog)
+        logger.debug("metadata used: %s", mdaobj)
     else:
-        metadataobj = None
+        mdaobj = None
 
     ###########################################################################
     ########## Handle the similar options to set the site code
@@ -1114,9 +1122,9 @@ def rinexmod(
         else:
             monum = nine_char_dict[rnx_4char].upper()[4:6]
             cntry = nine_char_dict[rnx_4char].upper()[6:]
-    elif metadataobj:
+    elif mdaobj:
         monum = "00"
-        cntry = metadataobj.get_country()
+        cntry = mdaobj.get_country()
     elif rnx_9char[6:] != "XXX":
         monum = rnx_9char[4:6]
         cntry = rnx_9char[6:]
@@ -1143,17 +1151,17 @@ def rinexmod(
 
     ###########################################################################
     ########## Remove previous comments
-    if metadataobj or modif_kw or (station_info and lfile_apriori):
+    if mdaobj or modif_kw or (station_info and lfile_apriori):
         rnxobj.clean_rinexmod_comments(clean_history=True)
 
     ###########################################################################
     ########## Apply the MetaData object on the RinexFile object
-    if metadataobj:
-        rnxobj = metadataobj_apply_on_rnxobj(rnxobj, metadataobj,
-                                             ignore=ignore,
-                                             keep_rnx_rec=keep_rnx_rec)
+    if mdaobj:
+        rnxobj = mdaobj_apply_on_rnxobj(
+            rnxobj, mdaobj, ignore=ignore, keep_rnx_rec=keep_rnx_rec
+        )
         logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_metadata()[0])
-        modif_source_metadata = metadataobj.filename
+        modif_source_metadata = mdaobj.filename
     else:
         modif_source_metadata = ""
 
@@ -1173,7 +1181,7 @@ def rinexmod(
 
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
-    # Must be after metadataobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
+    # Must be after mdaobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
     if "marker_name" not in modif_kw.keys():
         rnxobj.mod_marker(rnxobj.get_site(False, False, True))
@@ -1192,7 +1200,7 @@ def rinexmod(
     rnxobj.add_comment(
         "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M%z"))
     )
-    if metadataobj:
+    if mdaobj:
         rnxobj.add_comment("rinexmoded with {}".format(modif_source_metadata))
     if modif_kw:
         rnxobj.add_comment("rinexmoded with {}".format(modif_source_kw))
@@ -1201,9 +1209,9 @@ def rinexmod(
 
     ###########################################################################
     ########## Write the station history in the header
-    if metadataobj and full_history:
+    if mdaobj and full_history:
         title = ["- - - - - - - - - - - -", "SITE FULL HISTORY"]
-        rnxobj.add_comments(title + metadataobj.rinex_full_history_lines())
+        rnxobj.add_comments(title + mdaobj.rinex_full_history_lines())
 
     ###########################################################################
     ########## Sort the header
@@ -1227,11 +1235,8 @@ def rinexmod(
         )
     else:
         rnxobj.get_shortname(
-            inplace_set=True,
-            compression="",
-            filename_style=filename_style
+            inplace_set=True, compression="", filename_style=filename_style
         )
-
 
     # NB: here the compression type must be forced to ''
     #     it will be added in the next step in write_to_path
@@ -1288,6 +1293,7 @@ def rinexmod(
 # *****************************************************************************
 # Upper level rinexmod for a Console run
 
+
 def rinexmod_cli(
     rinexinput,
     outputfolder,
@@ -1302,7 +1308,7 @@ def rinexmod_cli(
     ignore=False,
     ninecharfile=None,
     no_hatanaka=False,
-    compression='gz',
+    compression="gz",
     relative="",
     verbose=True,
     alone=False,
