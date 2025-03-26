@@ -145,7 +145,9 @@ def metadata_input_manage(sitelog_inp, force=False):
         raise RinexModInputArgsError
 
 
-def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile=None):
+def gamit2mda_objs(
+    station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile_inp=None
+):
     """
     Read a GAMIT files and convert their content to MetaData objects
 
@@ -161,6 +163,10 @@ def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False, ni
         hen using GAMIT station.info metadata without apriori coordinates in
         the L-File, gives fake coordinates at (0°,0°) to the site.
         The default is False.
+    ninecharfile_inp : str, optional
+        Path of a file that contains 9-char. site names.
+        The default is None.
+
 
     Returns
     -------
@@ -177,16 +183,18 @@ def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False, ni
 
     if not lfile_inp:
         df_apr = pd.DataFrame(columns=["site"])
-        logger.warning("No L-File provided, fake coordinates will be used! "
-                       "(force_fake_coords forced to True)")
+        logger.warning(
+            "No L-File provided, fake coordinates will be used! "
+            "(force_fake_coords forced to True)"
+        )
         force_fake_coords = True
     elif isinstance(lfile_inp, pd.DataFrame):
         df_apr = lfile_inp
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
 
-    if ninecharfile:
-        nine_char_dict = rimo.rinexmod_api.read_ninecharfile(ninecharfile)
+    if ninecharfile_inp:
+        nine_char_dict = rimo.rinexmod_api.read_ninecharfile(ninecharfile_inp)
     else:
         nine_char_dict = dict()
 
@@ -223,6 +231,7 @@ def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False, ni
 
     for site, site_info in df_stinfo_grp:
         logger.debug("extract %s from %s", site, stinfo_name)
+
         if site in nine_char_dict.keys():
             site_use = nine_char_dict[site]
             logger.debug("4 > 9 char. conversion: %s > %s", site, site_use)
@@ -1071,7 +1080,6 @@ def rinexmod(
             raise RinexModInputArgsError
 
         nine_char_dict = read_ninecharfile(ninecharfile)
-
 
     # set the marker as Rinex site, if any
     # This preliminary set_site is for th research of the right sitelog

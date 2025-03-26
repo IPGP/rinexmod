@@ -279,10 +279,14 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
     "instrus" and "misc_meta" dictionaries,
     necessary for the MetaData objects
 
+    Here the site codes must remain as close as
+    possible from the GAMIT input files
+    i.e. 4 char.
+
     Parameters
     ----------
     site : str
-        native site 4 char. code which will be extracted from the
+        native site *4 char.* code which will be extracted from the
         station_info and apriori DataFrame.
     stinfo_df_inp : DataFrame
         station.info-like DataFrame.
