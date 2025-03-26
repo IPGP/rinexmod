@@ -48,7 +48,7 @@ def read_gamit_apr_lfile(aprfile_inp):
 
     for l in open(aprfile_inp):
 
-        if not l[0] == " ":
+        if not l[0] == " " or l.strip().startswith("#") or l.strip().startswith("*"):
             continue
 
         x, y, z = np.nan, np.nan, np.nan
