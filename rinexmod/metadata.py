@@ -18,6 +18,8 @@ import pandas as pd
 
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
+import rinexmod.logger as rimo_log
+import rinexmod.rinexmod_api as rimo_api
 
 logger = rimo_log.logger_define("INFO")
 
@@ -65,11 +67,11 @@ class MetaData:
     @property
     def site9char(self):
         if len(self.misc_meta["ID"]) == 9:
-            return self.misc_meta["ID"]
+            return self.misc_meta["ID"].upper()
         elif len(self.filename.split("_")[0]) == 9:
             return self.filename.split("_")[0].upper()
         else:
-            return self.site4char + "00XXX"
+            return self.site4char.upper() + "00XXX"
 
 
     def __repr__(self):
@@ -101,6 +103,8 @@ class MetaData:
     ):
         """
         initialization method for metadata import from GAMIT files
+
+        site can be 4 char or 9 char
         """
 
         self.site4char = site[:4].lower()
@@ -127,9 +131,12 @@ class MetaData:
                 apr_df_inp=self.raw_content_apr,
                 force_fake_coords=force_fake_coords,
             )
-
         else:
             self.instrus, self.misc_meta = None, None
+
+        if len(site) == 9:
+            self.misc_meta["ID"] = site.upper()
+            self.misc_meta["Country"] = site[-3:].upper()
 
     def add_instru(self, rec_dic: dict, ant_dic: dict, date_srt=None, date_end=None):
         """

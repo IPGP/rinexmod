@@ -145,7 +145,7 @@ def metadata_input_manage(sitelog_inp, force=False):
         raise RinexModInputArgsError
 
 
-def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False):
+def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile=None):
     """
     Read a GAMIT files and convert their content to MetaData objects
 
@@ -180,12 +180,15 @@ def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False):
         logger.warning("No L-File provided, fake coordinates will be used! "
                        "(force_fake_coords forced to True)")
         force_fake_coords = True
-
-
     elif isinstance(lfile_inp, pd.DataFrame):
         df_apr = lfile_inp
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
+
+    if ninecharfile:
+        nine_char_dict = rimo.rinexmod_api.read_ninecharfile(ninecharfile)
+    else:
+        nine_char_dict = dict()
 
     sites_isin = df_stinfo_raw["site"].isin(df_apr["site"])
     ### for the stats only
@@ -220,9 +223,15 @@ def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False):
 
     for site, site_info in df_stinfo_grp:
         logger.debug("extract %s from %s", site, stinfo_name)
+        if site in nine_char_dict.keys():
+            site_use = nine_char_dict[site]
+            logger.debug("4 > 9 char. conversion: %s > %s", site, site_use)
+        else:
+            site_use = site
+
         mdaobj = rimo_mda.MetaData(sitelogfile=None)
         mdaobj.set_from_gamit(
-            site,
+            site_use,
             df_stinfo,
             df_apr,
             force_fake_coords=force_fake_coords,
@@ -781,6 +790,17 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
     return this_outputfile
 
 
+def read_ninecharfile(ninecharfile_inp):
+    nine_char_dict = dict()
+    with open(ninecharfile_inp, "r") as F:
+        nine_char_list = F.readlines()
+
+    for site_key in nine_char_list:
+        nine_char_dict[site_key[:4].lower()] = site_key.strip()
+
+    return nine_char_dict
+
+
 # *****************************************************************************
 # Main function
 
@@ -1050,11 +1070,8 @@ def rinexmod(
             )
             raise RinexModInputArgsError
 
-        with open(ninecharfile, "r") as F:
-            nine_char_list = F.readlines()
+        nine_char_dict = read_ninecharfile(ninecharfile)
 
-        for site_key in nine_char_list:
-            nine_char_dict[site_key[:4].lower()] = site_key.strip()
 
     # set the marker as Rinex site, if any
     # This preliminary set_site is for th research of the right sitelog

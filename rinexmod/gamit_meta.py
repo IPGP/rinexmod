@@ -277,12 +277,12 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
     """
     read GAMIT files to get the RinexMod internal
     "instrus" and "misc_meta" dictionaries,
-    necessary for the Sitelog objects
+    necessary for the MetaData objects
 
     Parameters
     ----------
     site : str
-        GNSS site 4 char. code which will be extracted from the
+        native site 4 char. code which will be extracted from the
         station_info and apriori DataFrame.
     stinfo_df_inp : DataFrame
         station.info-like DataFrame.
@@ -365,7 +365,6 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
 
     mm_dic = {}
 
-    mm_dic["ID"] = site
     mm_dic["IERS DOMES Number"] = apr_df_site["domes"]
 
     mm_dic["operator"] = "OPERATOR"
@@ -375,6 +374,7 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
     mm_dic["Y coordinate (m)"] = apr_df_site["y"]
     mm_dic["Z coordinate (m)"] = apr_df_site["z"]
 
+    mm_dic["ID"] = site
     mm_dic["Country"] = "XXX"
 
     return installations, mm_dic
