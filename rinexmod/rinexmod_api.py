@@ -145,7 +145,7 @@ def metadata_input_manage(sitelog_inp, force=False):
         raise RinexModInputArgsError
 
 
-def gamit2mda_objs(station_info_inp, lfile_inp, force_fake_coords=False):
+def gamit2mda_objs(station_info_inp, lfile_inp=None, force_fake_coords=False):
     """
     Read a GAMIT files and convert their content to MetaData objects
 
@@ -175,7 +175,14 @@ def gamit2mda_objs(station_info_inp, lfile_inp, force_fake_coords=False):
         df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp)
         stinfo_name = os.path.basename(station_info_inp)
 
-    if isinstance(lfile_inp, pd.DataFrame):
+    if not lfile_inp:
+        df_apr = pd.DataFrame(columns=["site"])
+        logger.warning("No L-File provided, fake coordinates will be used! "
+                       "(force_fake_coords forced to True)")
+        force_fake_coords = True
+
+
+    elif isinstance(lfile_inp, pd.DataFrame):
         df_apr = lfile_inp
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
