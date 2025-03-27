@@ -802,7 +802,7 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
 def read_ninecharfile(ninecharfile_inp):
     nine_char_dict = dict()
 
-    if isinstance(ninecharfile_inp,str)
+    if isinstance(ninecharfile_inp,str):
         with open(ninecharfile_inp, "r") as F:
             nine_char_list = F.readlines()
     elif isinstance(ninecharfile_inp,list):
