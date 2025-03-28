@@ -51,9 +51,9 @@ def read_gamit_apr_lfile(aprfile_inp):
         if not l[0] == " " or l.strip().startswith("#") or l.strip().startswith("*"):
             continue
 
-        x, y, z = np.nan, np.nan, np.nan
+        # x, y, z = np.nan, np.nan, np.nan
         # vx,vy,vz = 0.,0.,0.
-        t = pd.NaT
+        # t = pd.NaT
 
         f = l[1:].split()
 
@@ -227,7 +227,7 @@ def read_gamit_station_info(station_info_inp):
     )
 
     df.columns = col
-    
+
     ##### clean df
     ### remove empty rows
     try:
@@ -235,18 +235,20 @@ def read_gamit_station_info(station_info_inp):
     except Exception as e:
         logger.error("unable to read the GAMIT's station.info")
         raise e
-        
+
     df = df[np.logical_not(bool_empty_rows)]
     ### do a second NaN cleaning, but the previous should have cleaned everything
     df.dropna(inplace=True, how="all")
     df.reset_index(inplace=True, drop=True)
 
     ##### create datetime start/end columns
+    df["start year"] = df["start year"].replace(9999, 2099)
     df["start doy"] = df["start doy"].replace(999, 365)
     df["start hh"] = df["start hh"].replace(99, 00)
     df["start mm"] = df["start mm"].replace(99, 00)
     df["start ss"] = df["start ss"].replace(99, 00)
 
+    df["stop year"] = df["stop year"].replace(9999, 2099)
     df["stop doy"] = df["stop doy"].replace(999, 365)
     df["stop hh"] = df["stop hh"].replace(99, 00)
     df["stop mm"] = df["stop mm"].replace(99, 00)
@@ -263,12 +265,21 @@ def read_gamit_station_info(station_info_inp):
     df["start"] = df_start
 
     df_end = doy2dt(
-        df["stop year"], df["stop doy"], df["stop hh"], df["stop mm"], df["stop ss"]
+        df["stop year"],
+        df["stop doy"],
+        df["stop hh"],
+        df["stop mm"],
+        df["stop ss"]
     )
 
     df["end"] = df_end
 
     df["site"] = df["site"].str.lower()
+
+    df["start"] = pd.to_datetime(df["start"])
+    df["end"] = pd.to_datetime(df["end"])
+
+    df.sort_values(by=["site", "start"], inplace=True)
 
     return df
 
@@ -307,27 +318,27 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
     installations = []
 
     for irow, row in stinfo_df_site.iterrows():
-        inst_dic = {}
+        inst_dic = dict()
 
         ##### dates
-        inst_dic["dates"] = [row["start"], row["end"]]
+        inst_dic["dates"] = [row["start"].to_pydatetime(), row["end"].to_pydatetime()]
 
         ##### receiver
-        rec_dic = {}
+        rec_dic = dict()
         rec_dic["Receiver Type"] = str(row["receiver type"])
         rec_dic["Satellite System"] = "GPS+GLO+GAL+BDS+QZSS+SBAS"
         rec_dic["Serial Number"] = str(row["receiver sn"])
         rec_dic["Firmware Version"] = str(row["vers"])
         rec_dic["Elevation Cutoff Setting"] = "0"
-        rec_dic["Date Installed"] = row["start"]
-        rec_dic["Date Removed"] = row["end"]
+        rec_dic["Date Installed"] = row["start"].to_pydatetime()
+        rec_dic["Date Removed"] = row["end"].to_pydatetime()
         rec_dic["Temperature Stabiliz."] = "none"
         rec_dic["Additional Information"] = "none"
 
         inst_dic["receiver"] = rec_dic
 
         ##### antenna
-        ant_dic = {}
+        ant_dic = dict()
         ant_dic["Antenna Type"] = str(row["antenna type"])
         ant_dic["Serial Number"] = str(row["antenna sn"])
         ant_dic["Antenna Reference Point"] = "none"
@@ -339,8 +350,8 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
         ant_dic["Radome Serial Number"] = "none"
         ant_dic["Antenna Cable Type"] = "none"
         ant_dic["Antenna Cable Length"] = "0"
-        ant_dic["Date Installed"] = row["start"]
-        ant_dic["Date Removed"] = row["end"]
+        ant_dic["Date Installed"] = row["start"].to_pydatetime()
+        ant_dic["Date Removed"] = row["end"].to_pydatetime()
         ant_dic["Additional Information"] = "none"
         ant_dic["metpack"] = "none"
 
@@ -367,7 +378,7 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
         apr_df_site = apr_df_site.iloc[-1]
         apr_df_site.squeeze()
 
-    mm_dic = {}
+    mm_dic = dict()
 
     mm_dic["IERS DOMES Number"] = apr_df_site["domes"]
 
