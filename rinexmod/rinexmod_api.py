@@ -146,7 +146,7 @@ def metadata_input_manage(sitelog_inp, force=False):
 
 
 def gamit2mda_objs(
-    station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile_inp=None
+    station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile_inp=None,rev=False
 ):
     """
     Read a GAMIT files and convert their content to MetaData objects
@@ -166,6 +166,8 @@ def gamit2mda_objs(
     ninecharfile_inp : str, optional
         Path of a file that contains 9-char. site names.
         The default is None.
+    rev : boolean to inverse order of inputs for station.info filled from the
+        newest to the oldest change
 
 
     Returns
@@ -246,6 +248,9 @@ def gamit2mda_objs(
             force_fake_coords=force_fake_coords,
             station_info_name=stinfo_name,
         )
+        if rev:
+            mdaobj.instrus.reverse()
+            logger.info('Reversing order of instrumental changes')
         mdaobjs_lis.append(mdaobj)
 
     logger.info("%i sites have been extracted from %s", len(mdaobjs_lis), stinfo_name)
