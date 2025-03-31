@@ -166,9 +166,12 @@ def gamit2mda_objs(
     ninecharfile_inp : str, optional
         Path of a file that contains 9-char. site names.
         The default is None.
-    rev : boolean to inverse order of inputs for station.info filled from the
+    rev : bool, optional
+        reverse order of inputs for station.info filled from the
         newest to the oldest change
-
+        (Automatic sort of the station.info file as DataFrame
+         is then disabled)
+        The default is False.
 
     Returns
     -------
@@ -180,7 +183,8 @@ def gamit2mda_objs(
         df_stinfo_raw = station_info_inp
         stinfo_name = "station.info"
     else:
-        df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp)
+        df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp,
+                                                         sort = not rev)
         stinfo_name = os.path.basename(station_info_inp)
 
     if not lfile_inp:

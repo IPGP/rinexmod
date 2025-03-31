@@ -103,7 +103,7 @@ def read_gamit_apr_lfile(aprfile_inp):
     return df
 
 
-def read_gamit_station_info(station_info_inp):
+def read_gamit_station_info(station_info_inp, sort=True):
     """
     read a GAMIT's station.info (GNSS stations metadata)
     and store the data in a DataFrame
@@ -279,7 +279,8 @@ def read_gamit_station_info(station_info_inp):
     df["start"] = pd.to_datetime(df["start"])
     df["end"] = pd.to_datetime(df["end"])
 
-    df.sort_values(by=["site", "start"], inplace=True)
+    if sort:
+        df.sort_values(by=["site", "start"], inplace=True)
 
     return df
 
