@@ -114,6 +114,9 @@ def read_gamit_station_info(station_info_inp, sort=True):
     ----------
     station_info_inp : str
         path of the input station.info.
+    sort : bool, optional
+        sort the DataFrame by site and start time.
+        The default is True.
 
     Returns
     -------

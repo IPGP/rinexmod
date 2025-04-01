@@ -184,7 +184,7 @@ def gamit2mda_objs(
         stinfo_name = "station.info"
     else:
         df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp,
-                                                         sort = not rev)
+                                                         sort = False) # sort = not rev if rev, no sort
         stinfo_name = os.path.basename(station_info_inp)
 
     if not lfile_inp:
