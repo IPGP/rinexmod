@@ -529,6 +529,13 @@ class RinexFile:
             logger.error(status)
 
         return rinex_data, status
+ #   _____      _     __  __      _   _               _
+ #  / ____|    | |   |  \/  |    | | | |             | |
+ # | |  __  ___| |_  | \  / | ___| |_| |__   ___   __| |___
+ # | | |_ |/ _ \ __| | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+ # | |__| |  __/ |_  | |  | |  __/ |_| | | | (_) | (_| \__ \
+ #  \_____|\___|\__| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
+ #
 
     def get_naming_convention(self):
         """
@@ -758,7 +765,7 @@ class RinexFile:
         the data.
         """
 
-        if self.status != 0:
+        if self.status:
             return None, None
 
         def _find_meta_label(meta_label_in):
@@ -1190,6 +1197,14 @@ class RinexFile:
 
         return dict_sys_obs, dict_sys_nobs
 
+     #  __  __           _   __  __      _   _               _
+     # |  \/  |         | | |  \/  |    | | | |             | |
+     # | \  / | ___   __| | | \  / | ___| |_| |__   ___   __| |___
+     # | |\/| |/ _ \ / _` | | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+     # | |  | | (_) | (_| | | |  | |  __/ |_| | | | (_) | (_| \__ \
+     # |_|  |_|\___/ \__,_| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
+
+
     ### ***************************************************************************
     ### mod methods. change the content of the RINEX header
 
@@ -1218,9 +1233,9 @@ class RinexFile:
         if not marker_inp and not number_inp:
             return
 
+        marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
         # Identify line that contains MARKER NAME
         if marker_inp:
-            marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
             # Edit line
             new_line = "{}".format(marker_inp.ljust(60)) + "MARKER NAME"
             if marker_name_header_idx:
@@ -1248,7 +1263,7 @@ class RinexFile:
 
         return
 
-    def mod_receiver(self, serial=None, type=None, firmware=None):
+    def mod_receiver(self, serial=None, type=None, firmware=None, keep_rnx_rec=False):
         """
         Modify within the RINEX header the receiver information
         (``REC # / TYPE / VERS`` line)
@@ -1261,6 +1276,9 @@ class RinexFile:
             Receiver model. The default is None.
         firmware : str, optional
             Firmware version. The default is None.
+        keep_rnx_rec : bool, optional
+            Keep the RINEX receiver header record in the output RINEX.
+            Metadata from the external source (e.g. sitelogs) will not be modded.
 
         Returns
         -------
@@ -1296,13 +1314,20 @@ class RinexFile:
                 logger.warning(
                     "The RINEX value might be the correct one, double-check your metadata source."
                 )
-            return None
+                return True
+                # True if the check fails: counter-intuitive, but makes sense for the test below
+            else:
+                return False
 
-        _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
-        _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
-        _mod_rec_check(
+        rec_chk_sn = _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
+        rec_chk_mt = _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
+        rec_chk_fw = _mod_rec_check(
             "firmware version", rinex_val=firmware_head, metadata_val=firmware
         )
+
+        if keep_rnx_rec and (rec_chk_sn or rec_chk_fw or rec_chk_fw):
+            logger.info("RINEX & metadata are different, but receiver values are kept (keep_rnx_rec = True)")
+            return
 
         # Edit line
         if serial:
@@ -1599,21 +1624,10 @@ class RinexFile:
         if not sat_system:
             return
 
-        # Identify line that contains RINEX VERSION / TYPE
-        sat_system_header_idx = search_idx_value(
-            self.rinex_data, "RINEX VERSION / TYPE"
-        )
-        sat_system_head = self.rinex_data[sat_system_header_idx]
-        # Parse line
-        rinex_ver_head = sat_system_head[0:9]
-        type_of_rinex_file_head = sat_system_head[20:40]
-        # sat_system_head = sat_system_head[40:60]
-        label = sat_system_head[60:]
-        # Edit line
-        if "+" in sat_system:
+        if "+" in sat_system: ### case MIXED system
             sat_system = "MIXED"
             sat_system_code = "M"
-        else:
+        else: ### case single system
             gnss_codes = {
                 "GPS": "G",
                 "GLO": "R",
@@ -1629,6 +1643,19 @@ class RinexFile:
             if not sat_system_code:
                 sat_system_code = sat_system
                 sat_system = ""
+
+        ### rewrite the RINEX header line
+
+        # Identify line that contains RINEX VERSION / TYPE
+        sat_system_header_idx = search_idx_value(
+            self.rinex_data, "RINEX VERSION / TYPE"
+        )
+        sat_system_head = self.rinex_data[sat_system_header_idx]
+        # Parse line
+        rinex_ver_head = sat_system_head[0:9]
+        type_of_rinex_file_head = sat_system_head[20:40]
+        # sat_system_head = sat_system_head[40:60]
+        label = sat_system_head[60:]
 
         sat_system_head = sat_system_code[0] + " : " + sat_system[:16].ljust(16)
         new_line = (
