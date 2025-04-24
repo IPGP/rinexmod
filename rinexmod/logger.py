@@ -21,9 +21,9 @@ def logger_define(level_prompt, logfile=None, level_logfile=None):
     the other to a logfile defined by 'logfile'.
     """
 
-    logger = colorlog.getLogger(__name__)
-    logger.propagate = False
-    logger.setLevel(level_prompt)
+    logger_out = colorlog.getLogger('rinexmod')
+    logger_out.propagate = True
+    logger_out.setLevel(level_prompt)
 
     # This handler is for prompt (console)
     prompthandler = colorlog.StreamHandler()
@@ -40,8 +40,8 @@ def logger_define(level_prompt, logfile=None, level_logfile=None):
     )
     prompthandler.setFormatter(promptformatter)
     prompthandler.setLevel(level_prompt)
-    if not len(logger.handlers):
-        logger.addHandler(prompthandler)
+    if not len(logger_out.handlers):
+        logger_out.addHandler(prompthandler)
 
     # This handler will write to a log file
     if logfile:
@@ -54,9 +54,9 @@ def logger_define(level_prompt, logfile=None, level_logfile=None):
         )
         filehandler.setFormatter(fileformatter)
         filehandler.setLevel(level_logfile)
-        logger.addHandler(filehandler)
+        logger_out.addHandler(filehandler)
 
-    return logger
+    return logger_out
 
 
 logger = logger_define("INFO")

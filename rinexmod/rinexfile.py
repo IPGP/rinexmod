@@ -13,7 +13,8 @@ from io import StringIO
 from pathlib import Path
 
 import hatanaka
-#import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 import numpy as np
 
 import rinexmod.logger as rimo_log
@@ -528,6 +529,13 @@ class RinexFile:
             logger.error(status)
 
         return rinex_data, status
+ #   _____      _     __  __      _   _               _
+ #  / ____|    | |   |  \/  |    | | | |             | |
+ # | |  __  ___| |_  | \  / | ___| |_| |__   ___   __| |___
+ # | | |_ |/ _ \ __| | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+ # | |__| |  __/ |_  | |  | |  __/ |_| | | | (_) | (_| \__ \
+ #  \_____|\___|\__| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
+ #
 
     def get_naming_convention(self):
         """
@@ -757,7 +765,7 @@ class RinexFile:
         the data.
         """
 
-        if self.status != 0:
+        if self.status:
             return None, None
 
         def _find_meta_label(meta_label_in):
@@ -884,6 +892,7 @@ class RinexFile:
         plot = False
         if plot:
             import matplotlib.pyplot as plt
+
             print(
                 "{:29} : {}".format(
                     "Sample intervals not nominals",
@@ -1188,6 +1197,14 @@ class RinexFile:
 
         return dict_sys_obs, dict_sys_nobs
 
+     #  __  __           _   __  __      _   _               _
+     # |  \/  |         | | |  \/  |    | | | |             | |
+     # | \  / | ___   __| | | \  / | ___| |_| |__   ___   __| |___
+     # | |\/| |/ _ \ / _` | | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+     # | |  | | (_) | (_| | | |  | |  __/ |_| | | | (_) | (_| \__ \
+     # |_|  |_|\___/ \__,_| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
+
+
     ### ***************************************************************************
     ### mod methods. change the content of the RINEX header
 
@@ -1213,20 +1230,21 @@ class RinexFile:
             return
 
         ###marker_inp is a mandatory arguement, no None!
-        if not marker_inp:
+        if not marker_inp and not number_inp:
             return
 
-        # Identify line that contains MARKER NAME
         marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
-        # Edit line
-        new_line = "{}".format(marker_inp.ljust(60)) + "MARKER NAME"
-        if marker_name_header_idx:
-            # marker_name_meta = self.rinex_data[marker_name_header_idx]
-            # Set line
-            self.rinex_data[marker_name_header_idx] = new_line
-        else:
-            pgm_header_idx = search_idx_value(self.rinex_data, "PGM / RUN BY / DATE")
-            self.rinex_data.insert(pgm_header_idx, new_line)
+        # Identify line that contains MARKER NAME
+        if marker_inp:
+            # Edit line
+            new_line = "{}".format(marker_inp.ljust(60)) + "MARKER NAME"
+            if marker_name_header_idx:
+                # marker_name_meta = self.rinex_data[marker_name_header_idx]
+                # Set line
+                self.rinex_data[marker_name_header_idx] = new_line
+            else:
+                pgm_header_idx = search_idx_value(self.rinex_data, "PGM / RUN BY / DATE")
+                self.rinex_data.insert(pgm_header_idx, new_line)
 
         if number_inp:
             # Identify line that contains MARKER NUMBER
@@ -1245,7 +1263,7 @@ class RinexFile:
 
         return
 
-    def mod_receiver(self, serial=None, type=None, firmware=None):
+    def mod_receiver(self, serial=None, type=None, firmware=None, keep_rnx_rec=False):
         """
         Modify within the RINEX header the receiver information
         (``REC # / TYPE / VERS`` line)
@@ -1258,6 +1276,9 @@ class RinexFile:
             Receiver model. The default is None.
         firmware : str, optional
             Firmware version. The default is None.
+        keep_rnx_rec : bool, optional
+            Keep the RINEX receiver header record in the output RINEX.
+            Metadata from the external source (e.g. sitelogs) will not be modded.
 
         Returns
         -------
@@ -1278,12 +1299,11 @@ class RinexFile:
         serial_head = receiver_head[0:20]
         type_head = receiver_head[20:40]
         firmware_head = receiver_head[40:60]
-        label = receiver_head[60:]
+        label_head = receiver_head[60:]
 
-        # warning
-        ### for the receiver, info in te input RINEX should be the correct ones
+        # warning: for the receiver, info in te input RINEX might be the correct ones
         def _mod_rec_check(field_type, rinex_val, metadata_val):
-            if rinex_val.strip() != metadata_val.strip():
+            if metadata_val and rinex_val.strip() != metadata_val.strip():
                 logger.warning(
                     "%s rec. %s in RINEX (%s) & in metadata (%s) are different.",
                     self.get_site(lower_case=False),
@@ -1294,11 +1314,20 @@ class RinexFile:
                 logger.warning(
                     "The RINEX value might be the correct one, double-check your metadata source."
                 )
-            return None
+                return True
+                # True if the check fails: counter-intuitive, but makes sense for the test below
+            else:
+                return False
 
-        _mod_rec_check("serial number", serial, serial_head)
-        _mod_rec_check("model type", type, type_head)
-        _mod_rec_check("firmware version", firmware, firmware_head)
+        rec_chk_sn = _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
+        rec_chk_mt = _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
+        rec_chk_fw = _mod_rec_check(
+            "firmware version", rinex_val=firmware_head, metadata_val=firmware
+        )
+
+        if keep_rnx_rec and (rec_chk_sn or rec_chk_fw or rec_chk_fw):
+            logger.info("RINEX & metadata are different, but receiver values are kept (keep_rnx_rec = True)")
+            return
 
         # Edit line
         if serial:
@@ -1307,7 +1336,7 @@ class RinexFile:
             type_head = str(type)[:20].ljust(20)
         if firmware:
             firmware_head = str(firmware)[:20].ljust(20)
-        new_line = serial_head + type_head + firmware_head + label
+        new_line = serial_head + type_head + firmware_head + label_head
         # Set line
         self.rinex_data[receiver_header_idx] = new_line
 
@@ -1595,21 +1624,10 @@ class RinexFile:
         if not sat_system:
             return
 
-        # Identify line that contains RINEX VERSION / TYPE
-        sat_system_header_idx = search_idx_value(
-            self.rinex_data, "RINEX VERSION / TYPE"
-        )
-        sat_system_head = self.rinex_data[sat_system_header_idx]
-        # Parse line
-        rinex_ver_head = sat_system_head[0:9]
-        type_of_rinex_file_head = sat_system_head[20:40]
-        # sat_system_head = sat_system_head[40:60]
-        label = sat_system_head[60:]
-        # Edit line
-        if "+" in sat_system:
+        if "+" in sat_system: ### case MIXED system
             sat_system = "MIXED"
             sat_system_code = "M"
-        else:
+        else: ### case single system
             gnss_codes = {
                 "GPS": "G",
                 "GLO": "R",
@@ -1625,6 +1643,19 @@ class RinexFile:
             if not sat_system_code:
                 sat_system_code = sat_system
                 sat_system = ""
+
+        ### rewrite the RINEX header line
+
+        # Identify line that contains RINEX VERSION / TYPE
+        sat_system_header_idx = search_idx_value(
+            self.rinex_data, "RINEX VERSION / TYPE"
+        )
+        sat_system_head = self.rinex_data[sat_system_header_idx]
+        # Parse line
+        rinex_ver_head = sat_system_head[0:9]
+        type_of_rinex_file_head = sat_system_head[20:40]
+        # sat_system_head = sat_system_head[40:60]
+        label = sat_system_head[60:]
 
         sat_system_head = sat_system_code[0] + " : " + sat_system[:16].ljust(16)
         new_line = (
@@ -1921,7 +1952,9 @@ class RinexFile:
             if "COMMENT" in e
         ]
 
-        if len(comment) < 60:  # if the comment is shorter than 60 characters, we center it with dashes
+        if (
+            len(comment) < 60
+        ):  # if the comment is shorter than 60 characters, we center it with dashes
             new_line = " {} ".format(comment).center(59, "-")[:59] + " COMMENT"
         else:  # if the comment is longer than 60 characters, we print it as it is (truncated to 60 characters)
             new_line = comment[:59] + " COMMENT"
@@ -2004,7 +2037,9 @@ class RinexFile:
         self.rinex_data = rinex_data_new
         return
 
-    def clean_translation_comments(self, internal_use_only=True, format_conversion=False):
+    def clean_translation_comments(
+        self, internal_use_only=True, format_conversion=False
+    ):
         """
         clean warning blocks generated during RINEX 2>3 translation
 
