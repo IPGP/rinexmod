@@ -18,6 +18,8 @@ import pandas as pd
 
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
+import rinexmod.logger as rimo_log
+import rinexmod.rinexmod_api as rimo_api
 
 logger = rimo_log.logger_define("INFO")
 
@@ -65,12 +67,11 @@ class MetaData:
     @property
     def site9char(self):
         if len(self.misc_meta["ID"]) == 9:
-            return self.misc_meta["ID"]
+            return self.misc_meta["ID"].upper()
         elif len(self.filename.split("_")[0]) == 9:
             return self.filename.split("_")[0].upper()
         else:
-            return self.site4char + "00XXX"
-
+            return self.site4char.upper() + "00XXX"
 
     def __repr__(self):
         return "{} metadata, from {}".format(self.site4char, self.filename)
@@ -92,15 +93,17 @@ class MetaData:
             self.misc_meta = None
 
     def set_from_gamit(
-        self,
-        site,
-        station_info,
-        lfile,
-        force_fake_coords=False,
-        station_info_name="station.info",
+            self,
+            site,
+            station_info,
+            lfile,
+            force_fake_coords=False,
+            station_info_name="station.info",
     ):
         """
         initialization method for metadata import from GAMIT files
+
+        site can be 4 char or 9 char
         """
 
         self.site4char = site[:4].lower()
@@ -120,16 +123,18 @@ class MetaData:
             self.raw_content_apr = rimo_gmm.read_gamit_apr_lfile(lfile)
 
         if self.raw_content is not None:
-            conv_fct = rimo_gmm.gamit_df2instru_miscmeta
-            self.instrus, self.misc_meta = conv_fct(
+            self.instrus, self.misc_meta = rimo_gmm.gamit_df2instru_miscmeta(
                 site=self.site4char,
                 stinfo_df_inp=self.raw_content,
                 apr_df_inp=self.raw_content_apr,
                 force_fake_coords=force_fake_coords,
             )
-
         else:
             self.instrus, self.misc_meta = None, None
+
+        if len(site) == 9:
+            self.misc_meta["ID"] = site.upper()
+            self.misc_meta["Country"] = site[-3:].upper()
 
     def add_instru(self, rec_dic: dict, ant_dic: dict, date_srt=None, date_end=None):
         """
@@ -183,8 +188,8 @@ class MetaData:
         ### antenna
         install_dict["antenna"] = ant_dic
         if (
-            "Antenna Type" in ant_dic.keys()
-            and not "Antenna Radome Type" in ant_dic.keys()
+                "Antenna Type" in ant_dic.keys()
+                and not "Antenna Radome Type" in ant_dic.keys()
         ):
             ant_dic["Antenna Radome Type"] = ant_dic["Antenna Radome Type"][-4:]
         install_dict["antenna"]["Date Installed"] = date_srt
@@ -194,7 +199,7 @@ class MetaData:
         return install_dict
 
     def set_meta(
-        self, site_id, domes, operator, agency, x, y, z, date_prepared, country
+            self, site_id, domes, operator, agency, x, y, z, date_prepared, country
     ):
         """
         Exemple of misc meta dict:
@@ -489,7 +494,7 @@ class MetaData:
             # We get the receiver corresponding to the date interval
             for receiver in receivers:
                 if (receiver["Date Installed"] <= install["dates"][0]) and (
-                    receiver["Date Removed"] >= install["dates"][1]
+                        receiver["Date Removed"] >= install["dates"][1]
                 ):
                     install["receiver"] = receiver
                     # Once found, we quit the loop
@@ -508,7 +513,7 @@ class MetaData:
             # We get the antenna corresponding to the date interval
             for antenna in antennas:
                 if (antenna["Date Installed"] <= install["dates"][0]) and (
-                    antenna["Date Removed"] >= install["dates"][1]
+                        antenna["Date Removed"] >= install["dates"][1]
                 ):
                     install["antenna"] = antenna
                     # Once found, we quit the loop
@@ -576,7 +581,7 @@ class MetaData:
         """
 
         if (
-            "Nine Character ID" in self.raw_content["1."].keys()
+                "Nine Character ID" in self.raw_content["1."].keys()
         ):  # now consistent with [IGSMAIL-8458]
             site_id = self.raw_content["1."]["Nine Character ID"]
         else:
@@ -596,11 +601,11 @@ class MetaData:
         )
 
         if (
-            "Country/Region" in self.raw_content["2."].keys()
+                "Country/Region" in self.raw_content["2."].keys()
         ):  # now consistent with [IGSMAIL-8458]
             country = self.raw_content["2."]["Country/Region"]
         elif (
-            "Country or Region" in self.raw_content["2."].keys()
+                "Country or Region" in self.raw_content["2."].keys()
         ):  # now consistent with [IGSMAIL-8458]
             country = self.raw_content["2."]["Country or Region"]
         else:
@@ -657,8 +662,8 @@ class MetaData:
             # We work with consecutive instrumentation periods
             for i in range(0, len(self.instrus) - 1):
                 if (
-                    self.instrus[i]["dates"][0] <= starttime
-                    and self.instrus[i + 1]["dates"][1] >= endtime
+                        self.instrus[i]["dates"][0] <= starttime
+                        and self.instrus[i + 1]["dates"][1] >= endtime
                 ):
 
                     # we copy the two instrumentation periods dictionnary to remove firmware info
