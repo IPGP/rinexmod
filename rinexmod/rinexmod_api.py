@@ -1074,7 +1074,7 @@ def rinexmod(
         logger.error("{:110s} - {}".format(rnxobj.status, rinexfile))
         raise RinexFileError
 
-    logger.debug("RINEX Origin Metadata :\n" + rnxobj.get_metadata()[0])
+    logger.debug("RINEX Origin Metadata :\n" + rnxobj.get_header()[0])
 
     # apply tolerant / strict (per default) file period
     if filename_style == "basic":
@@ -1207,7 +1207,7 @@ def rinexmod(
         rnxobj = mdaobj_apply_on_rnxobj(
             rnxobj, mdaobj, ignore=ignore, keep_rnx_rec=keep_rnx_rec
         )
-        logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_metadata()[0])
+        logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_header()[0])
         modif_source_metadata = mdaobj.filename
     else:
         modif_source_metadata = ""
@@ -1221,7 +1221,7 @@ def rinexmod(
         modif_source_kw = "keywords:" + " ".join(modif_kw.keys())
         rnxobj = modif_kw_apply_on_rnxobj(rnxobj, modif_kw)
         logger.debug(
-            "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_metadata()[0]
+            "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_header()[0]
         )
     else:
         modif_source_kw = ""
