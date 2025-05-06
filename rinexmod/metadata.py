@@ -206,7 +206,6 @@ class MetaData:
 
         return None
 
-
     def add_instru(self, rec_dic: dict, ant_dic: dict, date_srt=None, date_end=None):
         """
         Add an instrumentation period to instrus attribute the metadata object.
