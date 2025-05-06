@@ -19,6 +19,7 @@ import pandas as pd
 import rinexmod.gamit_meta as rimo_gmm
 import rinexmod.logger as rimo_log
 import rinexmod.logger as rimo_log
+import rinexmod.rinexfile
 import rinexmod.rinexmod_api as rimo_api
 
 logger = rimo_log.logger_define("INFO")
@@ -92,6 +93,8 @@ class MetaData:
             self.instrus = None
             self.misc_meta = None
 
+        return None
+
     def set_from_gamit(
             self,
             site,
@@ -135,6 +138,73 @@ class MetaData:
         if len(site) == 9:
             self.misc_meta["ID"] = site.upper()
             self.misc_meta["Country"] = site[-3:].upper()
+
+        return None
+
+
+    def set_from_rinex(self, rnxfile):
+        """
+        initialization method for metadata import from rinex header
+        """
+        self.path = rnxfile
+        self.filename = os.path.basename(self.path)
+        self.site4char = self.filename[:4].lower()
+
+        rnxobj = rinexmod.rinexfile.RinexFile(self.path)
+        head_str , head_dic = rnxobj.get_header()
+
+        self.raw_content = head_str
+
+        inst_dic = dict()
+        ##### receiver
+        rec_dic = dict()
+        rec_dic["Receiver Type"] = head_dic["Receiver type"]
+        rec_dic["Satellite System"] = "GPS+GLO+GAL+BDS+QZSS+SBAS"
+        rec_dic["Serial Number"] = head_dic["Receiver serial"]
+        rec_dic["Firmware Version"] = head_dic["Receiver firmware version"]
+        rec_dic["Elevation Cutoff Setting"] = "0"
+        rec_dic["Date Installed"] = head_dic["Start date and time"]
+        rec_dic["Date Removed"] = head_dic["Final date and time"]
+        rec_dic["Temperature Stabiliz."] = "none"
+        rec_dic["Additional Information"] = "none"
+
+        inst_dic["receiver"] = rec_dic
+
+        ##### antenna
+        ant_dic = dict()
+        ant_dic["Antenna Type"] = head_dic["Antenna type"].strip()[:-4]
+        ant_dic["Serial Number"] = head_dic["Antenna serial"]
+        ant_dic["Antenna Reference Point"] = "none"
+        ant_dic["Marker->ARP Up Ecc. (m)"] = float(head_dic["Antenna delta (H/E/N)"].split()[0])
+        ant_dic["Marker->ARP North Ecc(m)"] = float(head_dic["Antenna delta (H/E/N)"].split()[1])
+        ant_dic["Marker->ARP East Ecc(m)"] = float(head_dic["Antenna delta (H/E/N)"].split()[2])
+        ant_dic["Alignment from True N"] = 0.
+        ant_dic["Antenna Radome Type"] = head_dic["Antenna type"].strip()[-4:]
+        ant_dic["Radome Serial Number"] = "none"
+        ant_dic["Antenna Cable Type"] = "none"
+        ant_dic["Antenna Cable Length"] = "0"
+        ant_dic["Date Installed"] = head_dic["Start date and time"]
+        ant_dic["Date Removed"] = head_dic["Final date and time"]
+        ant_dic["Additional Information"] = "none"
+        ant_dic["metpack"] = "none"
+
+        inst_dic["antenna"] = ant_dic
+
+        inst_dic["dates"] = [head_dic["Start date and time"], head_dic["Final date and time"]]
+
+        self.instrus = [inst_dic]
+
+        self.set_meta(site_id = head_dic["Marker name"],
+                      domes = head_dic["Marker number"],
+                      operator = head_dic["Operator"],
+                      agency = head_dic["Agency"],
+                      x = float(head_dic["Antenna position (XYZ)"].split()[0]),
+                      y = float(head_dic["Antenna position (XYZ)"].split()[1]),
+                      z = float(head_dic["Antenna position (XYZ)"].split()[2]),
+                      date_prepared=head_dic["Start date and time"],
+                      country='XXX')
+
+        return None
 
     def add_instru(self, rec_dic: dict, ant_dic: dict, date_srt=None, date_end=None):
         """

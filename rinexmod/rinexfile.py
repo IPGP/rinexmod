@@ -40,7 +40,7 @@ class RinexFile:
     The method to get the file duration is based on reading the file name and
     not the data.
     A method to write the file in selected compression is also available.
-    The get_metadata method permits to have a printable string of all file's metadata.
+    The get_header method permits to have a printable string of all file's metadata.
     """
 
     def __init__(self, rinex_input, force_rnx_load=False):
@@ -142,7 +142,7 @@ class RinexFile:
     # *****************************************************************************
     #### Main methods
 
-    def get_metadata(self):
+    def get_header(self):
         """
         Returns a printable, with carriage-return, string of metadata lines from
         the header, and a python dict of the same information.
@@ -186,7 +186,7 @@ class RinexFile:
         # if not 'MARKER NUMBER' in metadata:
         #    metadata['MARKER NUMBER'] = ''
 
-        metadata_parsed = {
+        header_parsed = {
             "File": self.path,
             "File size (bytes)": self.size,
             "Rinex version": metadata["RINEX VERSION / TYPE"][0:9].strip(),
@@ -216,13 +216,14 @@ class RinexFile:
             "Final date and time": self.end_date,
         }
 
-        metadata_string = "\n".join(
-            ["{:29} : {}".format(key, value) for key, value in metadata_parsed.items()]
+        header_string = "\n".join(
+            ["{:29} : {}".format(key, value) for key, value in header_parsed.items()]
         )
 
-        metadata_string = "\n" + metadata_string + "\n"
+        header_string = "\n" + header_string + "\n"
 
-        return metadata_string, metadata_parsed
+        return header_string, header_parsed
+
 
     def get_site(self, lower_case=True, only_4char=False, no_country_then_4char=False):
         """
