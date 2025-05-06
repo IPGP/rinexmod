@@ -127,7 +127,7 @@ def metadata_input_manage(sitelog_inp, force=False):
         return [sitelog_inp]
     # list of MetaData objects
     elif isinstance(sitelog_inp, list) and isinstance(
-        sitelog_inp[0], rimo_mda.MetaData
+            sitelog_inp[0], rimo_mda.MetaData
     ):
         return sitelog_inp
     # single string or list of string
@@ -146,7 +146,7 @@ def metadata_input_manage(sitelog_inp, force=False):
 
 
 def gamit2mda_objs(
-    station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile_inp=None,rev=False
+        station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile_inp=None, rev=False
 ):
     """
     Read a GAMIT files and convert their content to MetaData objects
@@ -184,7 +184,7 @@ def gamit2mda_objs(
         stinfo_name = "station.info"
     else:
         df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp,
-                                                         sort = False) # sort = not rev if rev, no sort
+                                                         sort=False)  # sort = not rev if rev, no sort
         stinfo_name = os.path.basename(station_info_inp)
 
     if not lfile_inp:
@@ -263,7 +263,7 @@ def gamit2mda_objs(
 
 
 def sitlgs2mda_objs(
-    sitelog_filepath, force=False, return_list_even_if_single_input=True
+        sitelog_filepath, force=False, return_list_even_if_single_input=True
 ):
     """
     Read a set of sitelog files and convert them to MetaData objects
@@ -811,10 +811,10 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
 def read_ninecharfile(ninecharfile_inp):
     nine_char_dict = dict()
 
-    if isinstance(ninecharfile_inp,str):
+    if isinstance(ninecharfile_inp, str):
         with open(ninecharfile_inp, "r") as F:
             nine_char_list = F.readlines()
-    elif isinstance(ninecharfile_inp,list):
+    elif isinstance(ninecharfile_inp, list):
         nine_char_list = ninecharfile_inp
     else:
         nine_char_list = list(ninecharfile_inp)
@@ -830,30 +830,30 @@ def read_ninecharfile(ninecharfile_inp):
 
 
 def rinexmod(
-    rinexfile,
-    outputfolder,
-    sitelog=None,
-    modif_kw=dict(),
-    marker="",
-    country="",
-    longname=False,
-    shortname=False,
-    force_rnx_load=False,
-    force_sitelog=False,
-    ignore=False,
-    ninecharfile=None,
-    no_hatanaka=False,
-    compression="gz",
-    relative="",
-    verbose=True,
-    full_history=False,
-    filename_style="basic",
-    return_lists=None,
-    station_info=None,
-    lfile_apriori=None,
-    force_fake_coords=False,
-    remove=False,
-    keep_rnx_rec=False,
+        rinexfile,
+        outputfolder,
+        sitelog=None,
+        modif_kw=dict(),
+        marker="",
+        country="",
+        longname=False,
+        shortname=False,
+        force_rnx_load=False,
+        force_sitelog=False,
+        ignore=False,
+        ninecharfile=None,
+        no_hatanaka=False,
+        compression="gz",
+        relative="",
+        verbose=True,
+        full_history=False,
+        filename_style="basic",
+        return_lists=None,
+        station_info=None,
+        lfile_apriori=None,
+        force_fake_coords=False,
+        remove=False,
+        keep_rnx_rec=False,
 ):
     """
     Parameters
@@ -1045,8 +1045,8 @@ def rinexmod(
         modif_kw = dict()
 
     if (
-        os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder
-        and not outputfolder == "IDEM"
+            os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder
+            and not outputfolder == "IDEM"
     ):
         logger.error(
             "{:110s} - {}".format(
@@ -1342,35 +1342,35 @@ def rinexmod(
 
 
 def rinexmod_cli(
-    rinexinput,
-    outputfolder,
-    sitelog=None,
-    modif_kw=dict(),
-    marker="",
-    country="",
-    longname=False,
-    shortname=False,
-    force_sitelog=False,
-    force_rnx_load=False,
-    ignore=False,
-    ninecharfile=None,
-    no_hatanaka=False,
-    compression="gz",
-    relative="",
-    verbose=True,
-    alone=False,
-    output_logs=None,
-    write=False,
-    sort=False,
-    full_history=False,
-    filename_style="basic",
-    multi_process=1,
-    debug=False,
-    station_info=None,
-    lfile_apriori=None,
-    force_fake_coords=False,
-    remove=False,
-    keep_rnx_rec=False,
+        rinexinput,
+        outputfolder,
+        sitelog=None,
+        modif_kw=dict(),
+        marker="",
+        country="",
+        longname=False,
+        shortname=False,
+        force_sitelog=False,
+        force_rnx_load=False,
+        ignore=False,
+        ninecharfile=None,
+        no_hatanaka=False,
+        compression="gz",
+        relative="",
+        verbose=True,
+        alone=False,
+        output_logs=None,
+        write=False,
+        sort=False,
+        full_history=False,
+        filename_style="basic",
+        multi_process=1,
+        debug=False,
+        station_info=None,
+        lfile_apriori=None,
+        force_fake_coords=False,
+        remove=False,
+        keep_rnx_rec=False,
 ):
     """
     Main function for reading a Rinex list file. It processes the list, and apply
@@ -1386,13 +1386,13 @@ def rinexmod_cli(
 
     # If no longname, modif_kw and sitelog, return
     if (
-        not sitelog
-        and not modif_kw
-        and not marker
-        and not longname
-        and not shortname
-        and not station_info
-        and not lfile_apriori
+            not sitelog
+            and not modif_kw
+            and not marker
+            and not longname
+            and not shortname
+            and not station_info
+            and not lfile_apriori
     ):
         logger.critical(
             "No action asked, provide at least one of the following args:"
@@ -1615,6 +1615,5 @@ class ParseKwargs(argparse.Action):
 
                 _print_kw_tips(values)
                 raise e
-
 
 # *****************************************************************************
