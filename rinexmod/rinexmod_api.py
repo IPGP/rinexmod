@@ -199,7 +199,7 @@ def gamit2mda_objs(
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
 
-    if ninecharfile_inp:
+    if not ninecharfile_inp is None:
         nine_char_dict = rimo.rinexmod_api.read_ninecharfile(ninecharfile_inp)
     else:
         nine_char_dict = dict()
@@ -340,6 +340,68 @@ def sitlgs2mda_objs(
     return mdaobjs_lis
 
 
+def rinexs2mda_objs(rinex_paths, ninecharfile_inp=None):
+    """
+    Read a set of RINEX files and convert them to MetaData objects
+
+    Parameters
+    ----------
+    rinex_paths : list of str
+        path of a single rinex file or a set of rinex files (stored in a list).
+
+    ninecharfile_inp : str, optional
+        Path of a file that contains 9-char. site names.
+        The default is None.
+
+    Returns
+    -------
+    mdaobjs_lis : list
+        list of MetaData objects.
+
+    """
+
+    if not isinstance(rinex_paths, list):
+        rinex_paths = [rinex_paths]
+
+    if not ninecharfile_inp is None:
+        nine_char_dict = read_ninecharfile(ninecharfile_inp)
+    else:
+        nine_char_dict = dict()
+
+    mda_stk = []
+    for rnx in sorted(rinex_paths):
+        mda = rimo_mda.MetaData()
+        mda.set_from_rinex(rnx)
+
+        #### misc meta ID IMPROVE ME !!!
+        if mda.misc_meta["ID"][:4].lower() in nine_char_dict.keys():
+            mda.misc_meta["ID"] = nine_char_dict[mda.misc_meta["ID"][:4].lower()]
+            logger.info("4 > 9 char. conversion: %s > %s", mda.misc_meta["ID"][:4], mda.misc_meta["ID"][:9])
+
+        mda_stk.append(mda)
+
+    mdaobjs_lis , mdaobj_dic = merge_mda(mda_stk)
+
+    return mdaobjs_lis
+
+
+def merge_mda(mdaobj_list_inp):
+    mdaobj_dic = dict()
+    for mda in mdaobj_list_inp:
+        if not mda.site9char in mdaobj_dic.keys():
+            mdaobj_dic[mda.site9char] = mda
+        else:
+            for inst in mda.instrus:
+                mdaobj_dic[mda.site9char].add_instru(inst['receiver'],
+                                                  inst['antenna'],
+                                                  inst['dates'][0],
+                                                  inst['dates'][1])
+
+    mdaobj_lis = [v for k,v in mdaobj_dic.items()]
+
+    return mdaobj_lis , mdaobj_dic
+
+
 def load_sitelogs(sitelogs_inp, force=False):
     """
     Process a list of sitelogs and return a list of MetaData objects and a list of bad sitelogs.
@@ -396,7 +458,7 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
     based on date in its filename
     (mainly for time consumption reduction)
 
-    see also _mda_find_latest_prep (more reliable)
+    see also _mda_find_latest_prep (more reliable but slower)
     """
     # We list the available sites to group sitelogs
     bnm = os.path.basename
