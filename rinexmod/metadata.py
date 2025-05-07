@@ -115,12 +115,12 @@ class MetaData:
         return None
 
     def set_from_gamit(
-            self,
-            site,
-            station_info,
-            lfile,
-            force_fake_coords=False,
-            station_info_name="station.info",
+        self,
+        site,
+        station_info,
+        lfile,
+        force_fake_coords=False,
+        station_info_name="station.info",
     ):
         """
         initialization method for metadata import from GAMIT files
@@ -161,7 +161,7 @@ class MetaData:
         return None
 
     def set_meta(
-            self, site_id, domes, operator, agency, x, y, z, date_prepared, country
+        self, site_id, domes, operator, agency, x, y, z, date_prepared, country
     ):
         """
         Exemple of misc meta dict:
@@ -229,7 +229,7 @@ class MetaData:
         ant_dic["Marker->ARP Up Ecc. (m)"] = float(ecc[0])
         ant_dic["Marker->ARP North Ecc(m)"] = float(ecc[1])
         ant_dic["Marker->ARP East Ecc(m)"] = float(ecc[2])
-        ant_dic["Alignment from True N"] = 0.
+        ant_dic["Alignment from True N"] = 0.0
         ant_dic["Antenna Radome Type"] = head_dic["Antenna type"].strip()[-4:]
         ant_dic["Radome Serial Number"] = "none"
         ant_dic["Antenna Cable Type"] = "none"
@@ -241,20 +241,25 @@ class MetaData:
 
         inst_dic["antenna"] = ant_dic
 
-        inst_dic["dates"] = [head_dic["Start date and time"], head_dic["Final date and time"]]
+        inst_dic["dates"] = [
+            head_dic["Start date and time"],
+            head_dic["Final date and time"],
+        ]
 
         self.instrus = [inst_dic]
 
         xyz = head_dic["Antenna position (XYZ)"].split()
-        self.set_meta(site_id=head_dic["Marker name"],
-                      domes=head_dic["Marker number"],
-                      operator=head_dic["Operator"],
-                      agency=head_dic["Agency"],
-                      x=float(xyz[0]),
-                      y=float(xyz[1]),
-                      z=float(xyz[2]),
-                      date_prepared=head_dic["Start date and time"],
-                      country='XXX')
+        self.set_meta(
+            site_id=head_dic["Marker name"],
+            domes=head_dic["Marker number"],
+            operator=head_dic["Operator"],
+            agency=head_dic["Agency"],
+            x=float(xyz[0]),
+            y=float(xyz[1]),
+            z=float(xyz[2]),
+            date_prepared=head_dic["Start date and time"],
+            country="XXX",
+        )
 
         return None
 
@@ -310,8 +315,8 @@ class MetaData:
         ### antenna
         instru_dic["antenna"] = ant_dic
         if (
-                "Antenna Type" in ant_dic.keys()
-                and not "Antenna Radome Type" in ant_dic.keys()
+            "Antenna Type" in ant_dic.keys()
+            and not "Antenna Radome Type" in ant_dic.keys()
         ):
             ant_dic["Antenna Radome Type"] = ant_dic["Antenna Radome Type"][-4:]
         instru_dic["antenna"]["Date Installed"] = date_srt
@@ -398,9 +403,15 @@ class MetaData:
         """
         for instru in self.instrus:
             if date_source == "receiver":
-                instru['dates'] = [instru['receiver']['Date Installed'], instru['receiver']['Date Removed']]
+                instru["dates"] = [
+                    instru["receiver"]["Date Installed"],
+                    instru["receiver"]["Date Removed"],
+                ]
             elif date_source == "antenna":
-                instru['dates'] = [instru['antenna']['Date Installed'], instru['antenna']['Date Removed']]
+                instru["dates"] = [
+                    instru["antenna"]["Date Installed"],
+                    instru["antenna"]["Date Removed"],
+                ]
             else:
                 raise ValueError("date_source must be 'receiver' or 'antenna'")
         return self.instrus
@@ -693,7 +704,7 @@ class MetaData:
             # We get the receiver corresponding to the date interval
             for receiver in receivers:
                 if (receiver["Date Installed"] <= instru["dates"][0]) and (
-                        receiver["Date Removed"] >= instru["dates"][1]
+                    receiver["Date Removed"] >= instru["dates"][1]
                 ):
                     instru["receiver"] = receiver
                     # Once found, we quit the loop
@@ -712,7 +723,7 @@ class MetaData:
             # We get the antenna corresponding to the date interval
             for antenna in antennas:
                 if (antenna["Date Installed"] <= instru["dates"][0]) and (
-                        antenna["Date Removed"] >= instru["dates"][1]
+                    antenna["Date Removed"] >= instru["dates"][1]
                 ):
                     instru["antenna"] = antenna
                     # Once found, we quit the loop
@@ -780,7 +791,7 @@ class MetaData:
         """
 
         if (
-                "Nine Character ID" in self.raw_content["1."].keys()
+            "Nine Character ID" in self.raw_content["1."].keys()
         ):  # now consistent with [IGSMAIL-8458]
             site_id = self.raw_content["1."]["Nine Character ID"]
         else:
@@ -800,11 +811,11 @@ class MetaData:
         )
 
         if (
-                "Country/Region" in self.raw_content["2."].keys()
+            "Country/Region" in self.raw_content["2."].keys()
         ):  # now consistent with [IGSMAIL-8458]
             country = self.raw_content["2."]["Country/Region"]
         elif (
-                "Country or Region" in self.raw_content["2."].keys()
+            "Country or Region" in self.raw_content["2."].keys()
         ):  # now consistent with [IGSMAIL-8458]
             country = self.raw_content["2."]["Country or Region"]
         else:
@@ -861,8 +872,8 @@ class MetaData:
             # We work with consecutive instrumentation periods
             for i in range(0, len(self.instrus) - 1):
                 if (
-                        self.instrus[i]["dates"][0] <= starttime
-                        and self.instrus[i + 1]["dates"][1] >= endtime
+                    self.instrus[i]["dates"][0] <= starttime
+                    and self.instrus[i + 1]["dates"][1] >= endtime
                 ):
 
                     # we copy the two instrumentation periods dictionnary to remove firmware info
@@ -1102,7 +1113,7 @@ class MetaData:
 
 def equal_instru(instru1, instru2, compare_dates=False):
     """
-    Compare two instrumentation periods and return True if they are equal
+    Compare two instrumentation dict. and return True if they are equal
     """
 
     # Compare dates
@@ -1110,16 +1121,16 @@ def equal_instru(instru1, instru2, compare_dates=False):
         return False
 
     # Lambda function to filter out 'Date Installed' and 'Date Removed' keys
-    filter_keys = lambda d: {k: v for k, v in d.items() if k not in ["Date Installed", "Date Removed"]}
+    filter_keys = lambda d: {
+        k: v for k, v in d.items() if k not in ["Date Installed", "Date Removed"]
+    }
 
     # Compare receiver
     if filter_keys(instru1["receiver"]) != filter_keys(instru2["receiver"]):
-        print("AAAAAACCCC", filter_keys(instru1["receiver"]), filter_keys(instru2["receiver"]))
         return False
 
     # Compare antenna
     if filter_keys(instru1["antenna"]) != filter_keys(instru2["antenna"]):
-        print("AAAAAADDD", filter_keys(instru1["antenna"]), filter_keys(instru2["antenna"]))
         return False
 
     return True
