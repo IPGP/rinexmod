@@ -1667,6 +1667,7 @@ def rinexmod_cli(
                     type(e).__name__,
                     rnxmod_kwargs_inp["rinexfile"],
                 )
+                return None
 
     # number of parallel processing
     if multi_process > 1:
