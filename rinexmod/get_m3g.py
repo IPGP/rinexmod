@@ -211,7 +211,10 @@ def get_m3g_sitelogs(
             if move_folder or delete:
                 old_sitelogs_mv = glob.glob(f"{obs_path}/*{sitelog_name[:9]}*.log")
                 for f in old_sitelogs_mv:
-                    if move_folder and f != sitelog_local_path:
+                    if f == sitelog_local_path:
+                        # f is the new sitelog
+                        continue
+                    elif move_folder:
                         print(f"### {os.path.basename(f)} moved to archive folder ###")
                         shutil.move(f, move_folder)
                     elif delete:
