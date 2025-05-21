@@ -15,7 +15,7 @@ import sys
 
 def get_m3g_sitelogs(
     sitelogsfolder,
-    delete,
+    delete=False,
     observatory=None,
     root_folder=False,
     svn_mode=False,
@@ -142,9 +142,9 @@ def get_m3g_sitelogs(
 
     sitelog_local_paths = []
 
-    for ctry in net_obs_dic.keys():
+    for net in net_obs_dic.keys():
 
-        obs_url = country_url + ctry
+        obs_url = country_url + net
 
         obs_infos = requests.get(obs_url)
         obs_infos = obs_infos.content.decode("utf-8")
@@ -153,19 +153,13 @@ def get_m3g_sitelogs(
         obs_infos = list(reversed(obs_infos))  # list is reversed per def.
 
         if not root_folder:
-            obs_path = os.path.join(sitelogsfolder, net_obs_dic[ctry])
+            obs_path = os.path.join(sitelogsfolder, net_obs_dic[net])
         else:
             obs_path = sitelogsfolder
 
-        # If delete, empty folders
-        if delete and not move_folder:
-            old_sitelogs_del = glob.glob(obs_path + "/*" + ctry + "*.log")
-            for f in old_sitelogs_del:
-                os.remove(f)
-
         print(
             "###### Downloading {} ({}) sitelogs from M3G to {}".format(
-                net_obs_dic[ctry], ctry, obs_path
+                net_obs_dic[net], net, obs_path
             )
         )
 
@@ -213,16 +207,16 @@ def get_m3g_sitelogs(
             else:
                 print("### " + sitelog_name + " skip (already exists) ###")
 
-            ### get existing old sitelogs for moving
-            if move_folder:
-                old_sitelogs_mv = glob.glob(
-                    obs_path + "/*" + sitelog_name[:9] + "*.log"
-                )
-                if sitelog_local_path in old_sitelogs_mv:
-                    old_sitelogs_mv.remove(sitelog_local_path)
+            ### get existing old sitelogs for moving or delete
+            if move_folder or delete:
+                old_sitelogs_mv = glob.glob(f"{obs_path}/*{sitelog_name[:9]}*.log")
                 for f in old_sitelogs_mv:
-                    print("### " + os.path.basename(f) + " moved to archive folder ###")
-                    shutil.move(f, move_folder)
+                    if move_folder and f != sitelog_local_path:
+                        print(f"### {os.path.basename(f)} moved to archive folder ###")
+                        shutil.move(f, move_folder)
+                    elif delete:
+                        print(f"### {os.path.basename(f)} deleted ###")
+                        os.remove(f)
 
     if svn_mode:
         print("### SVN add/commit of the downloaded sitelogs")
