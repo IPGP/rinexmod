@@ -1166,7 +1166,7 @@ def rinexmod(
         logger.warning("The output folder is forced as the same one as the input one")
 
     if not os.path.exists(outputfolder):
-        logger.warning("the output folder does not exists")
+        logger.debug("The output folder does not exists, creating it")
         os.makedirs(outputfolder)
 
     if longname and shortname:
