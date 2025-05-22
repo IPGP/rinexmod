@@ -127,7 +127,7 @@ def make_site_id9(site_id_inp):
 def metadata_input_manage(sitelog_inp, force=False):
     """
     Manage the multiple types possible for metadata inputs
-    Return a list of MetaData to be handeled by metadata_find_site
+    Return a list of MetaData to be handeled by find_mda4site
 
     Possible inputs are:
      * list of string (sitelog file paths),
@@ -588,7 +588,7 @@ def _mda_find_latest_prep(mdaobjs_inp):
     return mdaobjs_latest
 
 
-def metadata_find_site(rnxobj_or_site4char, mdaobjs_lis, force):
+def find_mda4site(rnxobj_or_site4char, mdaobjs_lis, force):
     """
     Finding the right MetaData object
 
@@ -633,7 +633,7 @@ def metadata_find_site(rnxobj_or_site4char, mdaobjs_lis, force):
     return mdaobj
 
 
-def mdaobj_apply_on_rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
+def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -747,7 +747,7 @@ def _modif_kw_check(modif_kw):
     return None
 
 
-def modif_kw_apply_on_rnxobj(rnxobj, modif_kw):
+def apply_modifkw2rnxobj(rnxobj, modif_kw):
     """
     apply a modification keywords on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -1242,7 +1242,7 @@ def rinexmod(
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
-        mdaobj = metadata_find_site(rnxobj, mdaobjs_lis, force=force_sitelog)
+        mdaobj = find_mda4site(rnxobj, mdaobjs_lis, force=force_sitelog)
         logger.debug("metadata used: %s", mdaobj)
     else:
         mdaobj = None
@@ -1311,7 +1311,7 @@ def rinexmod(
     ###########################################################################
     ########## Apply the MetaData object on the RinexFile object
     if mdaobj:
-        rnxobj = mdaobj_apply_on_rnxobj(
+        rnxobj = apply_mda2rnxobj(
             rnxobj, mdaobj, ignore=ignore, keep_rnx_rec=keep_rnx_rec
         )
         logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_header()[0])
@@ -1326,7 +1326,7 @@ def rinexmod(
         _modif_kw_check(modif_kw)
 
         modif_source_kw = "keywords:" + " ".join(modif_kw.keys())
-        rnxobj = modif_kw_apply_on_rnxobj(rnxobj, modif_kw)
+        rnxobj = apply_modifkw2rnxobj(rnxobj, modif_kw)
         logger.debug(
             "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_header()[0]
         )
@@ -1335,7 +1335,7 @@ def rinexmod(
 
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
-    # Must be after mdaobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
+    # Must be after apply_mda2rnxobj and apply_modifkw2rnxobj
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
     if "marker_name" not in modif_kw.keys():
         rnxobj.mod_marker(rnxobj.get_site(False, False, True))
