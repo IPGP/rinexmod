@@ -1,9 +1,6 @@
-from . import logger
-from . import rinexfile
-from . import metadata
-from . import gamit_meta
-from . import rinexmod_api
-from . import get_m3g
+from . import api
+from . import common
+from . import classes
 
 __version__='3.7.2' #  changed automaticcaly with bump-my-version
 

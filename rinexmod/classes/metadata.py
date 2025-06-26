@@ -16,11 +16,12 @@ import pycountry
 
 import pandas as pd
 
-import rinexmod.gamit_meta as rimo_gmm
-import rinexmod.logger as rimo_log
-import rinexmod.rinexfile
-import rinexmod.rinexmod_api as rimo_api
+import rinexmod.common.gamit_meta as rimo_gmm
+import rinexmod.classes as rimo_cls
 
+import rinexmod.api as rimo_api
+
+import rinexmod.common.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
 
 
@@ -198,7 +199,7 @@ class MetaData:
         self.path = rnxfile
         self.filename = os.path.basename(self.path)
 
-        rnxobj = rinexmod.rinexfile.RinexFile(self.path)
+        rnxobj = rimo_cls.RinexFile(self.path)
         head_str, head_dic = rnxobj.get_header()
 
         self.site_id = head_dic["Marker name"]

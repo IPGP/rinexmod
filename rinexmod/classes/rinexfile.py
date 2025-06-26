@@ -17,16 +17,8 @@ import hatanaka
 # import matplotlib.pyplot as plt
 import numpy as np
 
-import rinexmod.logger as rimo_log
-
+import rinexmod.common.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
-
-
-# logger = logging.getLogger("rinexmod_api")
-
-# from rinexmod import rinexmod_api as rimo_api
-# logger = rimo_api.logger_define('INFO')
-
 
 # *****************************************************************************
 # class definition
@@ -578,7 +570,7 @@ class RinexFile:
 
     def get_compression(self):
         """
-        get the compression type in a 2-tuple: (compress,hatanaka)
+        get the compression type in a 2-tuple: (compress, hatanaka)
         compress is None or a string: gz, Z, 7z
         hatanaka is a bool
         """
@@ -1791,6 +1783,121 @@ class RinexFile:
 
         return
 
+    def mod_doi(self, doi):
+        """
+        Modify within the RINEX header the DOI
+        (``DOI`` line)
+
+        Parameters
+        ----------
+        doi : str, optional
+            DOI of the RINEX file. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        if self.status:
+            return
+
+        if not doi:
+            return
+
+        # Identify line that contains DOI
+        doi_header_idx = search_idx_value(self.rinex_data, "DOI")
+        # Edit line
+        new_line = "{}".format(doi.ljust(60)) + "DOI"
+        if doi_header_idx:
+            # Set line
+            self.rinex_data[doi_header_idx] = new_line
+        else:
+            pgm_header_idx = search_idx_value(self.rinex_data, "END OF HEADER")
+            self.rinex_data.insert(pgm_header_idx, new_line)
+
+        self.version = "4.02"  # Update version to 4.02 if DOI is set
+
+        return
+
+    def mod_license(self, license=None):
+        """
+        Modify within the RINEX header the license
+        (``LICENSE`` line)
+
+        Parameters
+        ----------
+        license : str, optional
+            License of the RINEX file. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        if self.status:
+            return
+
+        if not license:
+            return
+
+        # Identify line that contains LICENSE
+        license_header_idx = search_idx_value(self.rinex_data, "LICENSE OF USE")
+        # Edit line
+        new_line = "{}".format(license.ljust(60)) + "LICENSE OF USE"
+        if license_header_idx:
+            # Set line
+            self.rinex_data[license_header_idx] = new_line
+        else:
+            pgm_header_idx = search_idx_value(self.rinex_data, "END OF HEADER")
+            self.rinex_data.insert(pgm_header_idx, new_line)
+
+        self.version = "4.02"  # Update version to 4.02 if LICENSE is set
+
+        return
+
+    def mod_station_information(self, station_information=None):
+        """
+        Modify within the RINEX header the station information
+        (``STATION INFORMATION`` line)
+
+        Parameters
+        ----------
+        station_information : str, optional
+            Station information of the RINEX file. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        if self.status:
+            return
+
+        if not station_information:
+            return
+
+        # Identify line that contains STATION INFORMATION
+        station_info_header_idx = search_idx_value(self.rinex_data, "STATION INFORMATION")
+        # Edit line
+        new_line = "{}".format(station_information.ljust(60)) + "STATION INFORMATION"
+        if station_info_header_idx:
+            # Set line
+            self.rinex_data[station_info_header_idx] = new_line
+        else:
+            pgm_header_idx = search_idx_value(self.rinex_data, "END OF HEADER")
+            self.rinex_data.insert(pgm_header_idx, new_line)
+
+        self.version = "4.02"  # Update version to 4.02 if STATION INFORMATION is set
+
+        return
+
+
+    ##############################################################################
+    ### mod methods. to change the RINEX filename
+
     def mod_filename_data_freq(self, data_freq_inp=None):
         """
         Modify within the RINEX filename the data freqency
@@ -2139,7 +2246,7 @@ class RinexFile:
             head_sort = sorted(head, key=lambda x: header_order.index(x[60:].strip()))
             self.rinex_data = head_sort + body
         except:
-            logger.warning("unable to sort header's lines, action skipped (RNXv3 only)")
+            logger.warning("unable to sort header's lines, action skipped (RNXv3/4 only)")
         return
 
 
