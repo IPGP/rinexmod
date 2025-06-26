@@ -17,7 +17,7 @@ import hatanaka
 # import matplotlib.pyplot as plt
 import numpy as np
 
-import rinexmod.common.logger as rimo_log
+import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
 
 # *****************************************************************************

@@ -17,7 +17,7 @@ import rinexmod.classes.rinexfile as rimo_rnx
 import rinexmod.api.core_fcts as rimo_cor
 
 
-import rinexmod.common.logger as rimo_log
+import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
 
 

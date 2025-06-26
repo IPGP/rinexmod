@@ -17,7 +17,7 @@ import pandas as pd
 
 import rinexmod.api as rimo_api
 
-import rinexmod.common.logger as rimo_log
+import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
 
 

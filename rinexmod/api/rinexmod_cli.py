@@ -15,10 +15,10 @@ from datetime import datetime
 import hatanaka
 import pandas as pd
 
-import rinexmod.common.logger as rimo_log
 import rinexmod.api.core_fcts as rimo_cor
 import rinexmod.api.rinexmod as rimorimo
 
+import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
 
 # *****************************************************************************
