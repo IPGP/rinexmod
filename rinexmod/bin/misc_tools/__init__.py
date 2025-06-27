@@ -5,7 +5,3 @@ Created on 21/09/2024 20:30:36
 
 @author: psakic
 """
-
-from .crzmeta import *
-from .get_m3g_sitelogs import *
-from .rinexrename import *
