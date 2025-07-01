@@ -82,15 +82,6 @@ class MetaData:
     def site_id9(self):
         return rimo_api.make_site_id9(self.site_id)
 
-    # @property
-    # def site9char(self):
-    #     if len(self.misc_meta["ID"]) == 9:
-    #         return self.misc_meta["ID"].upper()
-    #     elif len(self.filename.split("_")[0]) == 9:
-    #         return self.filename.split("_")[0].upper()
-    #     else:
-    #         return self.site4char.upper() + "00XXX"
-
     def __repr__(self):
         return "{} metadata, from {}".format(self.site_id, self.filename)
 
@@ -128,7 +119,11 @@ class MetaData:
         site can be 4 char or 9 char
         """
 
+        ##### This site_id management is very strange, must be clarified
         self.site_id = site[:4].lower()
+        if len(site) == 9:
+            self.misc_meta["ID"] = site.upper()
+            self.misc_meta["Country"] = site[-3:].upper()
 
         if isinstance(station_info, pd.DataFrame):
             self.raw_content = station_info
@@ -154,10 +149,6 @@ class MetaData:
         else:
             self.instrus, self.misc_meta = None, None
 
-        if len(site) == 9:
-            self.misc_meta["ID"] = site.upper()
-            self.misc_meta["Country"] = site[-3:].upper()
-
         return None
 
     def set_meta(
@@ -178,6 +169,8 @@ class MetaData:
          'Country': 'Mayotte'
         }
         """
+
+        self.site_id = site_id
 
         self.misc_meta["ID"] = site_id
         self.misc_meta["IERS DOMES Number"] = domes
@@ -1009,7 +1002,7 @@ class MetaData:
         if not instru:
             return None, ignored
 
-        fourchar_id = self.misc_meta["ID"][:4]
+        fourchar_id = self.site_id4
         domes_id = self.misc_meta["IERS DOMES Number"]
 
         observable_type = instru["receiver"]["Satellite System"]
