@@ -997,44 +997,98 @@ class MetaData:
         fitted for RinexFile modification methods.
         """
 
+        ### searching for the instrumentation corresponding to the period
         instru, ignored = self.find_instru(starttime, endtime, ignore)
 
+        ### if no instrumentation found, we return None
         if not instru:
             return None, ignored
 
+        def key_chk_instru(dic_inp, keys_inp):
+            """
+            Check if all keys in keys_inp are present in dic_inp.
+            If not, raise an error.
+            """
+            for k in keys_inp:
+                if k not in dic_inp.keys():
+                    errmsg = f"Missing {k} for instru. period {starttime}-{endtime} ({dic_inp})"
+                    logger.error(errmsg)
+                    raise KeyError(errmsg)
+
+        ### get useful values in misc_meta
         fourchar_id = self.site_id4
-        domes_id = self.misc_meta["IERS DOMES Number"]
 
-        observable_type = instru["receiver"]["Satellite System"]
+        misc_meta = self.misc_meta
 
-        agencies = {
-            "operator": self.misc_meta["operator"],
-            "agency": self.misc_meta["agency"],
-        }
+        key_chk_instru(
+            misc_meta,
+            [
+                "IERS DOMES Number",
+                "X coordinate (m)",
+                "Y coordinate (m)",
+                "Z coordinate (m)",
+                "operator",
+                "agency",
+            ],
+        )
 
-        receiver = {
-            "serial": instru["receiver"]["Serial Number"],
-            "type": instru["receiver"]["Receiver Type"],
-            "firmware": instru["receiver"]["Firmware Version"],
-        }
-
-        antenna = {
-            "serial": instru["antenna"]["Serial Number"],
-            "type": instru["antenna"]["Antenna Type"],
-        }
+        domes_id = misc_meta["IERS DOMES Number"]
 
         antenna_pos = {
-            "X": self.misc_meta["X coordinate (m)"],
-            "Y": self.misc_meta["Y coordinate (m)"],
-            "Z": self.misc_meta["Z coordinate (m)"],
+            "X": misc_meta["X coordinate (m)"],
+            "Y": misc_meta["Y coordinate (m)"],
+            "Z": misc_meta["Z coordinate (m)"],
+        }
+
+        agencies = {
+            "operator": misc_meta["operator"],
+            "agency": misc_meta["agency"],
+        }
+
+        ### get useful values in instru_rec
+        instru_rec = instru["receiver"]
+
+        key_chk_instru(
+            instru_rec,
+            ["Serial Number",
+             "Receiver Type",
+             "Firmware Version",
+             "Satellite System"],
+        )
+
+        receiver = {
+            "serial": instru_rec["Serial Number"],
+            "type": instru_rec["Receiver Type"],
+            "firmware": instru_rec["Firmware Version"],
+        }
+        observable_type = instru_rec["Satellite System"]
+
+        ### get useful values in instru_ant
+        instru_ant = instru["antenna"]
+
+        key_chk_instru(
+            instru_ant,
+            [
+                "Serial Number",
+                "Antenna Type",
+                "Marker->ARP Up Ecc. (m)",
+                "Marker->ARP East Ecc(m)",
+                "Marker->ARP North Ecc(m)",
+            ],
+        )
+
+        antenna = {
+            "serial": instru_ant["Serial Number"],
+            "type": instru_ant["Antenna Type"],
         }
 
         antenna_delta = {
-            "H": instru["antenna"]["Marker->ARP Up Ecc. (m)"],
-            "E": instru["antenna"]["Marker->ARP East Ecc(m)"],
-            "N": instru["antenna"]["Marker->ARP North Ecc(m)"],
+            "H": instru_ant["Marker->ARP Up Ecc. (m)"],
+            "E": instru_ant["Marker->ARP East Ecc(m)"],
+            "N": instru_ant["Marker->ARP North Ecc(m)"],
         }
 
+        ### final output tuple
         metadata_vars = (
             fourchar_id,
             domes_id,
