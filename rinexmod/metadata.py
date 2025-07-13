@@ -43,7 +43,7 @@ class MetaData:
     corresponding to the period, if found. Option to ignore firmware version inconsistency.
     * teqcargs also takes a start and an end date and returns a string of args to
     pass to teqc so that it will modify a rinex file's header.
-    * rinex_metadata_lines will return a dict with all header metadatas that is
+    * find_instru4rnx will return a dict with all header metadatas that is
     compatible with RinexFile header modifications methods.
     * write_json will write the dict of the parsed values from the sitelog to a
     json file.
@@ -991,7 +991,7 @@ class MetaData:
 
         return teqcargs, ignored
 
-    def rinex_metadata_lines(self, starttime, endtime, ignore=False):
+    def find_instru4rnx(self, starttime, endtime, ignore=False):
         """
         Returns period's metadata in vars and dicts
         fitted for RinexFile modification methods.
@@ -1002,6 +1002,7 @@ class MetaData:
 
         ### if no instrumentation found, we return None
         if not instru:
+            logger.warning(f"No instru. found for period {starttime}-{endtime}.")
             return None, ignored
 
         def key_chk_instru(dic_inp, keys_inp):
