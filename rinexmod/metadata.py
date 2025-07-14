@@ -85,6 +85,39 @@ class MetaData:
     def __repr__(self):
         return "{} metadata, from {}".format(self.site_id, self.filename)
 
+    def set_meta(
+        self, site_id, domes, operator, agency, x, y, z, date_prepared, country
+    ):
+        """
+        Exemple of misc meta dict:
+
+        {
+         'ID': 'PMZI00MYT',
+         'IERS DOMES Number': '90109M001',
+         'operator': 'OVPF-IPGP',
+         'agency': 'IPGP',
+         'X coordinate (m)': 4377557.000,
+         'Y coordinate (m)': 4419689.300,
+         'Z coordinate (m)': -1403760.500,
+         'date prepared': datetime.datetime(2024, 9, 13, 0, 0),
+         'Country': 'Mayotte'
+        }
+        """
+
+        self.site_id = site_id
+
+        self.misc_meta["ID"] = site_id
+        self.misc_meta["IERS DOMES Number"] = domes
+        self.misc_meta["operator"] = operator
+        self.misc_meta["agency"] = agency
+        self.misc_meta["X coordinate (m)"] = float(x)
+        self.misc_meta["Y coordinate (m)"] = float(y)
+        self.misc_meta["Z coordinate (m)"] = float(z)
+        self.misc_meta["date prepared"] = date_prepared
+        self.misc_meta["Country"] = country
+
+        return self.misc_meta
+
     def set_from_sitelog(self, sitelogfile):
         """
         initialization method for metadata import from sitelog
@@ -150,39 +183,6 @@ class MetaData:
             self.instrus, self.misc_meta = None, None
 
         return None
-
-    def set_meta(
-        self, site_id, domes, operator, agency, x, y, z, date_prepared, country
-    ):
-        """
-        Exemple of misc meta dict:
-
-        {
-         'ID': 'PMZI00MYT',
-         'IERS DOMES Number': '90109M001',
-         'operator': 'OVPF-IPGP',
-         'agency': 'IPGP',
-         'X coordinate (m)': 4377557.000,
-         'Y coordinate (m)': 4419689.300,
-         'Z coordinate (m)': -1403760.500,
-         'date prepared': datetime.datetime(2024, 9, 13, 0, 0),
-         'Country': 'Mayotte'
-        }
-        """
-
-        self.site_id = site_id
-
-        self.misc_meta["ID"] = site_id
-        self.misc_meta["IERS DOMES Number"] = domes
-        self.misc_meta["operator"] = operator
-        self.misc_meta["agency"] = agency
-        self.misc_meta["X coordinate (m)"] = float(x)
-        self.misc_meta["Y coordinate (m)"] = float(y)
-        self.misc_meta["Z coordinate (m)"] = float(z)
-        self.misc_meta["date prepared"] = date_prepared
-        self.misc_meta["Country"] = country
-
-        return self.misc_meta
 
     def set_from_rinex(self, rnxfile):
         """
@@ -346,19 +346,19 @@ class MetaData:
         self.sort_instrus()
         instru_use = copy.deepcopy(self.instrus[0])
 
-        for instru in self.instrus[1:]:
+        for ins in self.instrus[1:]:
             # If the dates are overlapping, we merge the two periods
-            if equal_instru(instru_use, instru):
+            if equal_instru(instru_use, ins):
                 # Merge the two periods
-                instru_use["dates"][0] = min(instru_use["dates"][0], instru["dates"][0])
-                instru_use["dates"][1] = max(instru_use["dates"][1], instru["dates"][1])
+                instru_use["dates"][0] = min(instru_use["dates"][0], ins["dates"][0])
+                instru_use["dates"][1] = max(instru_use["dates"][1], ins["dates"][1])
 
                 # Merge the receiver and antenna dictionaries
                 for key in ["receiver", "antenna"]:
-                    instru_use[key].update(instru[key])
+                    instru_use[key].update(ins[key])
             else:
                 instrus_out.append(instru_use)
-                instru_use = copy.deepcopy(instru)
+                instru_use = copy.deepcopy(ins)
 
         instrus_out.append(instru_use)
 
@@ -394,16 +394,16 @@ class MetaData:
         ValueError
             If `date_source` is not "receiver" or "antenna".
         """
-        for instru in self.instrus:
+        for ins in self.instrus:
             if date_source == "receiver":
-                instru["dates"] = [
-                    instru["receiver"]["Date Installed"],
-                    instru["receiver"]["Date Removed"],
+                ins["dates"] = [
+                    ins["receiver"]["Date Installed"],
+                    ins["receiver"]["Date Removed"],
                 ]
             elif date_source == "antenna":
-                instru["dates"] = [
-                    instru["antenna"]["Date Installed"],
-                    instru["antenna"]["Date Removed"],
+                ins["dates"] = [
+                    ins["antenna"]["Date Installed"],
+                    ins["antenna"]["Date Removed"],
                 ]
             else:
                 raise ValueError("date_source must be 'receiver' or 'antenna'")
@@ -424,11 +424,11 @@ class MetaData:
             A list of instrumentation periods with updated installation dates.
         """
 
-        for instru in self.instrus:
-            instru["receiver"]["Date Installed"] = instru["dates"][0]
-            instru["receiver"]["Date Removed"] = instru["dates"][1]
-            instru["antenna"]["Date Installed"] = instru["dates"][0]
-            instru["antenna"]["Date Removed"] = instru["dates"][1]
+        for ins in self.instrus:
+            ins["receiver"]["Date Installed"] = ins["dates"][0]
+            ins["receiver"]["Date Removed"] = ins["dates"][1]
+            ins["antenna"]["Date Installed"] = ins["dates"][0]
+            ins["antenna"]["Date Removed"] = ins["dates"][1]
 
         return self.instrus
 
@@ -680,9 +680,9 @@ class MetaData:
             # Construct interval from listdates
             dates = [listdates[i], listdates[i + 1]]
             # Setting date interval in Dict of installation
-            instru = dict(dates=dates, receiver=None, antenna=None, metpack=None)
+            ins = dict(dates=dates, receiver=None, antenna=None, metpack=None)
             # Append it to list of installations
-            instrus.append(instru)
+            instrus.append(ins)
 
         ##### Getting Receiver info for each interval #####
 
@@ -693,13 +693,13 @@ class MetaData:
         ]
 
         # Constructing the installations list - Receivers
-        for instru in instrus:
+        for ins in instrus:
             # We get the receiver corresponding to the date interval
             for receiver in receivers:
-                if (receiver["Date Installed"] <= instru["dates"][0]) and (
-                    receiver["Date Removed"] >= instru["dates"][1]
+                if (receiver["Date Installed"] <= ins["dates"][0]) and (
+                    receiver["Date Removed"] >= ins["dates"][1]
                 ):
-                    instru["receiver"] = receiver
+                    ins["receiver"] = receiver
                     # Once found, we quit the loop
                     break
 
@@ -712,13 +712,13 @@ class MetaData:
         ]
 
         # Constructing the installations list - Antennas
-        for instru in instrus:
+        for ins in instrus:
             # We get the antenna corresponding to the date interval
             for antenna in antennas:
-                if (antenna["Date Installed"] <= instru["dates"][0]) and (
-                    antenna["Date Removed"] >= instru["dates"][1]
+                if (antenna["Date Installed"] <= ins["dates"][0]) and (
+                    antenna["Date Removed"] >= ins["dates"][1]
                 ):
-                    instru["antenna"] = antenna
+                    ins["antenna"] = antenna
                     # Once found, we quit the loop
                     break
 
@@ -1012,7 +1012,7 @@ class MetaData:
             """
             for k in keys_inp:
                 if k not in dic_inp.keys():
-                    errmsg = f"Missing {k} for instru. period {starttime}-{endtime} ({dic_inp})"
+                    errmsg = f"Missing '{k}' for instru. period {starttime}-{endtime} ({dic_inp})"
                     logger.error(errmsg)
                     raise KeyError(errmsg)
 
@@ -1051,10 +1051,7 @@ class MetaData:
 
         key_chk_instru(
             instru_rec,
-            ["Serial Number",
-             "Receiver Type",
-             "Firmware Version",
-             "Satellite System"],
+            ["Serial Number", "Receiver Type", "Firmware Version", "Satellite System"],
         )
 
         receiver = {
@@ -1110,20 +1107,20 @@ class MetaData:
         rec_stk = []
         ant_stk = []
 
-        for instru in self.instrus:
-            rec_stk.append(instru["receiver"])
-            ant_stk.append(instru["antenna"])
+        for ins in self.instrus:
+            rec_stk.append(ins["receiver"])
+            ant_stk.append(ins["antenna"])
 
         def _stack_lines(instru_stk, instru_name="Receiver"):
             lines_instru_stk = []
             lastl1, lastl2, lastl3 = None, None, None
 
-            for iins, ins in enumerate(instru_stk):
-                l1 = " ".join(
-                    (instru_name, ins[instru_name + " Type"], ins["Serial Number"])
-                )
-                l2 = "Installed on " + str(ins["Date Installed"])
-                l3 = "Removed on " + str(ins["Date Removed"])
+            inam = instru_name
+
+            for _, inss in enumerate(instru_stk):
+                l1 = " ".join((inam, inss[inam + " Type"], str(inss["Serial Number"])))
+                l2 = "Installed on " + str(inss["Date Installed"])
+                l3 = "Removed on " + str(inss["Date Removed"])
 
                 if l1 == lastl1 and l2 == lastl2 and l3 == lastl3:
                     continue
