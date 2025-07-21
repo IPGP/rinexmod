@@ -93,6 +93,33 @@ def get_git_hash():
     return githash
 
 
+def make_site_id9(site_id_inp):
+    """
+    Converts a site ID to a 9-character format.
+
+    This function takes a site ID and converts it to a 9-character format.
+    If the input site ID is already 9 characters long, it returns the uppercase version of the input.
+    If the input site ID is 4 characters long, it appends '00XXX' to the uppercase version of the input.
+    Otherwise, it takes the first 4 characters of the input, converts them to uppercase, and appends '00XXX'.
+
+    Parameters
+    ----------
+    site_id_inp : str
+        The input site ID to be converted.
+
+    Returns
+    -------
+    str
+        The site ID in 9-character format.
+    """
+    if len(site_id_inp) == 9:
+        return site_id_inp.upper()
+    elif len(site_id_inp) == 4:
+        return site_id_inp.upper() + "00XXX"
+    else:
+        return site_id_inp[:4].upper() + "00XXX"
+
+
 # *****************************************************************************
 # Metadata import
 
@@ -100,7 +127,7 @@ def get_git_hash():
 def metadata_input_manage(sitelog_inp, force=False):
     """
     Manage the multiple types possible for metadata inputs
-    Return a list of MetaData to be handeled by metadata_find_site
+    Return a list of MetaData to be handeled by find_mda4site
 
     Possible inputs are:
      * list of string (sitelog file paths),
@@ -136,17 +163,20 @@ def metadata_input_manage(sitelog_inp, force=False):
             sitelog_inp, force=force, return_list_even_if_single_input=True
         )
     else:
-        logger.error(
-            "Wrong Input, must be a list of string (path), a single string (path),"
-            "a MetaData object, or a list of MetaData objects. Input given: %s, %s",
-            sitelog_inp,
-            type(sitelog_inp),
-        )
-        raise RinexModInputArgsError
+        errmsg = "Wrong Input,"
+        errmsg = errmsg + "must be a list of string (path), a single string (path),"
+        errmsg = errmsg + "a MetaData object, or a list of MetaData objects."
+        errmsg = errmsg + f"Input given: {sitelog_inp}/{type(sitelog_inp)}"
+        logger.error(errmsg)
+        raise RinexModInputArgsError(errmsg)
 
 
 def gamit2mda_objs(
-    station_info_inp, lfile_inp=None, force_fake_coords=False, ninecharfile_inp=None,rev=False
+    station_info_inp,
+    lfile_inp=None,
+    force_fake_coords=False,
+    ninecharfile_inp=None,
+    rev=False,
 ):
     """
     Read a GAMIT files and convert their content to MetaData objects
@@ -183,8 +213,9 @@ def gamit2mda_objs(
         df_stinfo_raw = station_info_inp
         stinfo_name = "station.info"
     else:
-        df_stinfo_raw = rimo_gmm.read_gamit_station_info(station_info_inp,
-                                                         sort = False) # sort = not rev if rev, no sort
+        df_stinfo_raw = rimo_gmm.read_gamit_station_info(
+            station_info_inp, sort=False
+        )  # sort = not rev if rev, no sort
         stinfo_name = os.path.basename(station_info_inp)
 
     if not lfile_inp:
@@ -199,7 +230,7 @@ def gamit2mda_objs(
     else:
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
 
-    if ninecharfile_inp:
+    if not ninecharfile_inp is None:
         nine_char_dict = rimo.rinexmod_api.read_ninecharfile(ninecharfile_inp)
     else:
         nine_char_dict = dict()
@@ -238,6 +269,7 @@ def gamit2mda_objs(
     for site, site_info in df_stinfo_grp:
         logger.debug("extract %s from %s", site, stinfo_name)
 
+        #### search in ninecharfile IMPROVE ME !!!
         if site in nine_char_dict.keys():
             site_use = nine_char_dict[site]
             logger.debug("4 > 9 char. conversion: %s > %s", site, site_use)
@@ -254,7 +286,7 @@ def gamit2mda_objs(
         )
         if rev:
             mdaobj.instrus.reverse()
-            logger.info('Reversing order of instrumental changes')
+            logger.info("Reversing order of instrumental changes")
         mdaobjs_lis.append(mdaobj)
 
     logger.info("%i sites have been extracted from %s", len(mdaobjs_lis), stinfo_name)
@@ -308,10 +340,9 @@ def sitlgs2mda_objs(
         slgs_all = [f for f in slgs_all if sitelog_pattern.match(os.path.basename(f))]
     ### case of no file nor folder
     else:
-        logger.error(
-            "unable to handle file/directory. Does it exists?: %s", sitelog_filepath
-        )
-        raise RinexModInputArgsError
+        errmsg = "unable to handle file/directory. Does it exists?:" + sitelog_filepath
+        logger.error(errmsg)
+        raise RinexModInputArgsError(errmsg)
 
     #### Read the sitelogs
     logger.info("**** %i sitelogs detected (in %s)", len(slgs_all), sitelog_filepath)
@@ -340,6 +371,95 @@ def sitlgs2mda_objs(
     return mdaobjs_lis
 
 
+def rinexs2mda_objs(rinex_paths, ninecharfile_inp=None):
+    """
+    Read a set of RINEX files and convert them to MetaData objects
+
+    Parameters
+    ----------
+    rinex_paths : list of str
+        path of a single rinex file or a set of rinex files (stored in a list).
+
+    ninecharfile_inp : str, optional
+        Path of a file that contains 9-char. site names.
+        The default is None.
+
+    Returns
+    -------
+    mdaobjs_lis : list
+        list of MetaData objects.
+
+    """
+
+    if not isinstance(rinex_paths, list):
+        rinex_paths = [rinex_paths]
+
+    if not ninecharfile_inp is None:
+        nine_char_dict = read_ninecharfile(ninecharfile_inp)
+    else:
+        nine_char_dict = dict()
+
+    mda_stk = []
+    for rnx in sorted(rinex_paths):
+        mda = rimo_mda.MetaData()
+        mda.set_from_rinex(rnx)
+
+        #### search in ninecharfile IMPROVE ME !!!
+        if mda.site_id9[-3:] == "XXX" and mda.site_id4 in nine_char_dict.keys():
+            site_id4_orig = mda.site_id4
+            mda.site_id = nine_char_dict[mda.site_id4]
+            logger.info(f"4 > 9 char. conversion: {site_id4_orig:} > {mda.site_id9:}")
+
+        mda_stk.append(mda)
+
+    mdaobjs_lis, mdaobj_dic = group_mda(mda_stk)
+
+    return mdaobjs_lis
+
+
+def group_mda(mdaobj_list_inp):
+    """
+    Group a list of MetaData objects into a dictionary and return a list and dictionary of merged objects.
+
+    This function processes a list of MetaData objects, grouping them by their `site_id9` attribute.
+    If multiple MetaData objects share the same `site_id9`, their instrumentation data is merged.
+
+    Parameters
+    ----------
+    mdaobj_list_inp : list
+        A list of MetaData objects to be grouped.
+
+    Returns
+    -------
+    mdaobj_lis : list
+      A list of grouped MetaData objects.
+    mdaobj_dic : dict
+        A dictionary where keys are `site_id9` and values are the grouped MetaData objects.
+    """
+    mdaobj_dic = (
+        dict()
+    )  # Initialize an empty dictionary to store grouped MetaData objects.
+    for mda in mdaobj_list_inp:
+        # Check if the current MetaData object's site_id9 is already in the dictionary.
+        if not mda.site_id9 in mdaobj_dic.keys():
+            # If not, add it to the dictionary.
+            mdaobj_dic[mda.site_id9] = mda
+        else:
+            # If it exists, merge the instrumentation data from the current object.
+            for inst in mda.instrus:
+                mdaobj_dic[mda.site_id9].add_instru(
+                    inst["receiver"],
+                    inst["antenna"],
+                    inst["dates"][0],
+                    inst["dates"][1],
+                )
+
+    # Convert the dictionary values to a list of grouped MetaData objects.
+    mdaobj_lis = [v for k, v in mdaobj_dic.items()]
+
+    return mdaobj_lis, mdaobj_dic
+
+
 def load_sitelogs(sitelogs_inp, force=False):
     """
     Process a list of sitelogs and return a list of MetaData objects and a list of bad sitelogs.
@@ -365,13 +485,10 @@ def load_sitelogs(sitelogs_inp, force=False):
             mdaobj_load = rimo_mda.MetaData(sitelog_filepath)
         except Exception as e:
             # If sitelog is not parsable
-            logger.error(
-                "The sitelog is not parsable: %s (%s)",
-                os.path.basename(sitelog_filepath),
-                str(e),
-            )
+            errmsg = f"The sitelog is not parsable: {os.path.basename(sitelog_filepath)} ({str(e)})"
+            logger.error(errmsg)
             if not force_load:
-                raise MetaDataError
+                raise MetaDataError(errmsg)
             else:
                 mdaobj_load = None
 
@@ -396,7 +513,7 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
     based on date in its filename
     (mainly for time consumption reduction)
 
-    see also _mda_find_latest_prep (more reliable)
+    see also _mda_find_latest_prep (more reliable but slower)
     """
     # We list the available sites to group sitelogs
     bnm = os.path.basename
@@ -421,9 +538,8 @@ def _slg_find_latest_name(all_sitelogs_filepaths):
                 d = datetime.strptime(date_from_fn(sl), "%Y%m%d")
                 sitelogs_dates.append(d)
             except ValueError as e:
-                logger.error(
-                    "bad date %s in sitelog's filename: %s", date_from_fn(sl), sl
-                )
+                errmsg = f"bad date {date_from_fn(sl):} in sitelog's filename: {sl:}"
+                logger.error(errmsg)
                 raise e
         # We get the max date and put it back to string format.
         maxdate = max(sitelogs_dates).strftime("%Y%m%d")
@@ -449,11 +565,11 @@ def _mda_find_latest_prep(mdaobjs_inp):
     # set the output latest sitelog list
     mdaobjs_latest = []
 
-    sites_all = list(sorted(list(set([md.site4char for md in mdaobjs_lis]))))
+    sites_all = list(sorted(list(set([md.site_id4 for md in mdaobjs_lis]))))
 
     for site in sites_all:
         # Grouping by site
-        mdaobjs_site = [m for m in mdaobjs_lis if m.site4char == site]
+        mdaobjs_site = [m for m in mdaobjs_lis if m.site_id4 == site]
         # Getting dates from basename and parsing 'em
         mdaobjs_site_dates = [m.misc_meta["date prepared"] for m in mdaobjs_site]
         # We get the max date and put it back to string format.
@@ -468,7 +584,7 @@ def _mda_find_latest_prep(mdaobjs_inp):
     return mdaobjs_latest
 
 
-def metadata_find_site(rnxobj_or_site4char, mdaobjs_lis, force):
+def find_mda4site(rnxobj_or_site4char, mdaobjs_lis, force):
     """
     Finding the right MetaData object
 
@@ -477,10 +593,10 @@ def metadata_find_site(rnxobj_or_site4char, mdaobjs_lis, force):
     """
     if type(rnxobj_or_site4char) is str:
         rnx_4char = rnxobj_or_site4char[:4]
-        err_label = rnxobj_or_site4char
+        ermg_fna = rnxobj_or_site4char
     else:
         rnx_4char = rnxobj_or_site4char.get_site(True, True)
-        err_label = rnxobj_or_site4char.filename
+        ermg_fna = rnxobj_or_site4char.filename
 
     logger.debug("Searching corresponding metadata for site: " + rnx_4char)
 
@@ -488,34 +604,23 @@ def metadata_find_site(rnxobj_or_site4char, mdaobjs_lis, force):
         logger.warning("The metadata list provided is empty!")
 
     mdaobj = None
-    if rnx_4char not in [sl.site4char for sl in mdaobjs_lis]:
+    if rnx_4char not in [mda.site_id4 for mda in mdaobjs_lis]:
         if len(mdaobjs_lis) == 1:
             if not force:
-                logger.error(
-                    "{:110s} - {}".format(
-                        "33 - RINEX name's site does not correspond to provided metadata -"
-                        "use -f option to force",
-                        err_label,
-                    )
-                )
-                raise RinexModInputArgsError
+                ermg_lbl = "RINEX name's site does not correspond to provided metadata, use -f option to force"
+                errmsg = f"{ermg_lbl:110s} - {ermg_fna:}"
+                logger.error(errmsg)
+                raise RinexModInputArgsError(errmsg)
             else:
-                logger.warning(
-                    "{:110s} - {}".format(
-                        "34 - RINEX name's site does not correspond to provided metadata,"
-                        "forced processing anyway",
-                        err_label,
-                    )
-                )
+                ermg_lbl = "RINEX name's site does not correspond to provided metadata, forced processing anyway"
+                logger.warning(f"{ermg_lbl:110s} - {ermg_fna:}")
         else:
-            logger.error(
-                "{:110s} - {}".format(
-                    "33 - No metadata found for this RINEX", err_label
-                )
-            )
-            raise RinexModInputArgsError
+            ermg_lbl = "No metadata found for this RINEX"
+            errmsg = f"{ermg_lbl:110s} - {ermg_fna:}"
+            logger.error(errmsg)
+            raise RinexModInputArgsError(errmsg)
     else:
-        mdaobjs_site = [md for md in mdaobjs_lis if md.site4char == rnx_4char]
+        mdaobjs_site = [md for md in mdaobjs_lis if md.site_id4 == rnx_4char]
         if len(mdaobjs_site) == 1:
             mdaobj = mdaobjs_site[0]
         else:
@@ -526,7 +631,7 @@ def metadata_find_site(rnxobj_or_site4char, mdaobjs_lis, force):
     return mdaobj
 
 
-def mdaobj_apply_on_rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
+def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -535,7 +640,7 @@ def mdaobj_apply_on_rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
     ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    mda_4char = mdaobj.misc_meta["ID"].lower()[:4]
+    mda_4char = mdaobj.site_id4  # misc_meta["ID"].lower()[:4]
 
     if rnx_4char != mda_4char:
         logger.warning(
@@ -547,20 +652,18 @@ def mdaobj_apply_on_rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    mda_vars, ignored = mdaobj.rinex_metadata_lines(
+    mda_vars, ignored = mdaobj.find_instru4rnx(
         rnxobj.start_date, rnxobj.end_date, ignore
     )
 
     if not mda_vars:
-        logger.error(
-            "35 - No instrumentation corresponding to the RINEX epoch - %s",
-            rnxobj.filename,
-        )
-        raise MetaDataError
+        errmsg = f"No instrumentation corresponding to the RINEX epoch - {rnxobj.filename}"
+        logger.error(errmsg)
+        raise MetaDataError(errmsg)
 
     if ignored:
         logger.warning(
-            "36 - Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s",
+            "Instrumentation comes from merged metadata periods with different firmwares, processing anyway - %s",
             rnxobj.filename,
         )
 
@@ -632,15 +735,14 @@ def _modif_kw_check(modif_kw):
 
     for kw in modif_kw:
         if not any([re.match(akw, kw) for akw in acceptable_keywords]):
-            logger.error(
-                "'{}' is not an acceptable keyword for header modification.".format(kw)
-            )
-            return RinexModInputArgsError
+            errmsg = f"'{kw}' is not an acceptable keyword for header modification."
+            logger.error(errmsg)
+            return RinexModInputArgsError(errmsg)
 
     return None
 
 
-def modif_kw_apply_on_rnxobj(rnxobj, modif_kw):
+def apply_modifkw2rnxobj(rnxobj, modif_kw):
     """
     apply a modification keywords on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -752,12 +854,9 @@ def _return_lists_maker(rnxobj_or_dict, return_lists=dict()):
         file_period = list(rtrnlst[major_rinex_version][sample_rate_string].keys())[0]
         path_output = rtrnlst[major_rinex_version][sample_rate_string][file_period][0]
     else:
-        logger.error(
-            "Wrong Input, must be RinexFile object or dict. Input given: %s, %s",
-            rnxobj_or_dict,
-            type(rnxobj_or_dict),
-        )
-        raise ReturnListError
+        errmsg = f"Wrong Input, must be RinexFile object or dict. Input given: {rnxobj_or_dict}/{type(rnxobj_or_dict)}"
+        logger.error(errmsg)
+        raise ReturnListError(errmsg)
 
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:
@@ -811,10 +910,10 @@ def _return_lists_write(return_lists, logfolder, now_dt=None):
 def read_ninecharfile(ninecharfile_inp):
     nine_char_dict = dict()
 
-    if isinstance(ninecharfile_inp,str):
+    if isinstance(ninecharfile_inp, str):
         with open(ninecharfile_inp, "r") as F:
             nine_char_list = F.readlines()
-    elif isinstance(ninecharfile_inp,list):
+    elif isinstance(ninecharfile_inp, list):
         nine_char_list = ninecharfile_inp
     else:
         nine_char_list = list(ninecharfile_inp)
@@ -1023,13 +1122,12 @@ def rinexmod(
 
     if relative:
         if not relative in rinexfile:
-            logger.error(
-                "{:110s} - {}".format(
-                    "31 - The relative subfolder can not be reconstructed for RINEX file",
-                    rinexfile,
-                )
+            errmsg = "{:110s} - {}".format(
+                "The relative subfolder can not be reconstructed for RINEX file",
+                rinexfile,
             )
-            raise RinexModInputArgsError
+            logger.error(errmsg)
+            raise RinexModInputArgsError(errmsg)
 
         # We construct the output path with relative path between file name and parameter
         relpath = os.path.relpath(os.path.dirname(rinexfile), relative)
@@ -1048,33 +1146,34 @@ def rinexmod(
         os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder
         and not outputfolder == "IDEM"
     ):
-        logger.error(
-            "{:110s} - {}".format(
-                "30 - Input and output folders are the same!", rinexfile
-            )
+        errmsg = "{:110s} - {}".format(
+            "Input and output folders are the same!", rinexfile
         )
-        raise RinexFileError
+        logger.error(errmsg)
+        raise RinexFileError(errmsg)
 
     if outputfolder == "IDEM":
         logger.warning("The output folder is forced as the same one as the input one")
 
     if not os.path.exists(outputfolder):
-        logger.warning("the output folder does not exists")
+        logger.debug("The output folder does not exists, creating it")
         os.makedirs(outputfolder)
 
     if longname and shortname:
-        logger.error("longname and shortname are mutually exclusive")
-        raise RinexModInputArgsError
+        errmsg = "longname and shortname are mutually exclusive"
+        logger.error(errmsg)
+        raise RinexModInputArgsError(errmsg)
 
     ###########################################################################
     ########## Open the rinex file as an object
     rnxobj = rimo_rnx.RinexFile(rinexfile, force_rnx_load=force_rnx_load)
 
     if rnxobj.status:
-        logger.error("{:110s} - {}".format(rnxobj.status, rinexfile))
-        raise RinexFileError
+        errmsg = "{:110s} - {}".format(rnxobj.status, rinexfile)
+        logger.error(errmsg)
+        raise RinexFileError(errmsg)
 
-    logger.debug("RINEX Origin Metadata :\n" + rnxobj.get_metadata()[0])
+    logger.debug("RINEX Origin Metadata :\n" + rnxobj.get_header()[0])
 
     # apply tolerant / strict (per default) file period
     if filename_style == "basic":
@@ -1082,17 +1181,17 @@ def rinexmod(
 
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
-        logger.error("The site name provided is not 4 or 9-char valid: " + marker)
-        raise RinexModInputArgsError
+        errmsg = "The site name provided is not 4 or 9-char valid: " + marker
+        logger.error(errmsg)
+        raise RinexModInputArgsError(errmsg)
 
     # Get the 4 char > 9 char dictionnary from the input list
     nine_char_dict = dict()  # in any case, nine_char_dict is initialized
     if ninecharfile:
         if not os.path.isfile(ninecharfile):
-            logger.error(
-                "The specified 9-chars. list file does not exists: " + ninecharfile
-            )
-            raise RinexModInputArgsError
+            errmsg = "The specified 9-chars. list file does not exists: " + ninecharfile
+            logger.error(errmsg)
+            raise RinexModInputArgsError(errmsg)
 
         nine_char_dict = read_ninecharfile(ninecharfile)
 
@@ -1124,8 +1223,9 @@ def rinexmod(
     # in the 'sitelog' variable as a list of MetaData objects
 
     if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
-        logger.critical("station_info and lfile_apriori must be provided together")
-        raise RinexModInputArgsError
+        errmsg = "station_info and lfile_apriori must be provided together"
+        logger.critical(errmsg)
+        raise RinexModInputArgsError(errmsg)
 
     ### load the metadata from sitelog or GAMIT files if any
     if (station_info and lfile_apriori) and not sitelog:
@@ -1135,7 +1235,7 @@ def rinexmod(
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori):
-        mdaobj = metadata_find_site(rnxobj, mdaobjs_lis, force=force_sitelog)
+        mdaobj = find_mda4site(rnxobj, mdaobjs_lis, force=force_sitelog)
         logger.debug("metadata used: %s", mdaobj)
     else:
         mdaobj = None
@@ -1162,7 +1262,7 @@ def rinexmod(
     elif ninecharfile:
         if not rnx_4char in nine_char_dict:
             logger.warning(
-                "32 - Site's missing in the input 9-char. file: %s", rinexfile
+                "Site's missing in the input 9-char. file: %s", rinexfile
             )
             monum = "00"
             cntry = "XXX"
@@ -1184,13 +1284,13 @@ def rinexmod(
             cntry = country
         else:
             logger.warning(
-                "39 - Input country code is not 3 chars. RINEX will not be properly renamed: %s",
+                "Input country code is not 3 chars. RINEX will not be properly renamed: %s",
                 rinexfile,
             )
 
     if cntry == "XXX":
         logger.warning(
-            "32 - Site's country not retrieved. RINEX will not be properly renamed: %s",
+            "Site's country not retrieved. RINEX will not be properly renamed: %s",
             rinexfile,
         )
 
@@ -1204,10 +1304,10 @@ def rinexmod(
     ###########################################################################
     ########## Apply the MetaData object on the RinexFile object
     if mdaobj:
-        rnxobj = mdaobj_apply_on_rnxobj(
+        rnxobj = apply_mda2rnxobj(
             rnxobj, mdaobj, ignore=ignore, keep_rnx_rec=keep_rnx_rec
         )
-        logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_metadata()[0])
+        logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_header()[0])
         modif_source_metadata = mdaobj.filename
     else:
         modif_source_metadata = ""
@@ -1219,16 +1319,16 @@ def rinexmod(
         _modif_kw_check(modif_kw)
 
         modif_source_kw = "keywords:" + " ".join(modif_kw.keys())
-        rnxobj = modif_kw_apply_on_rnxobj(rnxobj, modif_kw)
+        rnxobj = apply_modifkw2rnxobj(rnxobj, modif_kw)
         logger.debug(
-            "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_metadata()[0]
+            "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_header()[0]
         )
     else:
         modif_source_kw = ""
 
     ###########################################################################
     ########## Apply the site as the MARKER NAME within the RINEX
-    # Must be after mdaobj_apply_on_rnxobj and modif_kw_apply_on_rnxobj
+    # Must be after apply_mda2rnxobj and apply_modifkw2rnxobj
     # apply only is modif_kw does not overrides it (it is the overwhelming case)
     if "marker_name" not in modif_kw.keys():
         rnxobj.mod_marker(rnxobj.get_site(False, False, True))
@@ -1311,11 +1411,8 @@ def rinexmod(
         )
         logger.info("# Out. file: " + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
-        logger.error(
-            "{:110s} - {}".format(
-                "06 - File could not be written - hatanaka exception", rinexfile
-            )
-        )
+        errmsg ="{:110s} - {}".format("File could not be written - hatanaka exception", rinexfile)
+        logger.error(errmsg)
         outputfile = None
         raise e
 
@@ -1478,22 +1575,23 @@ def rinexmod_cli(
         try:
             rinexinput_use = [line.strip() for line in open(rinexinput[0]).readlines()]
         except:
-            logger.error("Something went wrong while reading: %s", str(rinexinput[0]))
+            errmsg = f"Something went wrong while reading: {str(rinexinput[0])}"
+            logger.error(errmsg)
             logger.error("Did you forget -a/--alone option?")
-            return RinexModInputArgsError
+            return RinexModInputArgsError(errmsg)
     else:
         rinexinput_use = rinexinput
 
     if not rinexinput_use:
-        logger.error("The input file is empty: %s", str(rinexinput))
-        return RinexModInputArgsError
+        errmsg = f"The input file is empty: {str(rinexinput)}"
+        logger.error(errmsg)
+        return RinexModInputArgsError(errmsg)
 
     if rinexinput_use[0].endswith("RINEX VERSION / TYPE"):
-        logger.error(
-            "The input file is not a file list but a RINEX: %s", str(rinexinput[0])
-        )
+        errmsg = f"The input file is not a file list but a RINEX: {str(rinexinput[0])}"
+        logger.error(errmsg)
         logger.error("Did you forget -a/--alone option?")
-        return RinexModInputArgsError
+        return RinexModInputArgsError(errmsg)
 
     # sort the RINEX list
     if sort:
@@ -1560,6 +1658,7 @@ def rinexmod_cli(
                     type(e).__name__,
                     rnxmod_kwargs_inp["rinexfile"],
                 )
+                return None
 
     # number of parallel processing
     if multi_process > 1:

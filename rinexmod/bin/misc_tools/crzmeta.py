@@ -45,7 +45,7 @@ def crzmeta(rinexfile, plot):
         print('{:45s} - {}'.format('05 -Less than two epochs in the file', rinexfile))
         return
 
-    print(rinexfileobj.get_metadata()[0])
+    print(rinexfileobj.get_header()[0])
 
     # We reload _get_sample_rate method with plot set to true
     if plot:

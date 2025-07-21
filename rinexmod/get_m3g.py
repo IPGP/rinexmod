@@ -15,7 +15,7 @@ import sys
 
 def get_m3g_sitelogs(
     sitelogsfolder,
-    delete,
+    delete=False,
     observatory=None,
     root_folder=False,
     svn_mode=False,
@@ -33,9 +33,10 @@ def get_m3g_sitelogs(
         The folder where the downloaded sitelogs will be stored.
     delete : bool
         If True, deletes old sitelogs in the storage folder to keep only the latest version.
-    observatory : str, optional
-        IPGP's observatory ID to filter sitelogs to download.
-        Valid values are: OVSM, OVSG, OVPF, REVOSIMA. Default is None.
+    observatory : str or list of str, optional
+        IPGP's observatories IDs to filter sitelogs to download.
+        Valid values are: OVSM, OVSG, OVPF, REVOSIMA, OGA.
+        Default is None.
     root_folder : bool, optional
         If True, stores sitelogs in the root of OUTPUTFOLDER. Default is False.
     svn_mode : bool, optional
@@ -65,6 +66,9 @@ def get_m3g_sitelogs(
             "when using SVN mode (-s), a single observatory must be given with -o option"
         )
 
+    if not isinstance(observatory,list):
+        observatory = [observatory]
+
     # M3G country webservice. We use countries to filter IPGP's obs stations.
     country_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?country="
     country_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?network="
@@ -82,8 +86,8 @@ def get_m3g_sitelogs(
     #     "DJI": "OGA",
     # }  ### TAAF aka Terres Australes
 
-    #(No more country but network 2025-03)
-    observatories = {
+    # (No more country but network 2025-03)
+    net_obs_dic_all = {
         "MQ": "OVSM",
         "GL": "OVSG",
         "PF": "OVPF",
@@ -91,21 +95,31 @@ def get_m3g_sitelogs(
         "DJ": "OGA",
     }
 
+    # If observatory names are given, only download its/their sitelogs
+    if observatory and not (len(observatory) == 1 and not observatory[0]):
+        net_obs_dic = {
+            net_key: obs_val
+            for net_key, obs_val in net_obs_dic_all.items()
+            if obs_val in observatory
+        }
+    else:
+        net_obs_dic = net_obs_dic_all
 
-    # If an observatory ID is given, only download its sitelogs
+    ## complex for and ifs structure (2025-04)
+    # if not (len(observatory) == 1 and not observatory[0]):
+    #     for obs in observatory:
+    #         if obs in net_obs_dic.values():
+    #             net_obs_dic_cln = dict()
+    #             for net_key, obs_val in net_obs_dic.items():
+    #                 if obs_val in obs:
+    #                     net_obs_dic_cln[net_key] = obs_val
+    #
+    #             net_obs_dic = net_obs_dic_cln
 
-    if observatory in observatories.values():
-        observatories_clean = dict()
-        for obs_key, obs_val in observatories.items():
-            if obs_val in observatory:
-                observatories_clean[obs_key] = obs_val
-
-        observatories = observatories_clean
-
-        ## simple way to filter observatories if observatories is bijective
-        ## not the case anymore because ATF, BLM ... (2022-10)
-        # obs_key = list(observatories.keys())[list(observatories.values()).index(observatory)]
-        # observatories = {obs_key: observatories[obs_key]}
+    ## simple way to filter observatories if observatories is bijective
+    ## not the case anymore because ATF, BLM ... (2022-10)
+    # net_key = list(observatories.keys())[list(observatories.values()).index(obs)]
+    # observatories = {net_key: observatories[net_key]}
 
     # Check that output folder exists
     if not os.path.exists(sitelogsfolder):
@@ -117,7 +131,7 @@ def get_m3g_sitelogs(
         return
 
     # Check that obs' subfolder exists. If not, creates.
-    for obs in [*observatories.values()]:
+    for obs in [*net_obs_dic.values()]:
         if not root_folder:
             obs_path = os.path.join(sitelogsfolder, obs)
         else:
@@ -128,9 +142,9 @@ def get_m3g_sitelogs(
 
     sitelog_local_paths = []
 
-    for ctry in observatories.keys():
+    for net in net_obs_dic.keys():
 
-        obs_url = country_url + ctry
+        obs_url = country_url + net
 
         obs_infos = requests.get(obs_url)
         obs_infos = obs_infos.content.decode("utf-8")
@@ -139,19 +153,13 @@ def get_m3g_sitelogs(
         obs_infos = list(reversed(obs_infos))  # list is reversed per def.
 
         if not root_folder:
-            obs_path = os.path.join(sitelogsfolder, observatories[ctry])
+            obs_path = os.path.join(sitelogsfolder, net_obs_dic[net])
         else:
             obs_path = sitelogsfolder
 
-        # If delete, empty folders
-        if delete and not move_folder:
-            old_sitelogs_del = glob.glob(obs_path + "/*" + ctry + "*.log")
-            for f in old_sitelogs_del:
-                os.remove(f)
-
         print(
             "###### Downloading {} ({}) sitelogs from M3G to {}".format(
-                observatories[ctry], ctry, obs_path
+                net_obs_dic[net], net, obs_path
             )
         )
 
@@ -199,16 +207,19 @@ def get_m3g_sitelogs(
             else:
                 print("### " + sitelog_name + " skip (already exists) ###")
 
-            ### get existing old sitelogs for moving
-            if move_folder:
-                old_sitelogs_mv = glob.glob(
-                    obs_path + "/*" + sitelog_name[:9] + "*.log"
-                )
-                if sitelog_local_path in old_sitelogs_mv:
-                    old_sitelogs_mv.remove(sitelog_local_path)
+            ### get existing old sitelogs for moving or delete
+            if move_folder or delete:
+                old_sitelogs_mv = glob.glob(f"{obs_path}/*{sitelog_name[:9]}*.log")
                 for f in old_sitelogs_mv:
-                    print("### " + os.path.basename(f) + " moved to archive folder ###")
-                    shutil.move(f, move_folder)
+                    if f == sitelog_local_path:
+                        # f is the new sitelog
+                        continue
+                    elif move_folder:
+                        print(f"### {os.path.basename(f)} moved to archive folder ###")
+                        shutil.move(f, move_folder)
+                    elif delete:
+                        print(f"### {os.path.basename(f)} deleted ###")
+                        os.remove(f)
 
     if svn_mode:
         print("### SVN add/commit of the downloaded sitelogs")
@@ -239,4 +250,3 @@ def get_m3g_sitelogs(
     # for station in station_list:
     #
     #     output = os.path.join(sitelogsfolder, observatories[station[-3:]], station.lower() + '.log')
-

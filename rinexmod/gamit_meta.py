@@ -307,6 +307,9 @@ def gamit_df2instru_miscmeta(site, stinfo_df_inp, apr_df_inp, force_fake_coords=
         station.info-like DataFrame.
     apr_df_inp : DataFrame
         lfile-like DataFrame.
+    force_fake_coords : bool, optional
+        if True, the coordinates will be set to (0,0,0) and
+        the domes number to 00000X000. The default is False.
 
     Returns
     -------
