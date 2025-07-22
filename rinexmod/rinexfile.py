@@ -637,7 +637,7 @@ class RinexFile:
         """
 
         if self.status:
-            return ""
+            return None, None
 
         version_header_idx = search_idx_value(self.rinex_data, "RINEX VERSION / TYPE")
         version_header = self.rinex_data[version_header_idx]
