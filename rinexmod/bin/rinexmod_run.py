@@ -93,8 +93,8 @@ def main():
     optional.add_argument(
         "-m",
         "--marker",
-        help="A four or nine-character site code that will be used to rename input files."
-        "(apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it)",
+        help="A four or nine-character site code that will be used to rename input files. "
+        "(apply also to the header's MARKER NAME, but a custom -k marker_name='XXXX' overrides it).",
         type=str,
         default="",
     )
@@ -111,14 +111,14 @@ def main():
     optional.add_argument(
         "-n",
         "--ninecharfile",
-        help="Path of a file that contains 9-char. site names (e.g. from the M3G database)",
+        help="Path of a file that contains 9-char. site names (e.g. from the M3G database).",
         type=str,
         default="",
     )
     optional.add_argument(
         "-sti",
         "--station_info",
-        help="Path of a GAMIT station.info file to obtain GNSS site metadata information (needs also -lfi option)",
+        help="Path of a GAMIT station.info file to obtain GNSS site metadata information (needs also -lfi option).",
         type=str,
         default="",
     )
@@ -126,7 +126,7 @@ def main():
         "-lfi",
         "--lfile_apriori",
         help="Path of a GAMIT apriori apr/L-File to obtain GNSS site position "
-        "and DOMES information (needs also -sti option)",
+        "and DOMES information (needs also -sti option).",
         type=str,
         default="",
     )
@@ -135,14 +135,14 @@ def main():
         "--relative",
         help="Reconstruct files relative subfolders."
         "You have to indicate the common parent folder, "
-        "that will be replaced with the output folder",
+        "that will be replaced with the output folder.",
         type=str,
         default=0,
     )
     optional.add_argument(
         "-nh",
         "--no_hatanaka",
-        help="Skip high-level RINEX-specific Hatanaka compression (performed per default). See also -c 'none'",
+        help="Skip high-level RINEX-specific Hatanaka compression (performed per default). See also -c 'none'.",
         action="store_true",
         default=False,
     )
@@ -158,7 +158,7 @@ def main():
     optional.add_argument(
         "-l",
         "--longname",
-        help="Force RINEX file renaming with long name convention (force gzip compression)."
+        help="Force RINEX file renaming with long name convention (force gzip compression). "
         "Mutually exclusive with shortname.",
         action="store_true",
         default=False,
@@ -166,7 +166,7 @@ def main():
     optional.add_argument(
         "-sh",
         "--shortname",
-        help="Force RINEX file renaming with short name convention."
+        help="Force RINEX file renaming with short name convention. "
         "Mutually exclusive with longname.",
         action="store_true",
         default=False,
@@ -174,8 +174,8 @@ def main():
     optional.add_argument(
         "-fs",
         "--force_sitelog",
-        help="If a single sitelog is provided, force sitelog-based header values when RINEX's header and sitelog site"
-        " name do not correspond. \n If several sitelogs are provided, skip badly-formated sitelogs.",
+        help="If a single sitelog is provided, force sitelog-based header values when RINEX's header and sitelog site "
+        "name do not correspond. \n If several sitelogs are provided, skip badly-formated sitelogs.",
         action="store_true",
         default=False,
     )
@@ -183,39 +183,39 @@ def main():
         "-fc",
         "--force_fake_coords",
         help="When using GAMIT station.info metadata without apriori coordinates in the L-File, "
-        "gives fake coordinates at (0°,0°) to the site",
+        "gives fake coordinates at (0°,0°) to the site.",
         action="store_true",
         default=False,
     )
     optional.add_argument(
         "-fr",
         "--force_rnx_load",
-        help="Force the loading of the input RINEX. Useful if its name is not standard",
+        help="Force the loading of the input RINEX. Useful if its name is not standard.",
         action="store_true",
         default=False,
     )
     optional.add_argument(
         "-ig",
         "--ignore",
-        help="Ignore firmware changes between instrumentation periods when getting header values info from sitelogs",
+        help="Ignore firmware changes between instrumentation periods when getting header values info from sitelogs.",
         action="store_true",
     )
     optional.add_argument(
         "-a",
         "--alone",
-        help="INPUT is a single/alone RINEX file (and not a list file of RINEX paths)",
+        help="INPUT is a single/alone RINEX file (and not a list file of RINEX paths).",
         action="store_true",
     )
     optional.add_argument(
         "-ol",
         "--output_logs",
-        help="Folder where to write output logs. If not provided, logs will be written to OUTPUTFOLDER",
+        help="Folder where to write output logs. If not provided, logs will be written to OUTPUTFOLDER.",
         type=str,
     )
     optional.add_argument(
         "-w",
         "--write",
-        help="Write (RINEX version, sample rate, file period) dependant output lists",
+        help="Write (RINEX version, sample rate, file period) dependant output lists.",
         action="store_true",
     )
     optional.add_argument(
@@ -262,14 +262,14 @@ def main():
     optional.add_argument(
         "-mp",
         "--multi_process",
-        help="Number of parallel multiprocesing (default: %(default)s, no parallelization)",
+        help="Number of parallel multiprocesing. (default: %(default)s, no parallelization)",
         type=int,
         default=1,
     )
     optional.add_argument(
         "-d",
         "--debug",
-        help="Debug mode, stops if something goes wrong (default: %(default)s)",
+        help="Debug mode, stops if something goes wrong. (default: %(default)s)",
         action="store_true",
         default=False,
     )
