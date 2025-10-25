@@ -18,7 +18,15 @@ import hatanaka
 import numpy as np
 
 import rinexmod.logger as rimo_log
+
 logger = rimo_log.logger_define("INFO")
+
+
+# logger = logging.getLogger("rinexmod_api")
+
+# from rinexmod import rinexmod_api as rimo_api
+# logger = rimo_api.logger_define('INFO')
+
 
 # *****************************************************************************
 # class definition
@@ -146,9 +154,9 @@ class RinexFile:
         if self.status:
             return None
 
-        metadata = {}
+        head_raw = {}
 
-        metadata_lines = [
+        head_labels = [
             "RINEX VERSION / TYPE",
             "MARKER NAME",
             "MARKER NUMBER",
@@ -160,62 +168,59 @@ class RinexFile:
             "TIME OF FIRST OBS",
         ]
 
-        missing_metadata_lines = []
-        for kw in metadata_lines:
+        missing_head_labels = []
+        for kw in head_labels:
             for line in self.rinex_data:
-                if kw in line:
-                    metadata[kw] = line
+                if kw in line and not kw in head_raw.keys():
+                    head_raw[kw] = line
                     break
                 if "END OF HEADER" in line:
-                    missing_metadata_lines.append(kw)
+                    missing_head_labels.append(kw)
                     break
 
-        for miss_kw in missing_metadata_lines:
-            logger.warning("%s field is missing in %s header", miss_kw, self.filename)
-            metadata[miss_kw] = ""
+        for miss_lab in missing_head_labels:
+            logger.warning("%s label is missing in %s header", miss_lab, self.filename)
+            head_raw[miss_lab] = ""
 
         ### previous case with just 'MARKER NUMBER', too weak hardcoded solution
         # if not 'MARKER NUMBER' in metadata:
         #    metadata['MARKER NUMBER'] = ''
 
-        header_parsed = {
+        head_out = {
             "File": self.path,
             "File size (bytes)": self.size,
-            "Rinex version": metadata["RINEX VERSION / TYPE"][0:9].strip(),
+            "Rinex version": head_raw["RINEX VERSION / TYPE"][0:9].strip(),
             "Sample rate": self.sample_rate_string,
             "File period": self.file_period,
-            "Observable type": metadata["RINEX VERSION / TYPE"][40:60].strip(),
-            "Marker name": metadata["MARKER NAME"][0:60].strip(),
-            "Marker number": metadata["MARKER NUMBER"][0:60].strip(),
-            "Operator": metadata["OBSERVER / AGENCY"][0:20].strip(),
-            "Agency": metadata["OBSERVER / AGENCY"][20:40].strip(),
-            "Receiver serial": metadata["REC # / TYPE / VERS"][0:20].strip(),
-            "Receiver type": metadata["REC # / TYPE / VERS"][20:40].strip(),
-            "Receiver firmware version": metadata["REC # / TYPE / VERS"][40:60].strip(),
-            "Antenna serial": metadata["ANT # / TYPE"][0:20].strip(),
-            "Antenna type": metadata["ANT # / TYPE"][20:40].strip(),
+            "Observable type": head_raw["RINEX VERSION / TYPE"][40:60].strip(),
+            "Marker name": head_raw["MARKER NAME"][0:60].strip(),
+            "Marker number": head_raw["MARKER NUMBER"][0:60].strip(),
+            "Operator": head_raw["OBSERVER / AGENCY"][0:20].strip(),
+            "Agency": head_raw["OBSERVER / AGENCY"][20:40].strip(),
+            "Receiver serial": head_raw["REC # / TYPE / VERS"][0:20].strip(),
+            "Receiver type": head_raw["REC # / TYPE / VERS"][20:40].strip(),
+            "Receiver firmware version": head_raw["REC # / TYPE / VERS"][40:60].strip(),
+            "Antenna serial": head_raw["ANT # / TYPE"][0:20].strip(),
+            "Antenna type": head_raw["ANT # / TYPE"][20:40].strip(),
             "Antenna position (XYZ)": "{:14} {:14} {:14}".format(
-                metadata["APPROX POSITION XYZ"][0:14].strip(),
-                metadata["APPROX POSITION XYZ"][14:28].strip(),
-                metadata["APPROX POSITION XYZ"][28:42].strip(),
+                head_raw["APPROX POSITION XYZ"][0:14].strip(),
+                head_raw["APPROX POSITION XYZ"][14:28].strip(),
+                head_raw["APPROX POSITION XYZ"][28:42].strip(),
             ),
             "Antenna delta (H/E/N)": "{:14} {:14} {:14}".format(
-                metadata["ANTENNA: DELTA H/E/N"][0:14].strip(),
-                metadata["ANTENNA: DELTA H/E/N"][14:28].strip(),
-                metadata["ANTENNA: DELTA H/E/N"][28:42].strip(),
+                head_raw["ANTENNA: DELTA H/E/N"][0:14].strip(),
+                head_raw["ANTENNA: DELTA H/E/N"][14:28].strip(),
+                head_raw["ANTENNA: DELTA H/E/N"][28:42].strip(),
             ),
             "Start date and time": self.start_date,
             "Final date and time": self.end_date,
         }
 
-        header_string = "\n".join(
-            ["{:29} : {}".format(key, value) for key, value in header_parsed.items()]
-        )
+        head_str = "\n".join(["{:29} : {}".format(k, v) for k, v in head_out.items()])
 
-        header_string = "\n" + header_string + "\n"
+        head_str = "\n" + head_str + "\n"
 
-        return header_string, header_parsed
-
+        return head_str, head_out
 
     def get_site(self, lower_case=True, only_4char=False, no_country_then_4char=False):
         """
@@ -522,13 +527,14 @@ class RinexFile:
             logger.error(status)
 
         return rinex_data, status
- #   _____      _     __  __      _   _               _
- #  / ____|    | |   |  \/  |    | | | |             | |
- # | |  __  ___| |_  | \  / | ___| |_| |__   ___   __| |___
- # | | |_ |/ _ \ __| | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
- # | |__| |  __/ |_  | |  | |  __/ |_| | | | (_) | (_| \__ \
- #  \_____|\___|\__| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
- #
+
+    #   _____      _     __  __      _   _               _
+    #  / ____|    | |   |  \/  |    | | | |             | |
+    # | |  __  ___| |_  | \  / | ___| |_| |__   ___   __| |___
+    # | | |_ |/ _ \ __| | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+    # | |__| |  __/ |_  | |  | |  __/ |_| | | | (_) | (_| \__ \
+    #  \_____|\___|\__| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
+    #
 
     def get_naming_convention(self):
         """
@@ -570,7 +576,7 @@ class RinexFile:
 
     def get_compression(self):
         """
-        get the compression type in a 2-tuple: (compress, hatanaka)
+        get the compression type in a 2-tuple: (compress,hatanaka)
         compress is None or a string: gz, Z, 7z
         hatanaka is a bool
         """
@@ -631,7 +637,7 @@ class RinexFile:
         """
 
         if self.status:
-            return ""
+            return None, None
 
         version_header_idx = search_idx_value(self.rinex_data, "RINEX VERSION / TYPE")
         version_header = self.rinex_data[version_header_idx]
@@ -1190,13 +1196,12 @@ class RinexFile:
 
         return dict_sys_obs, dict_sys_nobs
 
-     #  __  __           _   __  __      _   _               _
-     # |  \/  |         | | |  \/  |    | | | |             | |
-     # | \  / | ___   __| | | \  / | ___| |_| |__   ___   __| |___
-     # | |\/| |/ _ \ / _` | | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
-     # | |  | | (_) | (_| | | |  | |  __/ |_| | | | (_) | (_| \__ \
-     # |_|  |_|\___/ \__,_| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
-
+    #  __  __           _   __  __      _   _               _
+    # |  \/  |         | | |  \/  |    | | | |             | |
+    # | \  / | ___   __| | | \  / | ___| |_| |__   ___   __| |___
+    # | |\/| |/ _ \ / _` | | |\/| |/ _ \ __| '_ \ / _ \ / _` / __|
+    # | |  | | (_) | (_| | | |  | |  __/ |_| | | | (_) | (_| \__ \
+    # |_|  |_|\___/ \__,_| |_|  |_|\___|\__|_| |_|\___/ \__,_|___/
 
     ### ***************************************************************************
     ### mod methods. change the content of the RINEX header
@@ -1236,7 +1241,9 @@ class RinexFile:
                 # Set line
                 self.rinex_data[marker_name_header_idx] = new_line
             else:
-                pgm_header_idx = search_idx_value(self.rinex_data, "PGM / RUN BY / DATE")
+                pgm_header_idx = search_idx_value(
+                    self.rinex_data, "PGM / RUN BY / DATE"
+                )
                 self.rinex_data.insert(pgm_header_idx, new_line)
 
         if number_inp:
@@ -1312,14 +1319,20 @@ class RinexFile:
             else:
                 return False
 
-        rec_chk_sn = _mod_rec_check("serial number", rinex_val=serial_head, metadata_val=serial)
-        rec_chk_mt = _mod_rec_check("model type", rinex_val=type_head, metadata_val=type)
+        rec_chk_sn = _mod_rec_check(
+            "serial number", rinex_val=serial_head, metadata_val=serial
+        )
+        rec_chk_mt = _mod_rec_check(
+            "model type", rinex_val=type_head, metadata_val=type
+        )
         rec_chk_fw = _mod_rec_check(
             "firmware version", rinex_val=firmware_head, metadata_val=firmware
         )
 
         if keep_rnx_rec and (rec_chk_sn or rec_chk_fw or rec_chk_fw):
-            logger.info("RINEX & metadata are different, but receiver values are kept (keep_rnx_rec = True)")
+            logger.info(
+                "RINEX & metadata are different, but receiver values are kept (keep_rnx_rec = True)"
+            )
             return
 
         # Edit line
@@ -1617,10 +1630,10 @@ class RinexFile:
         if not sat_system:
             return
 
-        if "+" in sat_system: ### case MIXED system
+        if "+" in sat_system:  ### case MIXED system
             sat_system = "MIXED"
             sat_system_code = "M"
-        else: ### case single system
+        else:  ### case single system
             gnss_codes = {
                 "GPS": "G",
                 "GLO": "R",
@@ -2246,7 +2259,7 @@ class RinexFile:
             head_sort = sorted(head, key=lambda x: header_order.index(x[60:].strip()))
             self.rinex_data = head_sort + body
         except:
-            logger.warning("unable to sort header's lines, action skipped (RNXv3/4 only)")
+            logger.warning("unable to sort header's lines, action skipped (RNXv3 only)")
         return
 
 
