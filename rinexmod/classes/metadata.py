@@ -192,7 +192,7 @@ class MetaData:
         self.path = rnxfile
         self.filename = os.path.basename(self.path)
 
-        rnxobj = rinexmod.rinexfile.RinexFile(self.path)
+        rnxobj = rimo_cls.RinexFile(self.path)
         head_str, head_dic = rnxobj.get_header()
 
         self.site_id = head_dic["Marker name"]

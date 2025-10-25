@@ -23,7 +23,6 @@ logger = rimo_log.logger_define("INFO")
 
 
 # logger = logging.getLogger("rinexmod_api")
-
 # from rinexmod import rinexmod_api as rimo_api
 # logger = rimo_api.logger_define('INFO')
 
@@ -327,7 +326,7 @@ class RinexFile:
         elif (
             compression != ""
         ):  # when a manual compression arg is given, and is not void
-            compression = "." + compression
+            compression = "." + str(compression)
         else:
             compression = ""
 
@@ -424,7 +423,7 @@ class RinexFile:
         alphabet = list(map(chr, range(97, 123)))
         if file_period_name[-1] == "H":
             timeformat = (
-                "%j" + alphabet[self.start_date.hour] + ".%y" + file_type + compression
+                "%j" + alphabet[self.start_date.hour] + ".%y" + str(file_type) + compression
             )
             start_date_use = self.start_date
 
@@ -434,7 +433,7 @@ class RinexFile:
                 + alphabet[self.start_date.hour]
                 + "%M"
                 + ".%y"
-                + file_type
+                + str(file_type)
                 + compression
             )
             start_date_use = round_time(
@@ -442,7 +441,7 @@ class RinexFile:
             )
 
         else:  # regular case file_period_name == "01D"
-            timeformat = "%j0.%y" + file_type + compression
+            timeformat = "%j0.%y" + str(file_type) + compression
             start_date_use = self.start_date
 
         shortname = self.get_site(True, True) + start_date_use.strftime(timeformat)
