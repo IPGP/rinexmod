@@ -3,6 +3,7 @@ venv/
 .idea/
 rinexmod.egg-info/
 py3rimo4a/
+pyenvrimo4b/
 venvrimo3/
 dist/
 build/
