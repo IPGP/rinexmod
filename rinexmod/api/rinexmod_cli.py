@@ -162,9 +162,10 @@ def rinexmod_cli(
         try:
             rinexinput_use = [line.strip() for line in open(rinexinput[0]).readlines()]
         except:
-            logger.error("Something went wrong while reading: %s", str(rinexinput[0]))
+            errmsg = f"Something went wrong while reading: {str(rinexinput[0])}"
+            logger.error(errmsg)
             logger.error("Did you forget -a/--alone option?")
-            return rimo_cor.RinexModInputArgsError
+            return RinexModInputArgsError(errmsg)
     else:
         rinexinput_use = rinexinput
 
