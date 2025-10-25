@@ -219,13 +219,12 @@ def rinexmod(
 
     if relative:
         if not relative in rinexfile:
-            logger.error(
-                "{:110s} - {}".format(
-                    "31 - The relative subfolder can not be reconstructed for RINEX file",
-                    rinexfile,
-                )
+            errmsg = "{:110s} - {}".format(
+                "The relative subfolder can not be reconstructed for RINEX file",
+                rinexfile,
             )
-            raise rimo_cor.RinexModInputArgsError
+            logger.error(errmsg)
+            raise rimo_cor.RinexModInputArgsError(errmsg)
 
         # We construct the output path with relative path between file name and parameter
         relpath = os.path.relpath(os.path.dirname(rinexfile), relative)
@@ -244,12 +243,11 @@ def rinexmod(
         os.path.abspath(os.path.dirname(rinexfile)) == myoutputfolder
         and not outputfolder == "IDEM"
     ):
-        logger.error(
-            "{:110s} - {}".format(
-                "30 - Input and output folders are the same!", rinexfile
-            )
+        errmsg = "{:110s} - {}".format(
+            "Input and output folders are the same!", rinexfile
         )
-        raise rimo_cor.RinexFileError
+        logger.error(errmsg)
+        raise rimo_cor.RinexFileError(errmsg)
 
     if outputfolder == "IDEM":
         logger.warning("The output folder is forced as the same one as the input one")
@@ -259,16 +257,18 @@ def rinexmod(
         os.makedirs(outputfolder)
 
     if longname and shortname:
-        logger.error("longname and shortname are mutually exclusive")
-        raise rimo_cor.RinexModInputArgsError
+        errmsg = "longname and shortname are mutually exclusive"
+        logger.error(errmsg)
+        raise rimo_cor.RinexModInputArgsError(errmsg)
 
     ###########################################################################
     ########## Open the rinex file as an object
     rnxobj = rimo_rnx.RinexFile(rinexfile, force_rnx_load=force_rnx_load)
 
     if rnxobj.status:
-        logger.error("{:110s} - {}".format(rnxobj.status, rinexfile))
-        raise rimo_cor.RinexFileError
+        errmsg = "{:110s} - {}".format(rnxobj.status, rinexfile)
+        logger.error(errmsg)
+        raise rimo_cor.RinexFileError(errmsg)
 
     logger.debug("RINEX Origin Metadata :\n" + rnxobj.get_header()[0])
 
@@ -278,17 +278,17 @@ def rinexmod(
 
     # Check that the provided marker is a 4-char site name
     if marker and (len(marker) != 4 and len(marker) != 9):
-        logger.error("The site name provided is not 4 or 9-char valid: " + marker)
-        raise rimo_cor.RinexModInputArgsError
+        errmsg = "The site name provided is not 4 or 9-char valid: " + marker
+        logger.error(errmsg)
+        raise rimo_cor.RinexModInputArgsError(errmsg)
 
     # Get the 4 char > 9 char dictionnary from the input list
     nine_char_dict = dict()  # in any case, nine_char_dict is initialized
     if ninecharfile:
         if not os.path.isfile(ninecharfile):
-            logger.error(
-                "The specified 9-chars. list file does not exists: " + ninecharfile
-            )
-            raise rimo_cor.RinexModInputArgsError
+            errmsg = "The specified 9-chars. list file does not exists: " + ninecharfile
+            logger.error(errmsg)
+            raise rimo_cor.RinexModInputArgsError(errmsg)
 
         nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile)
 
@@ -320,8 +320,9 @@ def rinexmod(
     # in the 'sitelog' variable as a list of MetaData objects
 
     if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
-        logger.critical("station_info and lfile_apriori must be provided together")
-        raise rimo_cor.RinexModInputArgsError
+        errmsg = "station_info and lfile_apriori must be provided together"
+        logger.critical(errmsg)
+        raise rimo_cor.RinexModInputArgsError(errmsg)
 
     ### load the metadata from sitelog or GAMIT files if any
     if (station_info and lfile_apriori) and not sitelog:
@@ -358,7 +359,7 @@ def rinexmod(
     elif ninecharfile:
         if not rnx_4char in nine_char_dict:
             logger.warning(
-                "32 - Site's missing in the input 9-char. file: %s", rinexfile
+                "Site's missing in the input 9-char. file: %s", rinexfile
             )
             monum = "00"
             cntry = "XXX"
@@ -380,13 +381,13 @@ def rinexmod(
             cntry = country
         else:
             logger.warning(
-                "39 - Input country code is not 3 chars. RINEX will not be properly renamed: %s",
+                "Input country code is not 3 chars. RINEX will not be properly renamed: %s",
                 rinexfile,
             )
 
     if cntry == "XXX":
         logger.warning(
-            "32 - Site's country not retrieved. RINEX will not be properly renamed: %s",
+            "Site's country not retrieved. RINEX will not be properly renamed: %s",
             rinexfile,
         )
 
@@ -507,11 +508,8 @@ def rinexmod(
         )
         logger.info("# Out. file: " + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
-        logger.error(
-            "{:110s} - {}".format(
-                "06 - File could not be written - hatanaka exception", rinexfile
-            )
-        )
+        errmsg ="{:110s} - {}".format("File could not be written - hatanaka exception", rinexfile)
+        logger.error(errmsg)
         outputfile = None
         raise e
 

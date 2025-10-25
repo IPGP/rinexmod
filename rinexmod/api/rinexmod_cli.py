@@ -181,7 +181,6 @@ def rinexmod_cli(
         logger.error("Did you forget -a/--alone option?")
         return rimo_cor.RinexModInputArgsError(errmsg)
 
-
     # sort the RINEX list
     if sort:
         rinexinput_use.sort()
