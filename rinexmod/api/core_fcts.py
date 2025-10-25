@@ -880,7 +880,7 @@ def return_lists_maker(rnxobj_or_dict, return_lists=dict()):
     return return_lists
 
 
-def _return_lists_write(return_lists, logfolder, now_dt=None):
+def return_lists_write(return_lists, logfolder, now_dt=None):
     # Writing an output file for each RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD lists
     if not now_dt:
         now_dt = datetime.now()

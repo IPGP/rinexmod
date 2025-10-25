@@ -165,20 +165,21 @@ def rinexmod_cli(
             errmsg = f"Something went wrong while reading: {str(rinexinput[0])}"
             logger.error(errmsg)
             logger.error("Did you forget -a/--alone option?")
-            return RinexModInputArgsError(errmsg)
+            return rimo_cor.RinexModInputArgsError(errmsg)
     else:
         rinexinput_use = rinexinput
 
     if not rinexinput_use:
-        logger.error("The input file is empty: %s", str(rinexinput))
-        return rimo_cor.RinexModInputArgsError
+        errmsg = f"The input file is empty: {str(rinexinput)}"
+        logger.error(errmsg)
+        return rimo_cor.RinexModInputArgsError(errmsg)
 
     if rinexinput_use[0].endswith("RINEX VERSION / TYPE"):
-        logger.error(
-            "The input file is not a file list but a RINEX: %s", str(rinexinput[0])
-        )
+        errmsg = f"The input file is not a file list but a RINEX: {str(rinexinput[0])}"
+        logger.error(errmsg)
         logger.error("Did you forget -a/--alone option?")
-        return rimo_cor.RinexModInputArgsError
+        return rimo_cor.RinexModInputArgsError(errmsg)
+
 
     # sort the RINEX list
     if sort:
@@ -190,7 +191,7 @@ def rinexmod_cli(
         sitelogs_list_use = rimo_cor.metadata_input_manage(sitelog, force_sitelog)
     # from GAMIT files
     elif station_info and lfile_apriori:
-        sitelogs_list_use = rimorimo.gamit2mda_objs(
+        sitelogs_list_use = rimo_cor.gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
     else:
@@ -267,7 +268,7 @@ def rinexmod_cli(
     logger.handlers.clear()
 
     if write:
-        rimo_cor._return_lists_write(return_lists, logfolder, now)
+        rimo_cor.return_lists_write(return_lists, logfolder, now)
 
     return return_lists
 
