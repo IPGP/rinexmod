@@ -996,6 +996,8 @@ class MetaData:
         """
         Returns period's metadata in vars and dicts
         fitted for RinexFile modification methods.
+
+        formerly rinex_metadata_lines
         """
 
         ### searching for the instrumentation corresponding to the period

@@ -654,7 +654,7 @@ def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
 
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
-    mda_vars, ignored = mdaobj.rinex_metadata_lines(
+    mda_vars, ignored = mdaobj.find_instru4rnx(
         rnxobj.start_date, rnxobj.end_date, ignore
     )
 

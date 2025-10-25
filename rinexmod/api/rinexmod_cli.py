@@ -15,8 +15,9 @@ from datetime import datetime
 import hatanaka
 import pandas as pd
 
+import rinexmod.api as rimo_api
 import rinexmod.api.core_fcts as rimo_cor
-import rinexmod.api.rinexmod as rimorimo
+import rinexmod.api.rinexmod_main as rimo_main
 
 import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
@@ -235,7 +236,7 @@ def rinexmod_cli(
 
     def rinexmod_mpwrap(rnxmod_kwargs_inp):
         try:
-            return_lists_out = rimorimo.rinexmod(**rnxmod_kwargs_inp)
+            return_lists_out = rimo_main.rinexmod(**rnxmod_kwargs_inp)
             return return_lists_out
         except Exception as e:
             if debug:  ### set as True for debug mode
