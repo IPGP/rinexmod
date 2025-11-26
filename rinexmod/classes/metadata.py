@@ -86,7 +86,7 @@ class MetaData:
     def __repr__(self):
         return "{} metadata, from {}".format(self.site_id, self.filename)
 
-    def set_meta(
+    def set_misc_meta(
         self, site_id, domes, operator, agency, x, y, z, date_prepared, country
     ):
         """
@@ -243,7 +243,7 @@ class MetaData:
         self.instrus = [inst_dic]
 
         xyz = head_dic["Antenna position (XYZ)"].split()
-        self.set_meta(
+        self.set_misc_meta(
             site_id=head_dic["Marker name"],
             domes=head_dic["Marker number"],
             operator=head_dic["Operator"],
@@ -818,7 +818,7 @@ class MetaData:
         self.misc_meta = dict()
         # We must initialize the misc_meta here
         # not initialized before (we are in the sitelog case)
-        mm_dic = self.set_meta(
+        mm_dic = self.set_misc_meta(
             site_id=site_id,
             domes=domes,
             operator=operator,
