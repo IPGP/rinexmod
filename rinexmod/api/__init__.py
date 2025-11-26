@@ -6,6 +6,6 @@ Created on 26/06/2025 18:25:32
 @author: psakic
 """
 
-from .core_fcts import *
-from .rinexmod_main import *
+from .basis_fcts import *
+from .rinexmod_core import *
 from .rinexmod_cli import *
