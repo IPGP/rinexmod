@@ -7,5 +7,5 @@ Created on 26/06/2025 18:25:32
 """
 
 from .basis_fcts import *
-from .rinexmod_core import *
+from .rinexmod import *
 from .rinexmod_cli import *
