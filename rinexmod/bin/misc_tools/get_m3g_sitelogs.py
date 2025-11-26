@@ -61,6 +61,7 @@ def get_m3g_sitelogs(
     move_folder=None,
     force=False,
     exclude=[],
+    geodesyml=False,
 ):
     """
     Downloads the latest version of sitelogs from the M3G repository and writes them
@@ -90,6 +91,8 @@ def get_m3g_sitelogs(
     exclude : list, optional
         List of site codes (4 or 9 characters) to exclude from download.
         Default is an empty list.
+    geodesyml : bool, optional
+        If True, downloads GeodesyML files instead of sitelogs.
 
     Returns
     -------
@@ -179,7 +182,7 @@ def get_m3g_sitelogs(
         if not os.path.exists(obs_path):
             os.mkdir(obs_path)
 
-    sitelog_local_paths = []
+    file_local_paths = []
 
     for net in net_obs_dic.keys():
 
@@ -215,42 +218,52 @@ def get_m3g_sitelogs(
             sitelog_md5 = line[1]
             sitelog_url = line[5]
             sitelog_name = line[2]
-            sitelog_local_path = os.path.join(obs_path, sitelog_name)
-            sitelog_local_paths.append(sitelog_local_path)
+            geodesyml_url = line[6]
+            geodesyml_name = line[3]
+
+            if geodesyml:
+                file_name = geodesyml_name
+                file_url = geodesyml_url
+            else:
+                file_name = sitelog_name
+                file_url = sitelog_url
+
+            file_local_path = os.path.join(obs_path, file_name)
+            file_local_paths.append(file_local_path)
 
             ### skip excluded stations
             exclude = [e.lower() for e in exclude]
-            if sitelog_name[:4] in exclude or sitelog_name[:9] in exclude:
-                print("### " + sitelog_name + " skip (excluded) ###")
+            if file_name[:4] in exclude or file_name[:9] in exclude:
+                print("### " + file_name + " skip (excluded) ###")
                 continue
 
             ### get the checksum for the existing sitelog, if any
-            if os.path.exists(sitelog_local_path):
-                local_file = open(sitelog_local_path, "rb")
+            if os.path.exists(file_local_path):
+                local_file = open(file_local_path, "rb")
                 local_md5 = hashlib.md5(local_file.read()).hexdigest()
             else:
                 local_md5 = None
 
             if force or (local_md5 != sitelog_md5):
-                print("### " + sitelog_name + " download ###")
+                print("### " + file_name + " download ###")
                 ##Dowload the sitelog
-                r = requests.get(sitelog_url, allow_redirects=True)
+                r = requests.get(file_url, allow_redirects=True)
                 # print(r.status_code)
                 content = r.content  # .rstrip()
-                open(sitelog_local_path, "wb").write(content)
+                open(file_local_path, "wb").write(content)
                 # subprocess.call(['wget',
                 #                  '--no-check-certificate',
-                #                  sitelog_url,'-q',
-                #                  '-O', sitelog_local_path])
+                #                  file_url,'-q',
+                #                  '-O', file_local_path])
 
             else:
-                print("### " + sitelog_name + " skip (already exists) ###")
+                print("### " + file_name + " skip (already exists) ###")
 
             ### get existing old sitelogs for moving or delete
             if move_folder or delete:
-                old_sitelogs_mv = glob.glob(f"{obs_path}/*{sitelog_name[:9]}*.log")
+                old_sitelogs_mv = glob.glob(f"{obs_path}/*{file_name[:9]}*.log")
                 for f in old_sitelogs_mv:
-                    if f == sitelog_local_path:
+                    if f == file_local_path:
                         # f is the new sitelog
                         continue
                     elif move_folder:
@@ -262,7 +275,7 @@ def get_m3g_sitelogs(
 
     if svn_mode:
         print("### SVN add/commit of the downloaded sitelogs")
-        for sitelog_local in sitelog_local_paths:
+        for sitelog_local in file_local_paths:
             subprocess.call(["svn", "add", sitelog_local])
         subprocess.call(
             ["svn", "commit", "-m", "get_m3g_sitelogs auto commit", sitelogsfolder]
@@ -275,7 +288,7 @@ def get_m3g_sitelogs(
     # node_url = "https://gnss-metadata.eu/v1/node/view?id="
     # node_id = '5e4d07d9468524145a7cf0f2' # IPGP
     #
-    # sitelog_url = "https://gnss-metadata.eu/v1/sitelog/exportlog?id="
+    # file_url = "https://gnss-metadata.eu/v1/sitelog/exportlog?id="
     #
     # # Getting station list related to IPGP node
     # node_url = node_url + node_id
@@ -362,9 +375,17 @@ def main():
         default=[],
     )
 
+    parser.add_argument(
+        "-g",
+        "--geodesyml",
+        help="Download GeodesyML files instead of sitelogs",
+        action="store_true",
+        default=False,
+    )
+
     args = parser.parse_args()
 
-    rinexmod.get_m3g.get_m3g_sitelogs(
+    get_m3g_sitelogs(
         sitelogsfolder=args.sitelogsfolder,
         delete=args.delete,
         observatory=args.observatory,
@@ -373,6 +394,7 @@ def main():
         move_folder=args.move,
         force=args.force,
         exclude=args.exclude,
+        geodesyml=args.geodesyml,
     )
 
 
