@@ -50,6 +50,7 @@ def rinexmod(
     force_fake_coords=False,
     remove=False,
     keep_rnx_rec=False,
+    round_instru_dates=False,
 ):
     """
     Parameters
@@ -188,6 +189,10 @@ def rinexmod(
     keep_rnx_rec: bool, optional
         Keep the RINEX receiver header record in the output RINEX.
         Metadata from the external source (e.g. sitelogs) will not be modded.
+        The default is False.
+    round_instru_dates: bool
+        If True, instrumentation dates (for receiver & antenna)
+        in the metadata (sitelogs...) are rounded to day boundaries.
         The default is False.
 
     Raises
@@ -402,7 +407,10 @@ def rinexmod(
     ########## Apply the MetaData object on the RinexFile object
     if mdaobj:
         rnxobj = rimo_cor.apply_mda2rnxobj(
-            rnxobj, mdaobj, ignore=ignore, keep_rnx_rec=keep_rnx_rec
+            rnxobj, mdaobj,
+            ignore=ignore,
+            keep_rnx_rec=keep_rnx_rec,
+            round_instru_dates=round_instru_dates,
         )
         logger.debug("RINEX Sitelog-Modified Metadata :\n" + rnxobj.get_header()[0])
         modif_source_metadata = mdaobj.filename

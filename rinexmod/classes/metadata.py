@@ -852,6 +852,7 @@ class MetaData:
         # Try exact match first
 
         dt1d = timedelta(minutes=1440)
+
         for ins in self.instrus:
 
             if round_instru_dates:
@@ -999,7 +1000,7 @@ class MetaData:
 
         return teqcargs, ignored
 
-    def find_instru4rnx(self, starttime, endtime, ignore=False):
+    def find_instru4rnx(self, starttime, endtime, ignore=False, round_instru_dates=False):
         """
         Returns period's metadata in vars and dicts
         fitted for RinexFile modification methods.
@@ -1008,7 +1009,7 @@ class MetaData:
         """
 
         ### searching for the instrumentation corresponding to the period
-        instru, ignored = self.find_instru(starttime, endtime, ignore)
+        instru, ignored = self.find_instru(starttime, endtime, ignore, round_instru_dates)
 
         ### if no instrumentation found, we return None
         if not instru:

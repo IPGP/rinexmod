@@ -56,6 +56,7 @@ def rinexmod_cli(
     force_fake_coords=False,
     remove=False,
     keep_rnx_rec=False,
+    round_instru_dates=False,
 ):
     """
     Main function for reading a Rinex list file. It processes the list, and apply
@@ -227,6 +228,7 @@ def rinexmod_cli(
             "force_fake_coords": force_fake_coords,
             "remove": remove,
             "keep_rnx_rec": keep_rnx_rec,
+            "round_instru_dates": round_instru_dates,
         }
 
         rnxmod_kwargs_lis.append(rnxmod_kwargs)

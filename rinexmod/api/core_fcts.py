@@ -633,7 +633,7 @@ def find_mda4site(rnxobj_or_site4char, mdaobjs_lis, force):
     return mdaobj
 
 
-def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
+def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False, round_instru_dates=False):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -655,7 +655,7 @@ def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False):
     # Get rinex header values from sitelog infos and start and end time of the file
     # ignore option is to ignore firmware changes between instrumentation periods.
     mda_vars, ignored = mdaobj.find_instru4rnx(
-        rnxobj.start_date, rnxobj.end_date, ignore
+        rnxobj.start_date, rnxobj.end_date, ignore, round_instru_dates
     )
 
     if not mda_vars:
