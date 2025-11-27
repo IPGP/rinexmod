@@ -841,53 +841,65 @@ class MetaData:
     #                                                  __/ |
     #                                                 |___/
 
+
+
     def find_instru(self, starttime, endtime, ignore=False):
         """
-        Get the instrumentation corresponding to starttime and endtime.
-        If ignore=True, firmware version changes between periods are ignored.
+        We get the instrumentation corresponding to the starttime and endtime.
+        If ignore option set to True, we will force ignoring the firmware version
+        modification between two periods and consider only the other parameters.
         """
 
-        # Try exact match first
+        # We get the installation corresponding to the starttime and endtime
+        found_install = None
+        ignored = False
+
+        # REGULAR CASE
         for install in self.instrus:
             if install["dates"][0] <= starttime and install["dates"][1] >= endtime:
-                return install, False
-
-        # If not found and ignore=True, check consecutive periods ignoring firmware
-        if not ignore:
-            return None, False
+                found_install = install
+                break
 
         # BACKUP CASE
-        # If we can't find a corresponding installation period and we use the force
+        # If we can't find a corresponding installation period and we use the ignore
         # option, we will force ignoring the firmware version modification and
         # consider only the other parameters
-        def compare_instru_ignore_firmware(instru1, instru2):
-            """Helper to compare two instru periods ignoring dates and firmware."""
-            exclude_keys = [
-                "Date Removed",
-                "Date Installed",
-                "Additional Information",
-                "Firmware Version",
-            ]
+        if not found_install and ignore:
+            # We work with consecutive instrumentation periods
+            for i in range(0, len(self.instrus) - 1):
+                if (
+                    self.instrus[i]["dates"][0] <= starttime
+                    and self.instrus[i + 1]["dates"][1] >= endtime
+                ):
 
-            for key in ["antenna", "receiver"]:
-                dict1 = {k: v for k, v in instru1[key].items() if k not in exclude_keys}
-                dict2 = {k: v for k, v in instru2[key].items() if k not in exclude_keys}
-                if dict1 != dict2:
-                    return False
+                    # we copy the two instrumentation periods dictionnary to remove firmware info
+                    nofirmware_instru_i = copy.deepcopy(self.instrus[i])
+                    nofirmware_instru_i1 = copy.deepcopy(self.instrus[i + 1])
 
-            return True
+                    # We remove date infos
+                    nofirmware_instru_i.pop("dates")
+                    nofirmware_instru_i1.pop("dates")
+                    for e in [
+                        "Date Removed",
+                        "Date Installed",
+                        "Additional Information",
+                    ]:
+                        nofirmware_instru_i["antenna"].pop(e)
+                        nofirmware_instru_i["receiver"].pop(e)
+                        nofirmware_instru_i1["antenna"].pop(e)
+                        nofirmware_instru_i1["receiver"].pop(e)
 
+                    # We remove Firmware info
+                    nofirmware_instru_i["receiver"].pop("Firmware Version")
+                    nofirmware_instru_i1["receiver"].pop("Firmware Version")
 
-        for i in range(len(self.instrus) - 1):
-            if not (self.instrus[i]["dates"][0] <= starttime and
-                    self.instrus[i + 1]["dates"][1] >= endtime):
-                continue
+                    # If, except dates and firmware version, the dicts are equls, we set
+                    # instrumentation to the first one of the two.
+                    if nofirmware_instru_i == nofirmware_instru_i1:
+                        found_install = self.instrus[i]
+                        ignored = True
 
-            # Compare periods without dates, firmware, and additional info
-            if compare_instru_ignore_firmware(self.instrus[i], self.instrus[i + 1]):
-                return self.instrus[i], True
-
-        return None, False
+        return found_install, ignored
 
     def get_country(self, iso_code=True):
         """
