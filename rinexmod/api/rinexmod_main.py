@@ -529,7 +529,7 @@ def rinexmod(
     # Construct return dict by adding key if doesn't exists
     # and appending file to corresponding list
     if type(return_lists) is dict:
-        return_lists = rimo_cor.return_lists_maker(rnxobj, return_lists)
+        return_lists = rimo_cor.rtun_lsts_make(rnxobj, return_lists)
         final_return = return_lists
     else:
         ###########################################################################

@@ -259,7 +259,7 @@ def rinexmod_cli(
 
     for return_lists_mono in results:
         try:
-            rimo_cor.return_lists_maker(return_lists_mono, return_lists)
+            rimo_cor.rtun_lsts_make(return_lists_mono, return_lists)
         except rimo_cor.ReturnListError:
             logger.warning(
                 "one file has been skipped because of an odd individual return list"
@@ -270,7 +270,7 @@ def rinexmod_cli(
     logger.handlers.clear()
 
     if write:
-        rimo_cor.return_lists_write(return_lists, logfolder, now)
+        rimo_cor.rtun_lsts_write(return_lists, logfolder, now)
 
     return return_lists
 
