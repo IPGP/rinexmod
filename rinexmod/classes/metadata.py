@@ -11,7 +11,7 @@ import copy
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import pycountry
 
 import pandas as pd
@@ -22,6 +22,7 @@ import rinexmod.classes as rimo_cls
 import rinexmod.api as rimo_api
 
 import rinexmod.logger as rimo_log
+
 logger = rimo_log.logger_define("INFO")
 
 
@@ -841,16 +842,31 @@ class MetaData:
     #                                                  __/ |
     #                                                 |___/
 
-    def find_instru(self, starttime, endtime, ignore=False):
+    def find_instru(self, starttime, endtime, ignore=False, round_instru_dates=False):
         """
         Get the instrumentation corresponding to starttime and endtime.
         If ignore=True, firmware version changes between periods are ignored.
+        If round_instru_dates=True, instru dates are rounded to day boundaries.
         """
 
         # Try exact match first
-        for install in self.instrus:
-            if install["dates"][0] <= starttime and install["dates"][1] >= endtime:
-                return install, False
+
+        dt1d = timedelta(minutes=1440)
+        for ins in self.instrus:
+
+            if round_instru_dates:
+                ins_srt = rimo_api.round_time(
+                    ins["dates"][0], date_delta=dt1d, to="down"
+                )
+                ins_end = rimo_api.round_time(
+                    ins["dates"][1], date_delta=dt1d, to="up"
+                )
+            else:
+                ins_srt = ins["dates"][0]
+                ins_end = ins["dates"][1]
+
+            if ins_srt <= starttime and ins_end >= endtime:
+                return ins, False
 
         # If not found and ignore=True, check consecutive periods ignoring firmware
         if not ignore:
@@ -877,10 +893,11 @@ class MetaData:
 
             return True
 
-
         for i in range(len(self.instrus) - 1):
-            if not (self.instrus[i]["dates"][0] <= starttime and
-                    self.instrus[i + 1]["dates"][1] >= endtime):
+            if not (
+                self.instrus[i]["dates"][0] <= starttime
+                and self.instrus[i + 1]["dates"][1] >= endtime
+            ):
                 continue
 
             # Compare periods without dates, firmware, and additional info

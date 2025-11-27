@@ -7,7 +7,6 @@ Class
 
 import os
 import re
-import string
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
@@ -18,6 +17,7 @@ import hatanaka
 import numpy as np
 
 import rinexmod.logger as rimo_log
+import rinexmod.api.core_fcts as rimo_cor
 
 logger = rimo_log.logger_define("INFO")
 
@@ -119,7 +119,7 @@ class RinexFile:
             return ""
 
         # We get header
-        end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
+        end_of_header_idx = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER") + 1
         str_rinex_file = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
         str_rinex_file.extend(
@@ -436,7 +436,7 @@ class RinexFile:
                 + str(file_type)
                 + compression
             )
-            start_date_use = round_time(
+            start_date_use = rimo_cor.round_time(
                 self.start_date, timedelta(minutes=5), to="down"
             )
 
@@ -458,7 +458,7 @@ class RinexFile:
         and the index of the END OF HEADER line if asked
         """
         i_end = None
-        i_end = search_idx_value(self.rinex_data, "END OF HEADER")
+        i_end = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER")
 
         head = self.rinex_data[: i_end + 1]
         body = self.rinex_data[i_end + 1 :]
@@ -540,7 +540,7 @@ class RinexFile:
         Get the naming convention based on a regular expression test
         """
         # Daily or hourly, hatanaka or not, gz or Z compressed file
-        pattern_dic = regex_pattern_rinex_filename()
+        pattern_dic = rimo_cor.regex_pattern_rinex_filename()
 
         pattern_shortname = re.compile(pattern_dic["shortname"])
         pattern_longname = re.compile(pattern_dic["longname"])
@@ -638,7 +638,7 @@ class RinexFile:
         if self.status:
             return None, None
 
-        version_header_idx = search_idx_value(self.rinex_data, "RINEX VERSION / TYPE")
+        version_header_idx = rimo_cor.search_idx_val(self.rinex_data, "RINEX VERSION / TYPE")
         version_header = self.rinex_data[version_header_idx]
         # Parse line
         rinex_ver_head_str = str(version_header[0:9].strip())
@@ -664,7 +664,7 @@ class RinexFile:
 
         return src
 
-    def _get_date_patterns(self):
+    def get_date_patterns(self):
         """
         Internal function to get the correct epoch pattern depending
         on the RINEX version
@@ -712,7 +712,7 @@ class RinexFile:
 
         def _find_first_last_epoch_line(rnxobj, last_epoch=False):
 
-            date_pattern, year_pattern = rnxobj._get_date_patterns()
+            date_pattern, year_pattern = rnxobj.get_date_patterns()
 
             if last_epoch:
                 datause = reversed(rnxobj.rinex_data)
@@ -797,7 +797,7 @@ class RinexFile:
 
         samples_stack = []
 
-        date_pattern, _ = self._get_date_patterns()
+        date_pattern, _ = self.get_date_patterns()
 
         for line in self.rinex_data:  # We get all the epochs dates
             if re.search(date_pattern, line):
@@ -823,7 +823,7 @@ class RinexFile:
             return None, None
 
         samples_stack = self.get_dates_all()
-        date_pattern, year_prefix = self._get_date_patterns()
+        date_pattern, year_prefix = self.get_date_patterns()
 
         # If less than 2 samples, can't get a sample rate
         if len(samples_stack) < 2:
@@ -1013,7 +1013,7 @@ class RinexFile:
 
         """
 
-        file_period, session = file_period_from_timedelta(
+        file_period, session = rimo_cor.file_period_from_timedelta(
             self.start_date, self.end_date
         )
 
@@ -1078,7 +1078,7 @@ class RinexFile:
             return None
 
         # Identify line that contains RINEX VERSION / TYPE
-        sat_system_header_idx = search_idx_value(
+        sat_system_header_idx = rimo_cor.search_idx_val(
             self.rinex_data, "RINEX VERSION / TYPE"
         )
         sat_system_head = self.rinex_data[sat_system_header_idx]
@@ -1157,7 +1157,7 @@ class RinexFile:
             return
 
         # Identify line that contains SYS / # / OBS TYPES
-        sys_obs_idx0 = search_idx_value(self.rinex_data, "SYS / # / OBS TYPES")
+        sys_obs_idx0 = rimo_cor.search_idx_val(self.rinex_data, "SYS / # / OBS TYPES")
 
         sys_obs_idx_fin = sys_obs_idx0
         while "SYS / # / OBS TYPES" in self.rinex_data[sys_obs_idx_fin]:
@@ -1230,7 +1230,7 @@ class RinexFile:
         if not marker_inp and not number_inp:
             return
 
-        marker_name_header_idx = search_idx_value(self.rinex_data, "MARKER NAME")
+        marker_name_header_idx = rimo_cor.search_idx_val(self.rinex_data, "MARKER NAME")
         # Identify line that contains MARKER NAME
         if marker_inp:
             # Edit line
@@ -1240,7 +1240,7 @@ class RinexFile:
                 # Set line
                 self.rinex_data[marker_name_header_idx] = new_line
             else:
-                pgm_header_idx = search_idx_value(
+                pgm_header_idx = rimo_cor.search_idx_val(
                     self.rinex_data, "PGM / RUN BY / DATE"
                 )
                 self.rinex_data.insert(pgm_header_idx, new_line)
@@ -1248,7 +1248,7 @@ class RinexFile:
         if number_inp:
             # Identify line that contains MARKER NUMBER
             ## marker_number_header_idx = next((i for i, e in enumerate(self.rinex_data) if 'MARKER NUMBER' in e), None)
-            marker_number_header_idx = search_idx_value(
+            marker_number_header_idx = rimo_cor.search_idx_val(
                 self.rinex_data, "MARKER NUMBER"
             )
             # Edit line
@@ -1292,7 +1292,7 @@ class RinexFile:
             return
 
         # Identify line that contains REC # / TYPE / VERS
-        receiver_header_idx = search_idx_value(self.rinex_data, "REC # / TYPE / VERS")
+        receiver_header_idx = rimo_cor.search_idx_val(self.rinex_data, "REC # / TYPE / VERS")
         receiver_head = self.rinex_data[receiver_header_idx]
         # Parse line
         serial_head = receiver_head[0:20]
@@ -1372,7 +1372,7 @@ class RinexFile:
             return
 
         # Identify line that contains ANT # / TYPE
-        antenna_header_idx = search_idx_value(self.rinex_data, "ANT # / TYPE")
+        antenna_header_idx = rimo_cor.search_idx_val(self.rinex_data, "ANT # / TYPE")
         antenna_head = self.rinex_data[antenna_header_idx]
         # Parse line
         serial_head = antenna_head[0:20]
@@ -1473,7 +1473,7 @@ class RinexFile:
             return
 
         # Identify line that contains APPROX POSITION XYZ
-        antenna_pos_header_idx = search_idx_value(
+        antenna_pos_header_idx = rimo_cor.search_idx_val(
             self.rinex_data, "APPROX POSITION XYZ"
         )
         antenna_pos_head = self.rinex_data[antenna_pos_header_idx]
@@ -1526,7 +1526,7 @@ class RinexFile:
             return
 
         # Identify line that contains ANTENNA: DELTA H/E/N
-        antenna_delta_header_idx = search_idx_value(
+        antenna_delta_header_idx = rimo_cor.search_idx_val(
             self.rinex_data, "ANTENNA: DELTA H/E/N"
         )
         antenna_delta_head = self.rinex_data[antenna_delta_header_idx]
@@ -1580,7 +1580,7 @@ class RinexFile:
             return
 
         # Identify line that contains OBSERVER / AGENCY
-        agencies_header_idx = search_idx_value(self.rinex_data, "OBSERVER / AGENCY")
+        agencies_header_idx = rimo_cor.search_idx_val(self.rinex_data, "OBSERVER / AGENCY")
 
         if not agencies_header_idx:  ##### THIS TEST SHOULD BE IN ALL MOD METHODS !!!!
             logger.warning(
@@ -1652,7 +1652,7 @@ class RinexFile:
         ### rewrite the RINEX header line
 
         # Identify line that contains RINEX VERSION / TYPE
-        sat_system_header_idx = search_idx_value(
+        sat_system_header_idx = rimo_cor.search_idx_val(
             self.rinex_data, "RINEX VERSION / TYPE"
         )
         sat_system_head = self.rinex_data[sat_system_header_idx]
@@ -1704,8 +1704,8 @@ class RinexFile:
             last_obs = self.end_date
 
         # Identify line that contains TIME OF FIRST OBS
-        first_obs_idx = search_idx_value(self.rinex_data, "TIME OF FIRST OBS")
-        last_obs_idx = search_idx_value(self.rinex_data, "TIME OF LAST OBS")
+        first_obs_idx = rimo_cor.search_idx_val(self.rinex_data, "TIME OF FIRST OBS")
+        last_obs_idx = rimo_cor.search_idx_val(self.rinex_data, "TIME OF LAST OBS")
 
         first_obs_head = self.rinex_data[first_obs_idx]
 
@@ -1762,7 +1762,7 @@ class RinexFile:
             return
 
         # Identify line that contains SYS / # / OBS TYPES
-        sys_obs_idx0 = search_idx_value(self.rinex_data, "SYS / # / OBS TYPES")
+        sys_obs_idx0 = rimo_cor.search_idx_val(self.rinex_data, "SYS / # / OBS TYPES")
 
         sys_obs_idx_fin = sys_obs_idx0
         while "SYS / # / OBS TYPES" in self.rinex_data[sys_obs_idx_fin]:
@@ -1773,7 +1773,7 @@ class RinexFile:
         for sys, obs in dict_sys_obs.items():
             ### make slice of 13 elements, i.e. the number of obervable max in
             ### one line
-            obs_slice = slice_list(obs, 13)
+            obs_slice = rimo_cor.slice_list(obs, 13)
 
             for iobss, obss in enumerate(obs_slice):
                 nobss = len(obss)
@@ -1818,14 +1818,14 @@ class RinexFile:
             return
 
         # Identify line that contains DOI
-        doi_header_idx = search_idx_value(self.rinex_data, "DOI")
+        doi_header_idx = rimo_cor.search_idx_val(self.rinex_data, "DOI")
         # Edit line
         new_line = "{}".format(doi.ljust(60)) + "DOI"
         if doi_header_idx:
             # Set line
             self.rinex_data[doi_header_idx] = new_line
         else:
-            pgm_header_idx = search_idx_value(self.rinex_data, "END OF HEADER")
+            pgm_header_idx = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER")
             self.rinex_data.insert(pgm_header_idx, new_line)
 
         self.version = "4.02"  # Update version to 4.02 if DOI is set
@@ -1855,14 +1855,14 @@ class RinexFile:
             return
 
         # Identify line that contains LICENSE
-        license_header_idx = search_idx_value(self.rinex_data, "LICENSE OF USE")
+        license_header_idx = rimo_cor.search_idx_val(self.rinex_data, "LICENSE OF USE")
         # Edit line
         new_line = "{}".format(license.ljust(60)) + "LICENSE OF USE"
         if license_header_idx:
             # Set line
             self.rinex_data[license_header_idx] = new_line
         else:
-            pgm_header_idx = search_idx_value(self.rinex_data, "END OF HEADER")
+            pgm_header_idx = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER")
             self.rinex_data.insert(pgm_header_idx, new_line)
 
         self.version = "4.02"  # Update version to 4.02 if LICENSE is set
@@ -1892,14 +1892,14 @@ class RinexFile:
             return
 
         # Identify line that contains STATION INFORMATION
-        station_info_header_idx = search_idx_value(self.rinex_data, "STATION INFORMATION")
+        station_info_header_idx = rimo_cor.search_idx_val(self.rinex_data, "STATION INFORMATION")
         # Edit line
         new_line = "{}".format(station_information.ljust(60)) + "STATION INFORMATION"
         if station_info_header_idx:
             # Set line
             self.rinex_data[station_info_header_idx] = new_line
         else:
-            pgm_header_idx = search_idx_value(self.rinex_data, "END OF HEADER")
+            pgm_header_idx = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER")
             self.rinex_data.insert(pgm_header_idx, new_line)
 
         self.version = "4.02"  # Update version to 4.02 if STATION INFORMATION is set
@@ -2065,7 +2065,7 @@ class RinexFile:
         if not comment:
             return
 
-        end_of_header_idx = search_idx_value(self.rinex_data, "END OF HEADER") + 1
+        end_of_header_idx = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER") + 1
         idx = [
             i
             for i, e in enumerate(self.rinex_data[0:end_of_header_idx])
@@ -2262,241 +2262,3 @@ class RinexFile:
         return
 
 
-# *****************************************************************************
-# low level functions (outside RinexFile class)
-def search_idx_value(data, field):
-    """
-    find the index (line number) of a researched field in the RINEX data
-    return None if nothing has beeen found
-    """
-    idx = -1
-    out_idx = None
-    for e in data:
-        idx += 1
-        if field in e:
-            out_idx = idx
-            break
-    return out_idx
-
-
-def slice_list(seq, num):
-    """make sublist of num elts of a list"""
-    # http://stackoverflow.com/questions/4501636/creating-sublists
-    return [seq[i : i + num] for i in range(0, len(seq), num)]
-
-
-def round_time(dt=None, date_delta=timedelta(minutes=60), to="average"):
-    """
-    Round a datetime object to a multiple of a timedelta
-    dt : datetime.datetime object, default now.
-    dateDelta : timedelta object, we round to a multiple of this, default 1 minute.
-    to : up / down / average
-    from:  http://stackoverflow.com/questions/3463930/how-to-round-the-minute-of-a-datetime-object-python
-    """
-    round_to = date_delta.total_seconds()
-    if dt is None:
-        dt = datetime.now()
-    seconds = (dt - dt.min).seconds
-
-    if seconds % round_to == 0 and dt.microsecond == 0:
-        rounding = (seconds + round_to / 2) // round_to * round_to
-    else:
-        if to == "up":
-            # // is a floor division, not a comment on following line (like in javascript):
-            rounding = (
-                (seconds + dt.microsecond / 1000000 + round_to) // round_to * round_to
-            )
-        elif to == "down":
-            rounding = seconds // round_to * round_to
-        else:
-            rounding = (seconds + round_to / 2) // round_to * round_to
-
-    return dt + timedelta(0, rounding - seconds, -dt.microsecond)
-
-
-def regex_pattern_rinex_filename():
-    """
-    return a dictionnary with the different REGEX patterns to describe a RIENX filename
-    """
-    pattern_dic = dict()
-    # pattern_dic["shortname"] = "....[0-9]{3}(\d|\D)\.[0-9]{2}(o|d)(|\.(Z|gz))"
-    pattern_dic["shortname"] = (
-        r"....[0-9]{3}(\d|\D)([0-9]{2}\.|\.)[0-9]{2}(o|d)(|\.(Z|gz))"  ### add subhour starting min
-    )
-    pattern_dic["longname"] = (
-        r".{4}[0-9]{2}.{3}_(R|S|U)_[0-9]{11}_([0-9]{2}\w)_[0-9]{2}\w_\w{2}\.\w{3}(\.gz|)"
-    )
-    pattern_dic["longname_gfz"] = (
-        r".{4}[0-9]{2}.{3}_[0-9]{8}_.{3}_.{3}_.{2}_[0-9]{8}_[0-9]{6}_[0-9]{2}\w_[0-9]{2}\w_[A-Z]*\.\w{3}(\.gz)?"
-    )
-
-    return pattern_dic
-
-
-def dates_from_rinex_filename(rnx_inp):
-    """
-    determine the start epoch, the end epoch and the period of a RINEX
-    file based on its name only.
-    The RINEX is not readed. This function is much faster but less reliable
-    than the RinexFile.start_date and RinexFile.end_date attribute
-
-    return the start epoch and end epoch as datetime
-    and the period as timedelta
-    """
-    pattern_dic = regex_pattern_rinex_filename()
-
-    pattern_shortname = re.compile(pattern_dic["shortname"])
-    pattern_longname = re.compile(pattern_dic["longname"])
-    pattern_longname_gfz = re.compile(pattern_dic["longname_gfz"])
-
-    rinexname = os.path.basename(rnx_inp)
-
-    def _period_to_timedelta(peri_inp):
-        peri_val = int(peri_inp[0:2])
-        peri_unit = str(peri_inp[2])
-
-        if peri_unit == "M":
-            unit_sec = 60
-        elif peri_unit == "H":
-            unit_sec = 3600
-        elif peri_unit == "D":
-            unit_sec = 86400
-        else:
-            logger.warn("odd RINEX period: %s, assume it as 01D", peri_inp)
-            unit_sec = 86400
-
-        return timedelta(seconds=peri_val * unit_sec)
-
-    ##### LONG rinex name
-    if re.search(pattern_longname, rinexname):
-        date_str = rinexname.split("_")[2]
-        period_str = rinexname.split("_")[3]
-
-        yyyy = int(date_str[:4])
-        doy = int(date_str[4:7])
-        hh = int(date_str[7:9])
-        mm = int(date_str[9:11])
-        dt_srt = datetime(yyyy, 1, 1) + timedelta(
-            days=doy - 1, seconds=hh * 3600 + mm * 60
-        )
-        period = _period_to_timedelta(period_str)
-        dt_end = dt_srt + period
-
-        return dt_srt, dt_end, period
-
-    ##### LONG rinex name -- GFZ's GODC internal name
-    elif re.search(pattern_longname_gfz, rinexname):
-        date_str = rinexname.split("_")[5]
-        time_str = rinexname.split("_")[6]
-        period_str = rinexname.split("_")[7]
-
-        yyyy = int(date_str[:4])
-        mo = int(date_str[4:6])
-        dd = int(date_str[6:8])
-
-        hh = int(time_str[0:2])
-        mm = int(time_str[2:4])
-        ss = int(time_str[4:6])
-
-        dt_srt = datetime(yyyy, mo, dd, hh, mm, ss)
-        period = _period_to_timedelta(period_str)
-        dt_end = dt_srt + period
-
-        return dt_srt, dt_end, period
-
-    ##### SHORT rinex name
-    elif re.search(pattern_shortname, rinexname):
-        alphabet = list(string.ascii_lowercase)
-
-        doy = int(rinexname[4:7])
-        yy = int(rinexname[9:11])
-
-        if yy > 80:
-            year = yy + 1900
-        else:
-            year = yy + 2000
-
-        if rinexname[7] in alphabet:
-            h = alphabet.index(rinexname[7])
-            period = timedelta(seconds=3600)
-        else:
-            h = 0
-            period = timedelta(seconds=86400)
-
-        dt_srt = datetime(year, 1, 1) + timedelta(days=doy - 1, seconds=h * 3600)
-        dt_end = dt_srt + period
-        return dt_srt, dt_end, period
-
-    else:
-        logger.error("%s has not a RINEX name well formatted", rinexname)
-        return None, None, None
-
-
-def file_period_from_timedelta(start_date, end_date):
-    """
-    return the RINEX file period (01H, 01D, 15M...) based on a
-    start and end date
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    file_period : str
-        file period (01H, 01D, 15M...)
-    session : bool
-        True if the timedelta refers to a session (<01D)
-        False otherwise (01D).
-
-    """
-    rndtup = lambda x, t: round_time(x, timedelta(minutes=t), "up")
-    rndtdown = lambda x, t: round_time(x, timedelta(minutes=t), "down")
-    rndtaver = lambda x, t: round_time(x, timedelta(minutes=t), "average")
-    # rounded at the hour
-    # maximum and average delta between start and end date
-    delta_max = rndtup(end_date, 60) - rndtdown(start_date, 60)
-    delta_ave = rndtaver(end_date, 60) - rndtaver(start_date, 60)
-
-    hours_ave = int(delta_ave.total_seconds() / 3600)
-    delta_sec = (end_date - start_date).total_seconds()
-
-    # first, the special case : N *full* hours
-    if delta_max <= timedelta(seconds=86400 - 3600) and hours_ave > 0:  ## = 23h max
-        # delta_ave is a more precise delta than delta_max (average)
-        file_period = str(hours_ave).zfill(2) + "H"
-        session = True
-    # more regular cases : 01H, 01D, nnM, or Unknown
-    elif delta_max <= timedelta(seconds=3600):
-        # Here we consider sub hourly cases
-        session = True
-        file_period = None
-        for m in [5, 10, 15, 20, 30]:
-            if (m * 60 - 1) <= delta_sec <= (m * 60 + 1):
-                file_period = str(m).zfill(2) + "M"
-        if not file_period:
-            # NB: this test is useless, it is treated by the previous test
-            file_period = "01H"
-    elif hours_ave == 0 and delta_max > timedelta(seconds=3600):  # Note 2
-        hours_max = int(delta_max.total_seconds() / 3600)
-        file_period = str(hours_max).zfill(2) + "H"
-        session = True
-    elif (
-        timedelta(seconds=3600) < delta_max <= timedelta(seconds=86400 + 3600)
-    ):  # Note1
-        file_period = "01D"
-        session = False
-    else:
-        file_period = "00U"
-        session = False
-    # Note1: a tolerance of +/- 1 hours is given because old ashtech RINEXs
-    #        includes the epoch of the next hour/day
-    #        and then the present delta_max value reach 25
-    #        it justifies also the necessity of the delta_ave variable
-
-    # Note 2: very rare (but possible) case --' :
-    #         very short file, riding in between* two hours ("a cheval sur 2 heures")
-    #         met e.g. for "2024-08-13 11:54:00" > "2024-08-13 12:04:00"
-    #         then the delta_max is 2H and the delta_ave is 0
-    #         and we must introduce hours_max rather than hours_ave
-
-    return file_period, session
