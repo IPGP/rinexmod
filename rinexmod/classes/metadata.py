@@ -859,7 +859,7 @@ class MetaData:
                 break
 
         # BACKUP CASE
-        # If we can't find a corresponding installation period and we use the force
+        # If we can't find a corresponding installation period and we use the ignore
         # option, we will force ignoring the firmware version modification and
         # consider only the other parameters
         if not found_install and ignore:
