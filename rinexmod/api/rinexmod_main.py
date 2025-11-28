@@ -444,10 +444,12 @@ def rinexmod(
 
     ###########################################################################
     ########## Add comment in the header
-    githash = rimo_cor.get_git_hash()
-    vers_num = rimo.__version__ + " " + githash[-3:]
-    # rnxobj.add_comment(("RinexMod (IPGP)","METADATA UPDATE"),add_pgm_cmt=True)
+    githash = rimo_cor.get_git_hash() # git hash is desactivated
+    vers_num = rimo.__version__ # + " " + githash[-3:]
+    vers_num = vers_num.replace("beta", "b")
     rnxobj.add_prg_run_date_comment("RinexMod " + vers_num, "METADATA UPDATE")
+    if githash != "xxxxxxx":
+        rnxobj.add_comment("RinexMod Git commit hash: " + githash)
     rnxobj.add_comment("RinexMod / IPGP-OVS (github.com/IPGP/rinexmod)")
     rnxobj.add_comment(
         "rinexmoded on {}".format(datetime.strftime(now, "%Y-%m-%d %H:%M%z"))
@@ -537,4 +539,3 @@ def rinexmod(
         final_return = outputfile
 
     return final_return
-
