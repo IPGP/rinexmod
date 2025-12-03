@@ -1,5 +1,9 @@
 ## Changelog
 
+### after v3.4.0
+Get the changelog directly in:
+https://github.com/IPGP/rinexmod/releases
+
 ### v3.4.0 (Dec, 2024)
 
 - shell programs are now in a `bin` folder and are set as executable in the `setup.py`
