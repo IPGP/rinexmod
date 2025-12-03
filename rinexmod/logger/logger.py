@@ -58,9 +58,7 @@ def logger_define(level_prompt, logfile=None, level_logfile=None):
 
     return logger_out
 
-
 logger = logger_define("INFO")
-
 
 def logger_tester():
     logger.debug("debug message")

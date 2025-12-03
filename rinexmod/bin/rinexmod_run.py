@@ -17,7 +17,7 @@ import argparse
 import textwrap
 
 import rinexmod
-import rinexmod.rinexmod_api as rimo_api
+import rinexmod.api as rimo_api
 
 from argparse import RawTextHelpFormatter
 
@@ -293,6 +293,17 @@ def main():
         default=False,
     )
 
+    optional.add_argument(
+        "-rnd",
+        "--round_instru_dates",
+        help="Round the instrumentation change dates (for receiver & antenna)"
+             "from the metadata (sitelogs...) to day boundaries."
+             "Useful when the sitelog dates are not exactly matching the RINEX dates. "
+             "(default: %(default)s)",
+        action="store_true",
+        default=False,
+    )
+
     args = parser.parse_args()
 
     rimo_api.rinexmod_cli(
@@ -324,7 +335,8 @@ def main():
         lfile_apriori=args.lfile_apriori,
         force_fake_coords=args.force_fake_coords,
         remove=args.remove,
-        keep_rnx_rec=args.keep_rnx_rec
+        keep_rnx_rec=args.keep_rnx_rec,
+        round_instru_dates=args.round_instru_dates,
     )
 
 if __name__ == '__main__':

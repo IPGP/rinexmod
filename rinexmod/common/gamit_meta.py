@@ -15,9 +15,9 @@ import re
 import numpy as np
 import pandas as pd
 
-from rinexmod import logger as rimo_log
-from rinexmod import rinexmod_api as rimo_api
+import rinexmod.api as rimo_api
 
+import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
 
 
