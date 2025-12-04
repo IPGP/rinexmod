@@ -53,6 +53,7 @@ import os, glob
 import shutil
 import sys
 
+
 def get_m3g_sitelogs(
     sitelogsfolder,
     delete=False,
@@ -115,7 +116,7 @@ def get_m3g_sitelogs(
             "when using SVN mode (-s), a single observatory must be given with -o option"
         )
 
-    if not isinstance(observatory,list):
+    if not isinstance(observatory, list):
         observatory = [observatory]
 
     # M3G country webservice. We use countries to filter IPGP's obs stations.
@@ -267,6 +268,7 @@ def get_m3g_sitelogs(
             ["svn", "commit", "-m", "get_m3g_sitelogs auto commit", sitelogsfolder]
         )
 
+
 def main():
     import argparse
 
@@ -283,8 +285,8 @@ def main():
         "-d",
         "--delete",
         help="Delete old sitelogs in the output folder. "
-             "This allows to have only the last version, "
-             "as version changing sitelogs changes of name.",
+        "This allows to have only the last version, "
+        "as version changing sitelogs changes of name.",
         action="store_true",
     )
     parser.add_argument(
@@ -299,7 +301,7 @@ def main():
         "--observatory",
         nargs="+",
         help="Download sitelogs for some specific IPGP's observatories. "
-             "Valid values are : OVSM OVSG OVPF REVOSIMA OGA",
+        "Valid values are : OVSM OVSG OVPF REVOSIMA OGA",
         type=str,
         default=None,
     )
@@ -307,8 +309,8 @@ def main():
         "-r",
         "--root",
         help="Store the sitelogs in OUTPUTFOLDER root. "
-             "(per default, an observatory-specific folder is "
-             "created to store the corresponding sitelogs.)",
+        "(per default, an observatory-specific folder is "
+        "created to store the corresponding sitelogs.)",
         action="store_true",
         default=False,
     )
@@ -316,9 +318,9 @@ def main():
         "-s",
         "--svn",
         help="A mode to maintain the legacy OVS SVN folder. "
-             "Download the sitelog of a single obs and perform a svn commit. "
-             "A single observatory must be given with -o option. "
-             "The root folder option is automatically activated (-r)",
+        "Download the sitelog of a single obs and perform a svn commit. "
+        "A single observatory must be given with -o option. "
+        "The root folder option is automatically activated (-r)",
         action="store_true",
         default=False,
     )
@@ -333,7 +335,7 @@ def main():
         "-e",
         "--exclude",
         help="Site(s) you want to exclude from download. "
-             "Provide as input 4 or 9 character site codes separated with spaces",
+        "Provide as input 4 or 9 character site codes separated with spaces",
         nargs="+",
         default=[],
     )
