@@ -151,7 +151,7 @@ class MetaData:
         self.raw_content = self.gml_file2raw()
 
         if self.raw_content:
-            self.instrus, = self.gml_raw2instrus()
+            self.instrus = self.gml_raw2instrus()
             self.misc_meta = self.gml_raw2misc_meta()
             self.site_id = self.misc_meta["ID"]
         else:
@@ -625,10 +625,16 @@ class MetaData:
         result = {}
         for child in element:
             text = MetaData.parse_element(child)
+            # when the same tag already exists
             if child.tag in result:
+                # convert to list if not already
                 if not isinstance(result[child.tag], list):
                     result[child.tag] = [result[child.tag]]
                 result[child.tag].append(text)
+            # gnssReceiver and gnssAntenna need to be lists even if single entry
+            elif child.tag in ['gnssReceiver', 'gnssAntenna']:
+                result[child.tag] = [text]
+            # usual case, tag not existing yet
             else:
                 result[child.tag] = text
         return result       
@@ -813,6 +819,7 @@ class MetaData:
             "%Y/%m/%dT%H:%MZ",
             "%Y-%m-%d %H:%M",
             "%Y-%m-%dT%H:%M",
+            "%Y-%m-%dT%H:%M:%SZ", # new one added for geodesyML
             "%d/%m/%YT%H:%MZ",
             "%d/%m/%Y %H:%M",
             "%d/%m/%YT%H:%M",
@@ -939,6 +946,37 @@ class MetaData:
         self.misc_meta = dict()
         # We must initialize the misc_meta here
         # not initialized before (we are in the sitelog case)
+        mm_dic = self.set_misc_meta(
+            site_id=site_id,
+            domes=domes,
+            operator=operator,
+            agency=agency,
+            x=x,
+            y=y,
+            z=z,
+            date_prepared=date_prepared,
+            country=country,
+        )
+
+        return mm_dic
+    
+    def gml_raw2misc_meta(self):
+        """
+        generates the "misc meta" dictionary from raw_content 
+        """
+        
+        site_id = self.filename[:9].upper()
+        domes = self.raw_content['siteIdentification']['iersDOMESNumber']
+        operator = self.raw_content['siteContact']['name']
+        agency = self.raw_content['moreInformation']['dataCenter']
+        x, y, z = self.raw_content['siteLocation']['approximatePositionITRF']['cartesianPosition']['Point']['pos'].split(' ')
+        date_prepared = self._tryparsedate(self.raw_content['formInformation']['datePrepared'])
+        country = self.raw_content['siteLocation']['countryCodeISO']
+
+        print("test test")
+
+        self.misc_meta = dict()
+
         mm_dic = self.set_misc_meta(
             site_id=site_id,
             domes=domes,
