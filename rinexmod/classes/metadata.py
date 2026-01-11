@@ -16,6 +16,8 @@ import pycountry
 
 import pandas as pd
 
+import xml.etree.ElementTree as ET
+
 import rinexmod.common.gamit_meta as rimo_gmm
 import rinexmod.classes as rimo_cls
 
@@ -133,6 +135,25 @@ class MetaData:
             self.misc_meta = self.slg_raw2misc_meta()
             self.site_id = self.misc_meta["ID"]
 
+        else:
+            self.instrus = None
+            self.misc_meta = None
+            self.site_id = self.filename[:4].lower()
+
+        return None
+    
+    def set_from_gml(self, gmlfile):
+        """
+        initialization method for metadata import from GeodesyML file
+        """
+        self.path = gmlfile
+        self.filename = os.path.basename(self.path)
+        self.raw_content = self.gml_file2raw()
+
+        if self.raw_content:
+            self.instrus, = self.gml_raw2instrus()
+            self.misc_meta = self.gml_raw2misc_meta()
+            self.site_id = self.misc_meta["ID"]
         else:
             self.instrus = None
             self.misc_meta = None
@@ -591,6 +612,57 @@ class MetaData:
                 slgdic[key]["Secondary Contact"].pop("Additional Information", None)
 
         return slgdic
+    
+    @staticmethod
+    def parse_element(element):
+        """
+        Recursive function that traverses an XML element and converts it into a dictionary.
+        """
+
+        if len(element) == 0:
+            return element.text
+        
+        result = {}
+        for child in element:
+            text = MetaData.parse_element(child)
+            if child.tag in result:
+                if not isinstance(result[child.tag], list):
+                    result[child.tag] = [result[child.tag]]
+                result[child.tag].append(text)
+            else:
+                result[child.tag] = text
+        return result       
+    
+    def gml_file2raw(self):
+        """
+        Function that reads a GeodesyML file and returns a dictionary.
+        """
+        if not os.path.isfile(self.path):
+            return None, 2
+
+        try:
+            tree = ET.parse(self.path)
+            root = tree.getroot()
+        except:
+            raise
+
+        # removing namespace
+        for elem in root.iter():
+            tag = elem.tag
+            if isinstance(tag, str) and tag.startswith('{'):
+                tag = tag.split('}', 1)[1]
+                elem.tag = tag
+
+        # removing antenna graphics if any
+        for elem in root.iter('moreInformation'):
+            if elem.find('antennaGraphicsWithDimensions') is not None:
+                elem.remove(elem.find('antennaGraphicsWithDimensions'))
+            if elem.find('insertTextGraphicFromAntenna') is not None:
+                elem.remove(elem.find('insertTextGraphicFromAntenna'))
+   
+        data_dict = {}
+        data_dict = self.parse_element(root.find('siteLog'))
+        return data_dict
 
     def slg_raw2instrus(self):
         """
@@ -761,6 +833,54 @@ class MetaData:
             date = datetime.strptime("9999-01-01", "%Y-%m-%d")
 
         return date
+    
+    def gml_raw2instrus(self):
+        """
+        using raw_content a list of instruments with their periods is built
+        """
+
+        listdates = []
+
+        # parsing dates in gnssReceiver entries
+        for receiver in self.raw_content['gnssReceiver']:
+            receiver['GnssReceiver']['dateInstalled'] = self._tryparsedate(receiver['GnssReceiver'].get('dateInstalled'))
+            listdates.append(receiver['GnssReceiver']['dateInstalled'])
+            receiver['GnssReceiver']['dateRemoved'] = self._tryparsedate(receiver['GnssReceiver'].get('dateRemoved'))
+            listdates.append(receiver['GnssReceiver']['dateRemoved'])
+
+        # parsing dates in gnssAntenna entries
+        for antenna in self.raw_content['gnssAntenna']:
+            antenna['GnssAntenna']['dateInstalled'] = self._tryparsedate(antenna['GnssAntenna'].get('dateInstalled'))
+            listdates.append(antenna['GnssAntenna']['dateInstalled'])
+            antenna['GnssAntenna']['dateRemoved'] = self._tryparsedate(antenna['GnssAntenna'].get('dateRemoved'))
+            listdates.append(antenna['GnssAntenna']['dateRemoved'])
+
+        # remove duplicates and sort
+        listdates = sorted(set(listdates))
+
+        instrus = []
+
+        for i in range(0, len(listdates)-1):
+            dates = [listdates[i], listdates[i+1]]
+            ins = dict(dates=dates, receiver=None, antenna=None, metpack=None)
+            instrus.append(ins)
+
+        for ins in instrus:
+            for receiver in self.raw_content['gnssReceiver']:
+                date_installed = receiver['GnssReceiver']['dateInstalled']
+                date_removed = receiver['GnssReceiver']['dateRemoved']
+                if date_installed <= ins['dates'][0] and date_removed >= ins['dates'][1]:
+                    ins['receiver'] = receiver['GnssReceiver']
+                    break
+
+            for antenna in self.raw_content['gnssAntenna']:
+                date_installed = antenna['GnssAntenna']['dateInstalled']
+                date_removed = antenna['GnssAntenna']['dateRemoved']
+                if date_installed <= ins['dates'][0] and date_removed >= ins['dates'][1]:
+                    ins['antenna'] = antenna['GnssAntenna']
+                    break
+        
+        return instrus
 
     def slg_raw2misc_meta(self):
         """
