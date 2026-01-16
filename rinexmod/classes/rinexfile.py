@@ -5,6 +5,7 @@ Class
 2022-02-01 Félix Léger - felixleger@gmail.com & sakic@ipgp.fr
 """
 
+import gzip
 import os
 import re
 from datetime import datetime, timedelta
@@ -12,6 +13,7 @@ from io import StringIO
 from pathlib import Path
 
 import hatanaka
+import ncompress
 
 # import matplotlib.pyplot as plt
 import numpy as np
@@ -1998,6 +2000,18 @@ class RinexFile:
 
         if not no_hatanaka:  ## regular case, Hatanaka-compression of the RINEX
             output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
+        elif compression in ("Z", "gz"):  ## no Hatanaka, but low-level compression requested
+            # Apply low-level compression for non-Hatanaka files
+            # Ensure data is bytes
+            if isinstance(output_data, str):
+                output_data = output_data.encode('utf-8')
+            
+            if compression == "gz":
+                # Use gzip compression
+                output_data = gzip.compress(output_data)
+            elif compression == "Z":
+                # Use ncompress for LZW compression
+                output_data = ncompress.compress(output_data)
 
         ### The data source is an actual RINEX file
         if self.source_from_file:
