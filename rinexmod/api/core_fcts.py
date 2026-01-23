@@ -712,6 +712,7 @@ def modif_kw_check(modif_kw):
         "station",
         "marker_name",
         "marker_number",
+        "marker_type",
         "receiver_serial",
         "receiver_type",
         "receiver_fw",
@@ -757,6 +758,7 @@ def apply_modifkw2rnxobj(rnxobj, modif_kw):
         return all([e in modif_kw.keys() for e in keys_in])
 
     rnxobj.mod_marker(modif_kw.get("marker_name"), modif_kw.get("marker_number"))
+    rnxobj.mod_marker_type(modif_kw.get("marker_type"))
 
     # legacy keyword, 'marker_name' should be used instead
     rnxobj.mod_marker(modif_kw.get("station"))
