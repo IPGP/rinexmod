@@ -418,6 +418,28 @@ def rinexs2mda_objs(rinex_paths, ninecharfile_inp=None):
 
     return mdaobjs_lis
 
+def geodesyml2mda_objs(gml_path):
+    """
+    Read a GeodesyML file and convert its content to MetaData objects
+
+    Parameters
+    ----------
+    gml_path : str
+        Path of a GeodesyML file containing GNSS\site metadata information.
+
+    Returns
+    -------
+    mdaobjs_lis : list
+        list of MetaData objects.
+
+    """
+    mdaobjs_lis = []
+
+    mdaobj = rimo_mda.MetaData(sitelogfile=None)
+    mdaobj.set_from_gml(gml_path)
+    mdaobjs_lis.append(mdaobj)
+
+    return mdaobjs_lis
 
 def group_mda(mdaobj_list_inp):
     """

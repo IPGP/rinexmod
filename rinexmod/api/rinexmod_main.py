@@ -51,6 +51,7 @@ def rinexmod(
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
+    gml_path=None,
 ):
     """
     Parameters
@@ -335,8 +336,12 @@ def rinexmod(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
+    if gml_path:
+        print("GML path provided:", gml_path)
+        mdaobjs_lis = rimo_cor.geodesyml2mda_objs(gml_path)
+
     ### find the right MetaData object corresponding to the RINEX
-    if sitelog or (station_info and lfile_apriori):
+    if sitelog or (station_info and lfile_apriori) or gml_path:
         mdaobj = rimo_cor.find_mda4site(rnxobj, mdaobjs_lis, force=force_sitelog)
         logger.debug("metadata used: %s", mdaobj)
     else:

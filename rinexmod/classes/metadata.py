@@ -157,7 +157,7 @@ class MetaData:
         else:
             self.instrus = None
             self.misc_meta = None
-            self.site_id = self.filename[:4].lower()
+            self.site_id = self.filename[:9].upper()
 
         return None
 
@@ -973,8 +973,6 @@ class MetaData:
         date_prepared = self._tryparsedate(self.raw_content['formInformation']['datePrepared'])
         country = self.raw_content['siteLocation']['countryCodeISO']
 
-        print("test test")
-
         self.misc_meta = dict()
 
         mm_dic = self.set_misc_meta(
@@ -1182,7 +1180,7 @@ class MetaData:
             for k in keys_inp:
                 if k not in dic_inp.keys():
                     errmsg = f"Missing '{k}' for instru. period {starttime}-{endtime} ({dic_inp})"
-                    logger.error(errmsg)
+                    # logger.error(errmsg)
                     raise KeyError(errmsg)
 
         ### get useful values in misc_meta
@@ -1190,17 +1188,21 @@ class MetaData:
 
         misc_meta = self.misc_meta
 
-        key_chk_instru(
-            misc_meta,
-            [
-                "IERS DOMES Number",
-                "X coordinate (m)",
-                "Y coordinate (m)",
-                "Z coordinate (m)",
-                "operator",
-                "agency",
-            ],
-        )
+        try:
+            key_chk_instru(
+                misc_meta,
+                [
+                    "IERS DOMES Number",
+                    "X coordinate (m)",
+                    "Y coordinate (m)",
+                    "Z coordinate (m)",
+                    "operator",
+                    "agency",
+                ],
+            )
+        except KeyError as e:
+            logger.error(e)
+            raise e
 
         domes_id = misc_meta["IERS DOMES Number"]
 
@@ -1218,10 +1220,30 @@ class MetaData:
         ### get useful values in instru_rec
         instru_rec = instru["receiver"]
 
-        key_chk_instru(
-            instru_rec,
-            ["Serial Number", "Receiver Type", "Firmware Version", "Satellite System"],
-        )
+        try:
+            key_chk_instru(
+                instru_rec,
+                ["Serial Number", "Receiver Type", "Firmware Version", "Satellite System"],
+            )
+        except KeyError as e:
+            try:
+                # try geodesyML keys
+                key_chk_instru(
+                    instru_rec,
+                    ["manufacturerSerialNumber", "igsModelCode", "firmwareVersion", "satelliteSystem"],
+                )
+                # remap keys
+                instru_rec["Serial Number"] = instru_rec["manufacturerSerialNumber"]
+                instru_rec["Receiver Type"] = instru_rec["igsModelCode"]
+                instru_rec["Firmware Version"] = instru_rec["firmwareVersion"]
+                # originally a list, transform to string with '+' separator like in sitelogs
+                if isinstance(instru_rec["satelliteSystem"], list):
+                    instru_rec["Satellite System"] = '+'.join(instru_rec["satelliteSystem"])
+                else:
+                    instru_rec["Satellite System"] = instru_rec["satelliteSystem"]
+            except KeyError as e2:
+                logger.error(e2)
+                raise e2
 
         receiver = {
             "serial": instru_rec["Serial Number"],
@@ -1233,16 +1255,39 @@ class MetaData:
         ### get useful values in instru_ant
         instru_ant = instru["antenna"]
 
-        key_chk_instru(
-            instru_ant,
-            [
-                "Serial Number",
-                "Antenna Type",
-                "Marker->ARP Up Ecc. (m)",
-                "Marker->ARP East Ecc(m)",
-                "Marker->ARP North Ecc(m)",
-            ],
-        )
+        try:
+            key_chk_instru(
+                instru_ant,
+                [
+                    "Serial Number",
+                    "Antenna Type",
+                    "Marker->ARP Up Ecc. (m)",
+                    "Marker->ARP East Ecc(m)",
+                    "Marker->ARP North Ecc(m)",
+                ],
+            )
+        except KeyError as e:
+            try:
+                # try geodesyML keys
+                key_chk_instru(
+                    instru_ant,
+                    [
+                        "manufacturerSerialNumber",
+                        "igsModelCode",
+                        "marker-arpUpEcc.",
+                        "marker-arpEastEcc.",
+                        "marker-arpNorthEcc.",
+                    ],
+                )
+                # remap keys
+                instru_ant["Serial Number"] = instru_ant["manufacturerSerialNumber"]
+                instru_ant["Antenna Type"] = instru_ant["igsModelCode"]
+                instru_ant["Marker->ARP Up Ecc. (m)"] = instru_ant["marker-arpUpEcc."]
+                instru_ant["Marker->ARP East Ecc(m)"] = instru_ant["marker-arpEastEcc."]
+                instru_ant["Marker->ARP North Ecc(m)"] = instru_ant["marker-arpNorthEcc."]
+            except KeyError as e2:
+                logger.error(e2)
+                raise e2
 
         antenna = {
             "serial": instru_ant["Serial Number"],
