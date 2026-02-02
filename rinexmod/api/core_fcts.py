@@ -1037,8 +1037,8 @@ def dates_from_rinex_filename(rnx_inp):
 
     ##### LONG rinex name
     if re.search(pattern_longname, rinexname):
-        date_str = rinexname.split("_")[2]
-        period_str = rinexname.split("_")[3]
+        date_str = rinexname[12:23]# rinexname.split("_")[2]
+        period_str = rinexname[24:27] # rinexname.split("_")[3]
 
         yyyy = int(date_str[:4])
         doy = int(date_str[4:7])
