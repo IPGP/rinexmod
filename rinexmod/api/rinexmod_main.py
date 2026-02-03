@@ -337,8 +337,7 @@ def rinexmod(
         )
 
     if gml_path:
-        logger.info("Loading geodesyML metadata from %s", gml_path)
-        mdaobjs_lis = rimo_cor.geodesyml2mda_objs(gml_path)
+        mdaobjs_lis = rimo_cor.metadata_input_manage_geodesyml(gml_path)
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori) or gml_path:

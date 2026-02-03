@@ -188,6 +188,7 @@ def rinexmod_cli(
     if sort:
         rinexinput_use.sort()
 
+    gml_list = None
     ### load the sitelogs/GAMIT-files as a **list of MetaData objects**
     # from sitelogs
     if sitelog:
@@ -199,7 +200,8 @@ def rinexmod_cli(
         )
     # from geodesyML files
     elif gml_path:
-        sitelogs_list_use = rimo_cor.geodesyml2mda_objs(gml_path)
+        gml_list = rimo_cor.metadata_input_manage_geodesyml(gml_path)
+        sitelogs_list_use = None
     else:
         sitelogs_list_use = None
 
@@ -234,7 +236,7 @@ def rinexmod_cli(
             "remove": remove,
             "keep_rnx_rec": keep_rnx_rec,
             "round_instru_dates": round_instru_dates,
-            "gml_path": gml_path,
+            "gml_path": gml_list,
         }
 
         rnxmod_kwargs_lis.append(rnxmod_kwargs)
