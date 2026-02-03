@@ -48,7 +48,6 @@ class ReturnListError(RinexModError):
     pass
 
 
-
 # *****************************************************************************
 # core functions
 
@@ -1120,12 +1119,16 @@ def file_period_from_timedelta(start_date, end_date):
     rndtup = lambda x, t: round_time(x, timedelta(minutes=t), "up")
     rndtdown = lambda x, t: round_time(x, timedelta(minutes=t), "down")
     rndtaver = lambda x, t: round_time(x, timedelta(minutes=t), "average")
+
+    # end date minus 1sec is necessary to avoid a side effect for HH:30:00
+    end_date_m1s = end_date - timedelta(seconds=1)
+
     # rounded at the hour
     # maximum and average delta between start and end date
     delta_max = rndtup(end_date, 60) - rndtdown(start_date, 60)
-    delta_ave = rndtaver(end_date, 60) - rndtaver(start_date, 60)
+    delta_ave = rndtaver(end_date_m1s, 60) - rndtaver(start_date, 60)
 
-    hours_ave = int(delta_ave.total_seconds() / 3600)
+    hours_ave = int(delta_ave.total_seconds()  / 3600)
     delta_sec = (end_date - start_date).total_seconds()
 
     # first, the special case : N *full* hours
@@ -1168,3 +1171,7 @@ def file_period_from_timedelta(start_date, end_date):
     #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
+
+s = pd.Timestamp("2026-02-03 08:15:00").to_pydatetime()
+e = pd.Timestamp("2026-02-03 08:30:00").to_pydatetime()
+file_period_from_timedelta(s, e)
