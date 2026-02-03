@@ -307,9 +307,9 @@ def rinexmod(
         rnxobj.set_site(marker)
 
     ## warning if no metadata at all is not provided
-    if not sitelog and not modif_kw and (not station_info or not lfile_apriori):
+    if not sitelog and not modif_kw and (not station_info or not lfile_apriori) and not gml_path:
         logger.warning(
-            "No sitelog nor keywords nor station.info+lfile provided. "
+            "No sitelog/keywords/station.info+lfile/geodesyML provided. "
             "Per default rec.'s header will remain & no new "
             "metdata will be written!"
         )
@@ -337,7 +337,7 @@ def rinexmod(
         )
 
     if gml_path:
-        print("GML path provided:", gml_path)
+        logger.info("Loading geodesyML metadata from %s", gml_path)
         mdaobjs_lis = rimo_cor.geodesyml2mda_objs(gml_path)
 
     ### find the right MetaData object corresponding to the RINEX

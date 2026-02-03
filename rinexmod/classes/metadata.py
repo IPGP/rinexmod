@@ -668,6 +668,15 @@ class MetaData:
    
         data_dict = {}
         data_dict = self.parse_element(root.find('siteLog'))
+
+        # rounding float values of cartesian position to 3 decimals
+        if 'siteLocation' in data_dict.keys():
+            if 'approximatePositionITRF' in data_dict['siteLocation'].keys():
+                if 'cartesianPosition' in data_dict['siteLocation']['approximatePositionITRF'].keys():
+                    if 'Point' in data_dict['siteLocation']['approximatePositionITRF']['cartesianPosition'].keys():
+                        coords = data_dict['siteLocation']['approximatePositionITRF']['cartesianPosition']['Point']['pos'].split()
+                        coords_rounded = [round(float(c), 3) for c in coords]
+                        data_dict['siteLocation']['approximatePositionITRF']['cartesianPosition']['Point']['pos'] = ' '.join([str(c) for c in coords_rounded])
         return data_dict
 
     def slg_raw2instrus(self):
