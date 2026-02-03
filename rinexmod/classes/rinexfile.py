@@ -1264,6 +1264,54 @@ class RinexFile:
 
         return
 
+    def mod_marker_type(self, type_inp=None):
+        """
+        Modify within the RINEX header the marker type
+        (``MARKER TYPE`` line)
+
+        Parameters
+        ----------
+        type_inp : str, optional
+            Marker type (GEODETIC, NON_GEODETIC, SPACEBORNE, etc.).
+            The default is None.
+
+        Returns
+        -------
+        None.
+        """
+
+        if self.status:
+            return
+
+        if not type_inp:
+            return
+
+        marker_type_header_idx = rimo_cor.search_idx_val(
+            self.rinex_data, "MARKER TYPE"
+        )
+        
+        # Edit line
+        new_line = "{}".format(type_inp.ljust(60)) + "MARKER TYPE"
+        
+        if marker_type_header_idx:  # The line exists
+            # Set line
+            self.rinex_data[marker_type_header_idx] = new_line
+        else:  # The line does not exist - insert after MARKER NUMBER
+            marker_number_header_idx = rimo_cor.search_idx_val(
+                self.rinex_data, "MARKER NUMBER"
+            )
+            if marker_number_header_idx:
+                self.rinex_data.insert(marker_number_header_idx + 1, new_line)
+            else:
+                # If no MARKER NUMBER, insert after MARKER NAME
+                marker_name_header_idx = rimo_cor.search_idx_val(
+                    self.rinex_data, "MARKER NAME"
+                )
+                if marker_name_header_idx:
+                    self.rinex_data.insert(marker_name_header_idx + 1, new_line)
+
+        return
+
     def mod_receiver(self, serial=None, type=None, firmware=None, keep_rnx_rec=False):
         """
         Modify within the RINEX header the receiver information
