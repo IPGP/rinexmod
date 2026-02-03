@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<geo:GeodesyML xmlns:geo="urn:xml-gov-au:icsm:egeodesy:0.4" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" gml:id="HOUZ00GLP">
+  <geo:siteLog gml:id="houz00glp_20250106">
+    <geo:formInformation>
+      <geo:preparedBy>IPGP-VOLOBSIS Team (volobsis-support@ipgp.fr)</geo:preparedBy>
+      <geo:datePrepared>2025-01-06</geo:datePrepared>
+      <geo:reportType>UPDATE</geo:reportType>
+    </geo:formInformation>
+    <geo:siteIdentification>
+      <geo:siteName>Le Houelmont</geo:siteName>
+      <geo:fourCharacterID>HOUZ</geo:fourCharacterID>
+      <geo:monumentNumber>0</geo:monumentNumber>
+      <geo:receiverNumber>0</geo:receiverNumber>
+      <geo:monumentInscription></geo:monumentInscription>
+      <geo:iersDOMESNumber>97102M001</geo:iersDOMESNumber>
+      <geo:cdpNumber>NONE</geo:cdpNumber>
+      <geo:monumentDescription codeSpace="urn:ga-gov-au:monument-description-type"><![CDATA[PILLAR, stainless steel rod, brass adapter]]></geo:monumentDescription>
+      <geo:heightOfTheMonument>1.35</geo:heightOfTheMonument>
+      <geo:monumentFoundation>CONCRETE</geo:monumentFoundation>
+      <geo:foundationDepth>1</geo:foundationDepth>
+      <geo:markerDescription>Top centre of stainless steel rod</geo:markerDescription>
+      <geo:dateInstalled>2000-05-13</geo:dateInstalled>
+      <geo:geologicCharacteristic codeSpace="urn:ga-gov-au:geologic-characteristic-type"><![CDATA[ANDESITIC DOME]]></geo:geologicCharacteristic>
+      <geo:bedrockType>IGNEOUS</geo:bedrockType>
+      <geo:bedrockCondition>WEATHERED</geo:bedrockCondition>
+      <geo:fractureSpacing>0</geo:fractureSpacing>
+      <geo:faultZonesNearby codeSpace="urn:ga-gov-au:fault-zones-type"><![CDATA[Yes]]></geo:faultZonesNearby>
+      <geo:distance-Activity>few kilometers from active faults.&#13;
+25 km from the 2004 M=6.4 earthquake epicenter</geo:distance-Activity>
+      <geo:notes><![CDATA[Site located at the Guadeloupe Volcanic and Seismologic Observatory, at the top of a large andesitic dome.
+Concrete pier is build on the clay resulting from andesitic dome alteration. 
+Site located at about 8 km from the top of La Soufriere active volcano.
+
+Second split receiver on the same antenna as HOUE00GLP.
+Thus, the present station is collocated with HOUE00GLP.
+
+HOUZ00GLP describes OVSG-IPGP's receiver.
+HOUE00GLP describes TERIA's receiver, which was historically maintained by OVSG-IPGP.
+
+Teria's devices have been installed on 2019-07-18.
+Before this date, HOUE00GLP and HOUZ00GLP are two aliases for the same receiver and thus the same data.
+
+Effective renaming of the IPGP-OVS's receiver for HOUZ00GLP has been performed on 2023-09-11. 
+HOUZ00GLP's data before this date have been generated retroactively.
+This change is transparent for the end-users.
+]]></geo:notes>
+    </geo:siteIdentification>
+    <geo:siteLocation>
+      <geo:city>Gourbeyre</geo:city>
+      <geo:state>Guadeloupe</geo:state>
+      <geo:countryCodeISO codeSpace="urn:gnss-metadata.eu:country-code" codeList="https://gnss-metadata.eu/geodesyml/codelists/country-codes-codelist.xml#GeodesyML_CountryCode" codeListValue="GLP"><![CDATA[GLP]]></geo:countryCodeISO>
+      <geo:tectonicPlate codeSpace="urn:ga-gov-au:plate-type"><![CDATA[CARIBBEAN]]></geo:tectonicPlate>
+      <geo:approximatePositionITRF>
+        <geo:cartesianPosition>
+          <gml:Point gml:id="pos_cartesian">
+            <gml:pos srsName="EPSG:4978"><![CDATA[2907580.1000162 -5400653.4000301 1744663.1000221]]></gml:pos>
+          </gml:Point>
+        </geo:cartesianPosition>
+        <geo:geodeticPosition>
+          <gml:Point gml:id="pos_ellipsoidal">
+            <gml:pos srsName="EPSG:4979"><![CDATA[15.97961312697 -61.703060829124 377.0362]]></gml:pos>
+          </gml:Point>
+        </geo:geodeticPosition>
+      </geo:approximatePositionITRF>
+      <geo:notes>ITRF2014 POSITION (2024.0)&#13;
+&#13;
+Previous Approx. Position before 2024-09-13:&#13;
+X= 2907579.310&#13;
+Y=-5400653.250&#13;
+Z= 1744663.100&#13;
+&#13;
+ARP IGS08 POSITION (2016-05-21)</geo:notes>
+    </geo:siteLocation>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-64f9fa00ce629">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>LP0346</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH Z-XII3"><![CDATA[ASHTECH Z-XII3]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[5J00-1C63]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2000-05-13T00:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2000-05-13T16:00:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-64f9fa00d028e">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>700570B02356</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH Z-XII3"><![CDATA[ASHTECH Z-XII3]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[CD00-1D02]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2000-05-13T16:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2001-11-26T16:00:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-64f9fa00d1687">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>LP0346</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH Z-XII3"><![CDATA[ASHTECH Z-XII3]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[6J00]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2001-11-26T16:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2002-03-08T21:00:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-64f9fa00d25ce">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>700570B02356</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH Z-XII3"><![CDATA[ASHTECH Z-XII3]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[CD00-1D02]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2002-03-08T21:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2004-10-29T20:58:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-64f9fa00d3457">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>ZR52001481</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH UZ-12"><![CDATA[ASHTECH UZ-12]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[J10-0A16]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2004-10-29T20:58:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2004-11-25T00:00:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-64f9fa00d449e">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>700570B02356</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH Z-XII3"><![CDATA[ASHTECH Z-XII3]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[CD00-1D02]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2004-11-25T00:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2005-09-04T23:59:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-651da7925d182">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>1200439017</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH Z-X"><![CDATA[ASHTECH Z-X]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[ZB00]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2005-09-05T00:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2006-05-06T00:00:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-10-04T17:57:00Z</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-651da7925d1b9">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>7008451Elp02702</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="ASHTECH Z-XII3"><![CDATA[ASHTECH Z-XII3]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[CD00-1D02]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">15.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2006-05-06T00:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2016-04-28T13:02:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2023-10-04T17:57:00Z</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-677c1e7c40c20">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>1831786</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="LEICA GR25"><![CDATA[LEICA GR25]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:satelliteSystem><![CDATA[GLO]]></geo:satelliteSystem>
+        <geo:satelliteSystem><![CDATA[GAL]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[3.22/6.521]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">0.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2016-04-28T13:02:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2018-12-15T00:00:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2025-01-06T18:18:00Z</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-677c1e7c40c45">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>2090589</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="LEICA GR50"><![CDATA[LEICA GR50]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:satelliteSystem><![CDATA[GLO]]></geo:satelliteSystem>
+        <geo:satelliteSystem><![CDATA[GAL]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[4.31/6.525]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">0.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2018-12-15T00:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2023-09-06T16:00:00Z]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="true"/>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2025-01-06T18:18:00Z</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssReceiver>
+      <geo:GnssReceiver gml:id="gnss-receiver-677c1ca508d3e">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>2090589</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:receiver-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSReceiverTypeCode" codeListValue="LEICA GR50"><![CDATA[LEICA GR50]]></geo:igsModelCode>
+        <geo:satelliteSystem><![CDATA[GPS]]></geo:satelliteSystem>
+        <geo:satelliteSystem><![CDATA[GLO]]></geo:satelliteSystem>
+        <geo:satelliteSystem><![CDATA[GAL]]></geo:satelliteSystem>
+        <geo:firmwareVersion><![CDATA[4.52/7.711]]></geo:firmwareVersion>
+        <geo:elevationCutoffSetting xsi:nil="false">0.0</geo:elevationCutoffSetting>
+        <geo:dateInstalled><![CDATA[2023-09-06T16:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[]]></geo:dateRemoved>
+        <geo:temperatureStabilization xsi:nil="false">0.0</geo:temperatureStabilization>
+      </geo:GnssReceiver>
+      <geo:dateInserted>2025-01-06T18:10:00Z</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssReceiver>
+    <geo:gnssAntenna>
+      <geo:GnssAntenna gml:id="gnss-antenna-64f9fa00d910d">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>CR15865</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:antenna-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSAntennaTypeCode" codeListValue="ASH700936E      NONE"><![CDATA[ASH700936E      NONE]]></geo:igsModelCode>
+        <geo:antennaReferencePoint codeSpace="urn:ga-gov-au:antenna-reference-point-type"><![CDATA[BPA]]></geo:antennaReferencePoint>
+        <geo:marker-arpUpEcc.>0.025</geo:marker-arpUpEcc.>
+        <geo:marker-arpNorthEcc.>0.0</geo:marker-arpNorthEcc.>
+        <geo:marker-arpEastEcc.>0.0</geo:marker-arpEastEcc.>
+        <geo:alignmentFromTrueNorth xsi:nil="false">0.0</geo:alignmentFromTrueNorth>
+        <geo:antennaRadomeType codeSpace="urn:igs-org:gnss-radome-model-code"><![CDATA[NONE]]></geo:antennaRadomeType>
+        <geo:radomeSerialNumber><![CDATA[]]></geo:radomeSerialNumber>
+        <geo:antennaCableType><![CDATA[N-N]]></geo:antennaCableType>
+        <geo:antennaCableLength xsi:nil="false">50.0</geo:antennaCableLength>
+        <geo:dateInstalled><![CDATA[2000-05-13T00:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2000-05-13T16:00:00Z]]></geo:dateRemoved>
+      </geo:GnssAntenna>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssAntenna>
+    <geo:gnssAntenna>
+      <geo:GnssAntenna gml:id="gnss-antenna-64f9fa00db8e6">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>CR16689</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:antenna-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSAntennaTypeCode" codeListValue="ASH700936E      SNOW"><![CDATA[ASH700936E      SNOW]]></geo:igsModelCode>
+        <geo:antennaReferencePoint codeSpace="urn:ga-gov-au:antenna-reference-point-type"><![CDATA[BPA]]></geo:antennaReferencePoint>
+        <geo:marker-arpUpEcc.>0.025</geo:marker-arpUpEcc.>
+        <geo:marker-arpNorthEcc.>0.0</geo:marker-arpNorthEcc.>
+        <geo:marker-arpEastEcc.>0.0</geo:marker-arpEastEcc.>
+        <geo:alignmentFromTrueNorth xsi:nil="false">0.0</geo:alignmentFromTrueNorth>
+        <geo:antennaRadomeType codeSpace="urn:igs-org:gnss-radome-model-code"><![CDATA[SNOW]]></geo:antennaRadomeType>
+        <geo:radomeSerialNumber><![CDATA[]]></geo:radomeSerialNumber>
+        <geo:antennaCableType><![CDATA[N-N]]></geo:antennaCableType>
+        <geo:antennaCableLength xsi:nil="false">50.0</geo:antennaCableLength>
+        <geo:dateInstalled><![CDATA[2000-05-13T16:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2016-04-28T13:02:00Z]]></geo:dateRemoved>
+      </geo:GnssAntenna>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssAntenna>
+    <geo:gnssAntenna>
+      <geo:GnssAntenna gml:id="gnss-antenna-64f9fa00de099">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>18325020</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:antenna-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSAntennaTypeCode" codeListValue="LEIAR10         NONE"><![CDATA[LEIAR10         NONE]]></geo:igsModelCode>
+        <geo:antennaReferencePoint codeSpace="urn:ga-gov-au:antenna-reference-point-type"><![CDATA[BAM]]></geo:antennaReferencePoint>
+        <geo:marker-arpUpEcc.>0.025</geo:marker-arpUpEcc.>
+        <geo:marker-arpNorthEcc.>0.0</geo:marker-arpNorthEcc.>
+        <geo:marker-arpEastEcc.>0.0</geo:marker-arpEastEcc.>
+        <geo:alignmentFromTrueNorth xsi:nil="false">0.0</geo:alignmentFromTrueNorth>
+        <geo:antennaRadomeType codeSpace="urn:igs-org:gnss-radome-model-code"><![CDATA[NONE]]></geo:antennaRadomeType>
+        <geo:radomeSerialNumber><![CDATA[]]></geo:radomeSerialNumber>
+        <geo:antennaCableType><![CDATA[TNC-TNC]]></geo:antennaCableType>
+        <geo:antennaCableLength xsi:nil="false">50.0</geo:antennaCableLength>
+        <geo:dateInstalled><![CDATA[2016-04-28T13:02:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2019-07-18T10:00:00Z]]></geo:dateRemoved>
+      </geo:GnssAntenna>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssAntenna>
+    <geo:gnssAntenna>
+      <geo:GnssAntenna gml:id="gnss-antenna-64f9fa00e0583">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>5506</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:antenna-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSAntennaTypeCode" codeListValue="AERAT1675_120   SPKE"><![CDATA[AERAT1675_120   SPKE]]></geo:igsModelCode>
+        <geo:antennaReferencePoint codeSpace="urn:ga-gov-au:antenna-reference-point-type"><![CDATA[BAM]]></geo:antennaReferencePoint>
+        <geo:marker-arpUpEcc.>0.025</geo:marker-arpUpEcc.>
+        <geo:marker-arpNorthEcc.>0.0</geo:marker-arpNorthEcc.>
+        <geo:marker-arpEastEcc.>0.0</geo:marker-arpEastEcc.>
+        <geo:alignmentFromTrueNorth xsi:nil="false">0.0</geo:alignmentFromTrueNorth>
+        <geo:antennaRadomeType codeSpace="urn:igs-org:gnss-radome-model-code"><![CDATA[SPKE]]></geo:antennaRadomeType>
+        <geo:radomeSerialNumber><![CDATA[]]></geo:radomeSerialNumber>
+        <geo:antennaCableType><![CDATA[TNC-TNC]]></geo:antennaCableType>
+        <geo:antennaCableLength xsi:nil="false">50.0</geo:antennaCableLength>
+        <geo:dateInstalled><![CDATA[2019-07-18T15:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[2023-09-06T15:00:00Z]]></geo:dateRemoved>
+      </geo:GnssAntenna>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssAntenna>
+    <geo:gnssAntenna>
+      <geo:GnssAntenna gml:id="gnss-antenna-64f9fa00e2b93">
+        <geo:notes></geo:notes>
+        <geo:manufacturerSerialNumber>5510</geo:manufacturerSerialNumber>
+        <geo:igsModelCode codeSpace="urn:gnss-metadata.eu:antenna-type" codeList="https://gnss-metadata.eu/geodesyml/codelists/antenna-receiver-codelists.xml#GeodesyML_GNSSAntennaTypeCode" codeListValue="AERAT1675_120   SPKE"><![CDATA[AERAT1675_120   SPKE]]></geo:igsModelCode>
+        <geo:antennaReferencePoint codeSpace="urn:ga-gov-au:antenna-reference-point-type"><![CDATA[BAM]]></geo:antennaReferencePoint>
+        <geo:marker-arpUpEcc.>0.025</geo:marker-arpUpEcc.>
+        <geo:marker-arpNorthEcc.>0.0</geo:marker-arpNorthEcc.>
+        <geo:marker-arpEastEcc.>0.0</geo:marker-arpEastEcc.>
+        <geo:alignmentFromTrueNorth xsi:nil="false">0.0</geo:alignmentFromTrueNorth>
+        <geo:antennaRadomeType codeSpace="urn:igs-org:gnss-radome-model-code"><![CDATA[SPKE]]></geo:antennaRadomeType>
+        <geo:radomeSerialNumber><![CDATA[]]></geo:radomeSerialNumber>
+        <geo:antennaCableType><![CDATA[TNC-TNC]]></geo:antennaCableType>
+        <geo:antennaCableLength xsi:nil="false">50.0</geo:antennaCableLength>
+        <geo:dateInstalled><![CDATA[2023-09-06T16:00:00Z]]></geo:dateInstalled>
+        <geo:dateRemoved><![CDATA[]]></geo:dateRemoved>
+      </geo:GnssAntenna>
+      <geo:dateInserted>2023-09-07</geo:dateInserted>
+      <geo:dateDeleted></geo:dateDeleted>
+    </geo:gnssAntenna>
+    <geo:siteOwner gml:id="siteOwner">
+      <gml:identifier codeSpace="https://gnss-metadata.eu/"><![CDATA[subagency_5cf8eae5b6ae0c4caa731ba2_5f6e127baf697_-10]]></gml:identifier>
+      <gml:name><![CDATA[IPGP]]></gml:name>
+      <gmd:MD_SecurityConstraints>
+        <gmd:classification gco:nilReason="Missing"/>
+      </gmd:MD_SecurityConstraints>
+      <gmd:CI_ResponsibleParty>
+        <gmd:individualName>
+          <gco:CharacterString><![CDATA[IPGP-VOLOBSIS Team]]></gco:CharacterString>
+        </gmd:individualName>
+        <gmd:organisationName>
+          <gco:CharacterString><![CDATA[Institut de Physique du Globe de Paris]]></gco:CharacterString>
+        </gmd:organisationName>
+        <gmd:contactInfo>
+          <gmd:CI_Contact>
+            <gmd:phone>
+              <gmd:CI_Telephone/>
+            </gmd:phone>
+            <gmd:address>
+              <gmd:CI_Address>
+                <gmd:deliveryPoint>
+                  <gco:CharacterString><![CDATA[rue Jussieu, 1]]></gco:CharacterString>
+                </gmd:deliveryPoint>
+                <gmd:city>
+                  <gco:CharacterString><![CDATA[Paris]]></gco:CharacterString>
+                </gmd:city>
+                <gmd:postalCode>
+                  <gco:CharacterString><![CDATA[75005]]></gco:CharacterString>
+                </gmd:postalCode>
+                <gmd:country>
+                  <gco:CharacterString><![CDATA[France]]></gco:CharacterString>
+                </gmd:country>
+                <gmd:electronicMailAddress>
+                  <gco:CharacterString><![CDATA[volobsis-support@ipgp.fr]]></gco:CharacterString>
+                </gmd:electronicMailAddress>
+              </gmd:CI_Address>
+            </gmd:address>
+          </gmd:CI_Contact>
+        </gmd:contactInfo>
+        <gmd:role/>
+      </gmd:CI_ResponsibleParty>
+    </geo:siteOwner>
+    <geo:siteContact gml:id="siteContact">
+      <gml:identifier codeSpace="https://gnss-metadata.eu/"><![CDATA[agency_5cf8eae5b6ae0c4caa731ba2_-10]]></gml:identifier>
+      <gml:name><![CDATA[OVSG-IPGP]]></gml:name>
+      <gmd:MD_SecurityConstraints>
+        <gmd:classification gco:nilReason="Missing"/>
+      </gmd:MD_SecurityConstraints>
+      <gmd:CI_ResponsibleParty>
+        <gmd:individualName>
+          <gco:CharacterString><![CDATA[OVSG-IPGP Team]]></gco:CharacterString>
+        </gmd:individualName>
+        <gmd:organisationName>
+          <gco:CharacterString><![CDATA[Guadeloupe Seismic and Volcano Observatory]]></gco:CharacterString>
+        </gmd:organisationName>
+        <gmd:contactInfo>
+          <gmd:CI_Contact>
+            <gmd:phone>
+              <gmd:CI_Telephone>
+                <gmd:voice>
+                  <gco:CharacterString><![CDATA[+590 590 99 11 33]]></gco:CharacterString>
+                </gmd:voice>
+                <gmd:facsimile>
+                  <gco:CharacterString><![CDATA[+590 590 99 11 33]]></gco:CharacterString>
+                </gmd:facsimile>
+              </gmd:CI_Telephone>
+            </gmd:phone>
+            <gmd:address>
+              <gmd:CI_Address>
+                <gmd:deliveryPoint>
+                  <gco:CharacterString><![CDATA[Le Houëlmont, ]]></gco:CharacterString>
+                </gmd:deliveryPoint>
+                <gmd:city>
+                  <gco:CharacterString><![CDATA[Gourbeyre, Guadeloupe, FWI]]></gco:CharacterString>
+                </gmd:city>
+                <gmd:postalCode>
+                  <gco:CharacterString><![CDATA[97113]]></gco:CharacterString>
+                </gmd:postalCode>
+                <gmd:country>
+                  <gco:CharacterString><![CDATA[France]]></gco:CharacterString>
+                </gmd:country>
+                <gmd:electronicMailAddress>
+                  <gco:CharacterString><![CDATA[equipe@ovsg.univ-ag.fr]]></gco:CharacterString>
+                </gmd:electronicMailAddress>
+              </gmd:CI_Address>
+            </gmd:address>
+          </gmd:CI_Contact>
+        </gmd:contactInfo>
+        <gmd:role/>
+      </gmd:CI_ResponsibleParty>
+    </geo:siteContact>
+    <geo:siteMetadataCustodian gml:id="metadataCustodian">
+      <gml:identifier codeSpace="https://gnss-metadata.eu/"><![CDATA[agency_5cf8eae5b6ae0c4caa731ba2_6329d149eae8305cf25a1253]]></gml:identifier>
+      <gml:name><![CDATA[OVSG-IPGP]]></gml:name>
+      <gmd:MD_SecurityConstraints>
+        <gmd:classification gco:nilReason="Missing"/>
+      </gmd:MD_SecurityConstraints>
+      <gmd:CI_ResponsibleParty>
+        <gmd:individualName>
+          <gco:CharacterString><![CDATA[IPGP-VOLOBSIS Team]]></gco:CharacterString>
+        </gmd:individualName>
+        <gmd:organisationName>
+          <gco:CharacterString><![CDATA[Guadeloupe Seismic and Volcano Observatory]]></gco:CharacterString>
+        </gmd:organisationName>
+        <gmd:contactInfo>
+          <gmd:CI_Contact>
+            <gmd:phone>
+              <gmd:CI_Telephone/>
+            </gmd:phone>
+            <gmd:address>
+              <gmd:CI_Address>
+                <gmd:deliveryPoint>
+                  <gco:CharacterString><![CDATA[Le Houëlmont, ]]></gco:CharacterString>
+                </gmd:deliveryPoint>
+                <gmd:city>
+                  <gco:CharacterString><![CDATA[Gourbeyre, Guadeloupe, FWI]]></gco:CharacterString>
+                </gmd:city>
+                <gmd:postalCode>
+                  <gco:CharacterString><![CDATA[97113]]></gco:CharacterString>
+                </gmd:postalCode>
+                <gmd:country>
+                  <gco:CharacterString><![CDATA[France]]></gco:CharacterString>
+                </gmd:country>
+                <gmd:electronicMailAddress>
+                  <gco:CharacterString><![CDATA[volobsis-support@ipgp.fr]]></gco:CharacterString>
+                </gmd:electronicMailAddress>
+              </gmd:CI_Address>
+            </gmd:address>
+          </gmd:CI_Contact>
+        </gmd:contactInfo>
+        <gmd:role/>
+      </gmd:CI_ResponsibleParty>
+    </geo:siteMetadataCustodian>
+    <geo:moreInformation>
+      <geo:dataCenter><![CDATA[IPGP]]></geo:dataCenter>
+      <geo:urlForMoreInformation><![CDATA[http://volobsis.ipgp.fr]]></geo:urlForMoreInformation>
+      <geo:siteMap><![CDATA[http://volobsis.ipgp.fr]]></geo:siteMap>
+      <geo:siteDiagram><![CDATA[]]></geo:siteDiagram>
+      <geo:horizonMask><![CDATA[]]></geo:horizonMask>
+      <geo:monumentDescription><![CDATA[]]></geo:monumentDescription>
+      <geo:sitePictures><![CDATA[]]></geo:sitePictures>
+      <geo:notes><![CDATA[]]></geo:notes>
+      <geo:antennaGraphicsWithDimensions><![CDATA[ASH700936E
+ASH700936E_C
+ASH700936F_C
+
+                      +---------+
+                     /           \
+                    |             |
+  +-----------------+-------------+-----------------+     <--  0.1008  TCR
+  |                                                 |
+  |                                                 |
+  |                                                 |
+  |                                                 |
++-+-------------------------------------------------+-+   <--  0.0378
++-------------------+-------------+-------------------+   <--  0.0348  BCR
+                    |             |
+                    |             |
+                    +------x------+                       <--  0.0000  BPA=ARP
+                                                                       NOM=NRP
+<--                      0.3794                     -->
+
+LEIAR10
+
+                        .  ^  .                           <--  0.1362
+                    .             .
+               .                       .
+           .                               .
+        .                                     .
+      /                                         \
+     |                                           |
+     |                                           |        <--  0.0362  Notch
+     +-----____                         ____-----+
+               -----____       ____-\ \-
+                        +--x--+      \_\                  <--  0.0000  BAM=ARP
+                                                                       NOM=NRP
+     <--                 0.2400                -->]]></geo:antennaGraphicsWithDimensions>
+      <geo:insertTextGraphicFromAntenna><![CDATA[ASH700936E
+ASH700936E_C
+ASH700936F_C
+
+                      +---------+
+                     /           \
+                    |             |
+  +-----------------+-------------+-----------------+     <--  0.1008  TCR
+  |                                                 |
+  |                                                 |
+  |                                                 |
+  |                                                 |
++-+-------------------------------------------------+-+   <--  0.0378
++-------------------+-------------+-------------------+   <--  0.0348  BCR
+                    |             |
+                    |             |
+                    +------x------+                       <--  0.0000  BPA=ARP
+                                                                       NOM=NRP
+<--                      0.3794                     -->
+
+LEIAR10
+
+                        .  ^  .                           <--  0.1362
+                    .             .
+               .                       .
+           .                               .
+        .                                     .
+      /                                         \
+     |                                           |
+     |                                           |        <--  0.0362  Notch
+     +-----____                         ____-----+
+               -----____       ____-\ \-
+                        +--x--+      \_\                  <--  0.0000  BAM=ARP
+                                                                       NOM=NRP
+     <--                 0.2400                -->]]></geo:insertTextGraphicFromAntenna>
+      <geo:DOI codeSpace="urn:ga-gov-au:self.moreInformation-type"><![CDATA[https://doi.org/10.18715/GUADELOUPE.OVSG]]></geo:DOI>
+    </geo:moreInformation>
+  </geo:siteLog>
+</geo:GeodesyML>
