@@ -1171,7 +1171,3 @@ def file_period_from_timedelta(start_date, end_date):
     #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
-
-s = pd.Timestamp("2026-02-03 08:15:00").to_pydatetime()
-e = pd.Timestamp("2026-02-03 08:30:00").to_pydatetime()
-file_period_from_timedelta(s, e)
