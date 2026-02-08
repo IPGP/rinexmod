@@ -144,7 +144,9 @@ class MetaData:
     
     def set_from_gml(self, gmlfile):
         """
-        initialization method for metadata import from GeodesyML file
+        This method initializes the metadata object from a GeodesyML file. 
+        It uses the gml_file2raw method to parse the GeodesyML file and extract the raw content, which is then processed to populate the instrus and misc_meta attributes of the metadata object. 
+        The site_id is also set based on the extracted metadata.
         """
         self.path = gmlfile
         self.filename = os.path.basename(self.path)
@@ -617,6 +619,18 @@ class MetaData:
     def parse_element(element):
         """
         Recursive function that traverses an XML element and converts it into a dictionary.
+        If the element has no child elements, it returns the text content of the element.
+        If the element has child elements, it iterates through each child and calls itself recursively to parse the child elements.
+        The resulting dictionary is constructed based on the tag names of the child elements.
+        If multiple child elements have the same tag name, their values are stored in a list.
+
+        Parameters
+        ----------
+        element : xml.etree.ElementTree.Element to be parsed
+
+        Returns
+        -------
+        dict or str
         """
 
         if len(element) == 0:
@@ -641,7 +655,14 @@ class MetaData:
     
     def gml_file2raw(self):
         """
-        Function that reads a GeodesyML file and returns a dictionary.
+        The function uses the ElementTree XML API to parse the GeodesyML file and convert it into a dictionary format. 
+        It removes any XML namespaces and antenna graphics information from the parsed data. 
+        The resulting dictionary contains the structured information extracted from the GeodesyML file, which can be used for further processing.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the structured information extracted from the GeodesyML file.
         """
         if not os.path.isfile(self.path):
             return None, 2
@@ -852,7 +873,11 @@ class MetaData:
     
     def gml_raw2instrus(self):
         """
-        using raw_content a list of instruments with their periods is built
+        This function uses the raw_content attribute (dictionary), generated with gml_file2raw method to identify the different complete installations from the antenna and receiver change dates.
+
+        Returns
+        -------
+        instrus : list containing one or several dictionaries with 3 keys 'dates' 'receiver' 'antenna'
         """
 
         listdates = []
@@ -971,7 +996,11 @@ class MetaData:
     
     def gml_raw2misc_meta(self):
         """
-        generates the "misc meta" dictionary from raw_content 
+        This function generates the "misc meta" dictionary containing all useful metadata information which is not stored in the instrumentation dictionary.
+
+        Returns
+        -------
+        dict : dictionary containing the structured information extracted from the GeodesyML file, which can be used for further processing
         """
         
         site_id = self.filename[:9].upper()
