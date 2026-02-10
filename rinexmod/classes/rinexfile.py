@@ -2131,6 +2131,22 @@ class RinexFile:
 
         self.add_comment(new_line, add_as_first=True)
 
+    def add_map_sys_obs_comments(self, map_sys_obs_dic):
+        """
+        Add COMMENT lines describing the mapping of the observables in the RINEX header.
+        """
+
+        cmt_list = ["-" * 59 , "OBSERVABLES MAPPING:"]
+        for sys in map_sys_obs_dic.keys():
+            for k in map_sys_obs_dic[sys].keys():
+                cmt_list.append(f"sys {sys} band/obs {str(k):>3s} mapped to {map_sys_obs_dic[sys][k]:>3s}")
+        cmt_list.append("-" * 59 )
+
+        self.add_comments(cmt_list)
+
+        return
+
+
     def add_comments(self, comment_list):
         """
         Add several comments at the same time.
