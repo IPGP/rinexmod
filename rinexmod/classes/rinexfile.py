@@ -2136,11 +2136,11 @@ class RinexFile:
         Add COMMENT lines describing the mapping of the observables in the RINEX header.
         """
 
-        cmt_list = ["-" * 59 , "OBSERVABLES MAPPING:"]
+        cmt_list = ["-" * 60 , "OBSERVABLES MAPPING:"]
         for sys in map_sys_obs_dic.keys():
             for k in map_sys_obs_dic[sys].keys():
-                cmt_list.append(f"sys {sys} band/obs {str(k):>3s} mapped to {map_sys_obs_dic[sys][k]:>3s}")
-        cmt_list.append("-" * 59 )
+                cmt_list.append(f"sys {sys} type/band/channel {str(k):>3s} mapped to {map_sys_obs_dic[sys][k]:>3s}")
+        cmt_list.append("-" * 60)
 
         self.add_comments(cmt_list)
 
