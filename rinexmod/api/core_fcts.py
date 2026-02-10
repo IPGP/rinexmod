@@ -1235,7 +1235,7 @@ def map_sys_obs(sys_obs_dic, map_sys_obs_dic, force=False):
             cha = obs[2] if len(obs) == 3 else " "
 
             if len(obs) == 3 and not force:
-                logger.info(f"sys {sys} obs {obs} has 3 characters. Skipping mapping for this obs. (use force to override)")
+                logger.debug(f"sys {sys} obs {obs} has 3 characters. Skipping mapping for this obs. (use force to override)")
                 sys_obs_dic_new[sys].append(obs)
                 continue
 
