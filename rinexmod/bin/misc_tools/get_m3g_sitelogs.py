@@ -44,6 +44,7 @@ EXAMPLE:
 2021-10-18 FL
 2023-03-21 PS
 """
+from zoneinfo import InvalidTZPathWarning
 
 import requests
 import subprocess
@@ -51,6 +52,7 @@ import hashlib
 import os, glob
 import shutil
 import sys
+
 
 def get_m3g_sitelogs(
     sitelogsfolder,
@@ -62,6 +64,7 @@ def get_m3g_sitelogs(
     force=False,
     exclude=[],
     geodesyml=False,
+    network=None,
 ):
     """
     Downloads the latest version of sitelogs from the M3G repository and writes them
@@ -93,6 +96,11 @@ def get_m3g_sitelogs(
         Default is an empty list.
     geodesyml : bool, optional
         If True, downloads GeodesyML files instead of sitelogs.
+        Default is False.
+    network : str or list of str, optional
+        A more generic way to select network(s) to filter sitelogs to download.
+        M3G's Network code(s) to filter sitelogs to download.
+        Default is None.
 
     Returns
     -------
@@ -108,25 +116,12 @@ def get_m3g_sitelogs(
             "when using SVN mode (-s), a single observatory must be given with -o option"
         )
 
-    if not isinstance(observatory,list):
+    if not isinstance(observatory, list):
         observatory = [observatory]
 
     # M3G country webservice. We use countries to filter IPGP's obs stations.
-    country_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?country="
-    country_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?network="
-
-    # # Observatories. First field is the counrty code in M3G's webservice.
-    # # Second field is the name of the observatory and is used to build the subfolder
-    # observatories = {
-    #     "MTQ": "OVSM",
-    #     "GLP": "OVSG",
-    #     "BLM": "OVSG",  ### St Barthelemy
-    #     "MAF": "OVSG",  ### St Martin (no station there for the moment)
-    #     "REU": "OVPF",
-    #     "MYT": "REVOSIMA",
-    #     "ATF": "REVOSIMA",
-    #     "DJI": "OGA",
-    # }  ### TAAF aka Terres Australes
+    # country_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?country="
+    ntwk_url = "https://gnss-metadata.eu/v1/sitelog/metadata-list?network="
 
     # (No more country but network 2025-03)
     net_obs_dic_all = {
@@ -147,21 +142,13 @@ def get_m3g_sitelogs(
     else:
         net_obs_dic = net_obs_dic_all
 
-    ## complex for and ifs structure (2025-04)
-    # if not (len(observatory) == 1 and not observatory[0]):
-    #     for obs in observatory:
-    #         if obs in net_obs_dic.values():
-    #             net_obs_dic_cln = dict()
-    #             for net_key, obs_val in net_obs_dic.items():
-    #                 if obs_val in obs:
-    #                     net_obs_dic_cln[net_key] = obs_val
-    #
-    #             net_obs_dic = net_obs_dic_cln
-
-    ## simple way to filter observatories if observatories is bijective
-    ## not the case anymore because ATF, BLM ... (2022-10)
-    # net_key = list(observatories.keys())[list(observatories.values()).index(obs)]
-    # observatories = {net_key: observatories[net_key]}
+    # A more generic way to select network(s) (2025-12)
+    if network:
+        if not isinstance(network, list):
+            network = [network]
+        for net in network:
+            if net not in net_obs_dic.keys():
+                net_obs_dic[net] = net
 
     # Check that output folder exists
     if not os.path.exists(sitelogsfolder):
@@ -186,7 +173,7 @@ def get_m3g_sitelogs(
 
     for net in net_obs_dic.keys():
 
-        obs_url = country_url + net
+        obs_url = ntwk_url + net
 
         obs_infos = requests.get(obs_url)
         obs_infos = obs_infos.content.decode("utf-8")
@@ -216,10 +203,10 @@ def get_m3g_sitelogs(
                 continue
 
             sitelog_md5 = line[1]
-            sitelog_url = line[5]
             sitelog_name = line[2]
-            geodesyml_url = line[6]
             geodesyml_name = line[3]
+            sitelog_url = line[5]
+            geodesyml_url = line[6]
 
             if geodesyml:
                 file_name = geodesyml_name
@@ -281,28 +268,6 @@ def get_m3g_sitelogs(
             ["svn", "commit", "-m", "get_m3g_sitelogs auto commit", sitelogsfolder]
         )
 
-    # # Other tecnhique using node webservice that will send back less information
-    # # about the sitelogs but will filter with the node ID, and will return all
-    # # sitelogs belonging to IPGP node
-    #
-    # node_url = "https://gnss-metadata.eu/v1/node/view?id="
-    # node_id = '5e4d07d9468524145a7cf0f2' # IPGP
-    #
-    # file_url = "https://gnss-metadata.eu/v1/sitelog/exportlog?id="
-    #
-    # # Getting station list related to IPGP node
-    # node_url = node_url + node_id
-    #
-    # node_infos = requests.get(node_url)
-    # node_infos = node_infos.content.decode('utf-8')
-    # node_infos = json.loads(node_infos)
-    #
-    # station_list = node_infos['stations']
-    #
-    # for station in station_list:
-    #
-    #     output = os.path.join(sitelogsfolder, observatories[station[-3:]], station.lower() + '.log')
-
 
 def main():
     import argparse
@@ -320,8 +285,8 @@ def main():
         "-d",
         "--delete",
         help="Delete old sitelogs in the output folder. "
-             "This allows to have only the last version, "
-             "as version changing sitelogs changes of name.",
+        "This allows to have only the last version, "
+        "as version changing sitelogs changes of name.",
         action="store_true",
     )
     parser.add_argument(
@@ -335,27 +300,27 @@ def main():
         "-o",
         "--observatory",
         nargs="+",
-        help="Download sitelogs for some specific IPGP's observatories."
-             "Valid values are : OVSM OVSG OVPF REVOSIMA OGA",
+        help="Download sitelogs for some specific IPGP's observatories. "
+        "Valid values are : OVSM OVSG OVPF REVOSIMA OGA",
         type=str,
         default=None,
     )
     parser.add_argument(
         "-r",
         "--root",
-        help="Store the sitelogs in OUTPUTFOLDER root."
-             "(per default, an observatory-specific folder is"
-             "created to store the corresponding sitelogs.)",
+        help="Store the sitelogs in OUTPUTFOLDER root. "
+        "(per default, an observatory-specific folder is "
+        "created to store the corresponding sitelogs.)",
         action="store_true",
         default=False,
     )
     parser.add_argument(
         "-s",
         "--svn",
-        help="A mode to maintain the legacy OVS SVN folder."
-             "Download the sitelog of a single obs and perform a svn commit."
-             "A single observatory must be given with -o option."
-             "The root folder option is automatically activated (-r)",
+        help="A mode to maintain the legacy OVS SVN folder. "
+        "Download the sitelog of a single obs and perform a svn commit. "
+        "A single observatory must be given with -o option. "
+        "The root folder option is automatically activated (-r)",
         action="store_true",
         default=False,
     )
@@ -370,7 +335,7 @@ def main():
         "-e",
         "--exclude",
         help="Site(s) you want to exclude from download. "
-             "Provide as input 4 or 9 character site codes separated with spaces",
+        "Provide as input 4 or 9 character site codes separated with spaces",
         nargs="+",
         default=[],
     )
@@ -381,6 +346,15 @@ def main():
         help="Download GeodesyML files instead of sitelogs",
         action="store_true",
         default=False,
+    )
+
+    parser.add_argument(
+        "-n",
+        "--network",
+        nargs="+",
+        help="M3G's Network code(s) to filter sitelogs to download.",
+        type=str,
+        default=None,
     )
 
     args = parser.parse_args()
@@ -395,6 +369,7 @@ def main():
         force=args.force,
         exclude=args.exclude,
         geodesyml=args.geodesyml,
+        network=args.network,
     )
 
 

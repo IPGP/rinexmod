@@ -66,6 +66,12 @@ class RinexFile:
         self.rinex_data, self.status = self._load_rinexdata(
             force_rnx_load=force_rnx_load
         )
+
+        if not self.rinex_data:
+            errmsg = f"RINEX data could not be loaded: {self.status}"
+            logger.error(errmsg)
+            raise rimo_cor.RinexFileError(errmsg)
+
         self.size = self.get_size()
         self.name_conv = self.get_naming_convention()
         self.compression, self.hatanka_input = self.get_compression()
@@ -1141,11 +1147,11 @@ class RinexFile:
 
         Returns
         -------
-        dict_sys_obs : dict
+        sys_obs_dic : dict
             a dictionary of lists describing the observables per system, e.g.:
             ``{"G" : ["C1C","C1W","C2W","L1C","L2W","S1C",S2W"]}``.
 
-        dict_sys_nobs : dict
+        sys_nobs_dic : dict
             a dictionary of integer describing the number of observables per system, e.g.:
             ``{'C': 8, 'E': 16, 'G': 16, 'I': 4, 'R': 12, 'S': 4}``.
 
@@ -1178,14 +1184,14 @@ class RinexFile:
                 lines_sys.remove(l)
 
         #### store system and observables in a dictionnary
-        dict_sys_obs = dict()
-        dict_sys_nobs = dict()
+        sys_obs_dic = dict()
+        sys_nobs_dic = dict()
 
         for il, l in enumerate(lines_sys):
             sysobs = l.split()
             sys = sysobs[0]
-            dict_sys_obs[sys] = sysobs[2:]
-            dict_sys_nobs[sys] = int(sysobs[1])
+            sys_obs_dic[sys] = sysobs[2:]
+            sys_nobs_dic[sys] = int(sysobs[1])
             ## adds the LLI and SSI indicators
             if len(sysobs[2:]) != int(sysobs[1]):
                 logger.warn(
@@ -1195,7 +1201,7 @@ class RinexFile:
                     sys,
                 )
 
-        return dict_sys_obs, dict_sys_nobs
+        return sys_obs_dic, sys_nobs_dic
 
     #  __  __           _   __  __      _   _               _
     # |  \/  |         | | |  \/  |    | | | |             | |
@@ -1739,7 +1745,7 @@ class RinexFile:
 
         return
 
-    def mod_sys_obs_types(self, dict_sys_obs):
+    def mod_sys_obs_types(self, sys_obs_dic):
         """
         Modify within the RINEX header the systems/observables
         of the ``SYS / # / OBS TYPES`` lines
@@ -1748,7 +1754,7 @@ class RinexFile:
 
         Parameters
         ----------
-        dict_sys_obs : dict
+        sys_obs_dic : dict
             a dictionary of lists describing the observables per system, e.g.:
             ``{"G" : ["C1C","C1W","C2W","L1C","L2W","S1C",S2W"]}``
         """
@@ -1756,7 +1762,7 @@ class RinexFile:
         if self.status:
             return
 
-        if not any([dict_sys_obs]):
+        if not any([sys_obs_dic]):
             return
 
         if self.version_float < 3:
@@ -1772,7 +1778,7 @@ class RinexFile:
 
         ### parse the dict
         lfmt_stk = []
-        for sys, obs in dict_sys_obs.items():
+        for sys, obs in sys_obs_dic.items():
             ### make slice of 13 elements, i.e. the number of obervable max in
             ### one line
             obs_slice = rimo_cor.slice_list(obs, 13)
