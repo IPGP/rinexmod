@@ -1022,7 +1022,9 @@ def dates_from_rinex_filename(rnx_inp):
         peri_val = int(peri_inp[0:2])
         peri_unit = str(peri_inp[2])
 
-        if peri_unit == "M":
+        if peri_unit == "S":
+            unit_sec = 1
+        elif peri_unit == "M":
             unit_sec = 60
         elif peri_unit == "H":
             unit_sec = 3600
