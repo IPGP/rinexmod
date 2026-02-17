@@ -24,7 +24,9 @@ import rinexmod.classes.rinexfile as rimo_rnx
 
 
 import rinexmod.logger as rimo_log
+
 logger = rimo_log.logger_define("INFO")
+
 
 # *****************************************************************************
 # define Python user-defined exceptions
@@ -242,20 +244,12 @@ def gamit2mda_objs(
     n_sites_notin = len(sites_uniq) - sum(sites_isin_uniq)
 
     if n_sites_notin > 0 and not force_fake_coords:
-        logger.warning(
-            "%i/%i sites in %s are not in apr/lfile. They are skipped (you can force fake coords with -fc)",
-            n_sites_notin,
-            len(sites_uniq),
-            stinfo_name,
-        )
+        warnmsg = "%i/%i sites in %s are not in apr/lfile. They are skipped (you can force fake coords with -fc)"
+        logger.warning(warnmsg, n_sites_notin, len(sites_uniq), stinfo_name)
         df_stinfo = df_stinfo_raw[sites_isin]
     elif n_sites_notin > 0 and force_fake_coords:
-        logger.warning(
-            "%i/%i sites in %s are not in apr/lfile. Fake coords at (0°,0°) used",
-            n_sites_notin,
-            len(sites_uniq),
-            stinfo_name,
-        )
+        warnmsg = "%i/%i sites in %s are not in apr/lfile. Fake coords at (0°,0°) used"
+        logger.warning(warnmsg, n_sites_notin, len(sites_uniq), stinfo_name)
         df_stinfo = df_stinfo_raw
     else:  #### no missing coords, n_sites_notin == 0
         df_stinfo = df_stinfo_raw
@@ -437,7 +431,9 @@ def group_mda(mdaobj_list_inp):
     mdaobj_dic : dict
         A dictionary where keys are `site_id9` and values are the grouped MetaData objects.
     """
-    mdaobj_dic = dict()  # Initialize an empty dictionary to store grouped MetaData objects.
+    mdaobj_dic = (
+        dict()
+    )  # Initialize an empty dictionary to store grouped MetaData objects.
     for mda in mdaobj_list_inp:
         # Check if the current MetaData object's site_id9 is already in the dictionary.
         if not mda.site_id9 in mdaobj_dic.keys():
@@ -632,7 +628,9 @@ def find_mda4site(rnxobj_or_site4char, mdaobjs_lis, force):
     return mdaobj
 
 
-def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False, round_instru_dates=False):
+def apply_mda2rnxobj(
+    rnxobj, mdaobj, ignore=False, keep_rnx_rec=False, round_instru_dates=False
+):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -641,7 +639,7 @@ def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False, round_ins
     ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    mda_4char = mdaobj.site_id4 # misc_meta["ID"].lower()[:4]
+    mda_4char = mdaobj.site_id4  # misc_meta["ID"].lower()[:4]
 
     if rnx_4char != mda_4char:
         logger.warning(
@@ -806,6 +804,7 @@ def apply_modifkw2rnxobj(rnxobj, modif_kw):
 # *****************************************************************************
 # dictionnary as output for gnss_delivery workflow
 
+
 def rtun_lsts_make(rnxobj_or_dict, return_lists=dict()):
     """
     Construct the so called ``return_lists`` (which are actually dictionnaries)
@@ -929,6 +928,7 @@ def read_ninecharfile(ninecharfile_inp):
 
     return nine_char_dict
 
+
 # *****************************************************************************
 # low level functions originaly from RinexFile class
 def search_idx_val(data, field):
@@ -1038,8 +1038,8 @@ def dates_from_rinex_filename(rnx_inp):
 
     ##### LONG rinex name
     if re.search(pattern_longname, rinexname):
-        date_str = rinexname[12:23]# rinexname.split("_")[2]
-        period_str = rinexname[24:27] # rinexname.split("_")[3]
+        date_str = rinexname[12:23]  # rinexname.split("_")[2]
+        period_str = rinexname[24:27]  # rinexname.split("_")[3]
 
         yyyy = int(date_str[:4])
         doy = int(date_str[4:7])
@@ -1130,7 +1130,7 @@ def file_period_from_timedelta(start_date, end_date):
     delta_max = rndtup(end_date, 60) - rndtdown(start_date, 60)
     delta_ave = rndtaver(end_date_m1s, 60) - rndtaver(start_date, 60)
 
-    hours_ave = int(delta_ave.total_seconds()  / 3600)
+    hours_ave = int(delta_ave.total_seconds() / 3600)
     delta_sec = (end_date - start_date).total_seconds()
 
     # first, the special case : N *full* hours
@@ -1173,6 +1173,7 @@ def file_period_from_timedelta(start_date, end_date):
     #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
+
 
 def map_sys_obs(sys_obs_dic, map_sys_obs_dic, force=False):
     """
@@ -1225,7 +1226,9 @@ def map_sys_obs(sys_obs_dic, map_sys_obs_dic, force=False):
 
     for sys in sys_obs_dic.keys():
         if sys not in map_sys_obs_dic.keys():
-            logger.warning(f"Sys {sys} not in mapping dict. Keeping original obs for this sys.")
+            logger.warning(
+                f"Sys {sys} not in mapping dict. Keeping original obs for this sys."
+            )
             sys_obs_dic_new[sys] = sys_obs_dic[sys]
             continue
 
@@ -1237,7 +1240,9 @@ def map_sys_obs(sys_obs_dic, map_sys_obs_dic, force=False):
             cha = obs[2] if len(obs) == 3 else " "
 
             if len(obs) == 3 and not force:
-                logger.debug(f"sys {sys} obs {obs} has 3 characters. Skipping mapping for this obs. (use force to override)")
+                logger.debug(
+                    f"sys {sys} obs {obs} has 3 characters. Skipping mapping for this obs. (use force to override)"
+                )
                 sys_obs_dic_new[sys].append(obs)
                 continue
 
@@ -1247,7 +1252,9 @@ def map_sys_obs(sys_obs_dic, map_sys_obs_dic, force=False):
                 sys_obs_dic_new[sys].append(obs_new)
             elif ban in map_sys_obs_dic[sys].keys():
                 obs_new = typ + str(ban) + map_sys_obs_dic[sys][ban][-1]
-                logger.debug(f"Mapping sys {sys} obs {obs} to {obs_new} based on band {ban}.")
+                logger.debug(
+                    f"Mapping sys {sys} obs {obs} to {obs_new} based on band {ban}."
+                )
                 sys_obs_dic_new[sys].append(obs_new)
             else:
                 logger.debug(f"No mapping for sys {sys} obs {obs}. Keeping original.")
@@ -1256,7 +1263,7 @@ def map_sys_obs(sys_obs_dic, map_sys_obs_dic, force=False):
     return sys_obs_dic_new
 
 
-def map_sys_obs_dic_default(rec='SEPT POLARX5'):
+def map_sys_obs_dic_default(rec="SEPT POLARX5"):
     """
     Returns a default mapping dictionary for GNSS observation codes based on receiver type.
 
@@ -1289,11 +1296,13 @@ def map_sys_obs_dic_default(rec='SEPT POLARX5'):
     ------
     NotImplementedError
     """
-    if rec == 'SEPT POLARX5':
-        map_sys_obs_dic = {"E": {1: "C", 5 : "Q", 6: "B", 7 : "Q", 8: "Q"},
-                           "S": {5: "I", 1: "C"},
-                           "G": {5: "Q", "L1": "L1C", "L2" : "L2W"},
-                           "R": {5: "Q", 1: "C", "L1" : "L1C", "L2" : "L2P"},}
+    if rec == "SEPT POLARX5":
+        map_sys_obs_dic = {
+            "E": {1: "C", 5: "Q", 6: "B", 7: "Q", 8: "Q"},
+            "S": {5: "I", 1: "C"},
+            "G": {5: "Q", "L1": "L1C", "L2": "L2W"},
+            "R": {5: "Q", 1: "C", "L1": "L1C", "L2": "L2P"},
+        }
 
     else:
         raise NotImplementedError(f"Mapping for receiver {rec} not implemented.")
