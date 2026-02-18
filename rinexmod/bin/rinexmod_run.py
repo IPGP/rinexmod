@@ -306,7 +306,7 @@ def main():
 
     optional.add_argument(
         "-gml",
-        "--gml_path",
+        "--geodesyml",
         help="Path to a folder or a file containing geodesyML files to obtain GNSS site metadata information.",
         type=str,
         default="",
@@ -345,7 +345,7 @@ def main():
         remove=args.remove,
         keep_rnx_rec=args.keep_rnx_rec,
         round_instru_dates=args.round_instru_dates,
-        gml_path=args.gml_path,
+        geodesyml=args.geodesyml,
     )
 
 if __name__ == '__main__':

@@ -20,6 +20,8 @@ import rinexmod.api.core_fcts as rimo_cor
 import rinexmod.api.rinexmod_main as rimo_main
 
 import rinexmod.logger as rimo_log
+from rinexmod.api import geodesyml2mda_objs
+
 logger = rimo_log.logger_define("INFO")
 
 # *****************************************************************************
@@ -57,7 +59,7 @@ def rinexmod_cli(
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
-    gml_path=None,
+    geodesyml=None,
 ):
     """
     Main function for reading a Rinex list file. It processes the list, and apply
@@ -80,11 +82,11 @@ def rinexmod_cli(
         and not shortname
         and not station_info
         and not lfile_apriori
-        and not gml_path
+        and not geodesyml
     ):
         logger.critical(
             "No action asked, provide at least one of the following args:"
-            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori, --gml_path"
+            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori, --geodesyml"
         )
         return None
 
@@ -199,8 +201,8 @@ def rinexmod_cli(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
     # from geodesyML files
-    elif gml_path:
-        gml_list = rimo_cor.metadata_input_manage_geodesyml(gml_path)
+    elif geodesyml:
+        gml_list = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
         sitelogs_list_use = None
     else:
         sitelogs_list_use = None
@@ -236,7 +238,7 @@ def rinexmod_cli(
             "remove": remove,
             "keep_rnx_rec": keep_rnx_rec,
             "round_instru_dates": round_instru_dates,
-            "gml_path": gml_list,
+            "geodesyml": gml_list,
         }
 
         rnxmod_kwargs_lis.append(rnxmod_kwargs)
