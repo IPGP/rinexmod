@@ -121,17 +121,18 @@ classifiers = [
 ### https://stackoverflow.com/questions/76784012/pip-install-e-fails-with-expected-end-or-semicolon-for-githttps-in-require
 dynamic = ["dependencies"]
 [tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
-#dependencies = [
-#    'colorlog',
-#    'pandas',
-#    'hatanaka',
-#    #matplotlib
-#    'numpy',
-#    'requests',
-#    'setuptools',
-#    'pycountry',
-#]
+#dependencies = {file = ["requirements.txt"]}
+dependencies = [
+    'colorlog',
+    'pandas',
+    'hatanaka',
+    #matplotlib
+    'numpy',
+    'requests',
+    'setuptools',
+    'pycountry',
+    'pytest'
+]
 
 [tool.setuptools.packages.find]
 where = ["."]  # list of folders that contain the packages (["."] by default)
