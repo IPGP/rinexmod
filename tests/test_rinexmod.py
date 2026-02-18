@@ -19,7 +19,7 @@ TEST_CASES = [
     ),
     (
         [rinex_in, "TMP"],
-        {"gml_path": geodesy_gml_in, "alone": True},
+        {"geodesyml": geodesy_gml_in, "alone": True},
         correct_gml_out
     )
 ]
