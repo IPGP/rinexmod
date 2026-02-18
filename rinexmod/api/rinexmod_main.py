@@ -78,6 +78,7 @@ def rinexmod(
          * comment
          * marker_name
          * marker_number
+         * marker_type
          * station (legacy alias for marker_name)
          * receiver_serial
          * receiver_type
