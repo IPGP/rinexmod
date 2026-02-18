@@ -2,5 +2,5 @@ from . import api
 from . import common
 from . import classes
 
-__version__='4.1.0' #  changed automaticcaly with bump-my-version
+__version__='4.1.1-beta0' #  changed automaticcaly with bump-my-version
 
