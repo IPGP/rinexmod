@@ -12,7 +12,7 @@ See rinexrename -h for option description
 
 """
 
-from rinexmod.rinexfile import RinexFile
+from rinexmod.classes import RinexFile
 import shutil, os
 
 def rinexrename(rinexinput, output=None, delete=False, alone=False, country="00XXX"):
