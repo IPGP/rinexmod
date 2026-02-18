@@ -172,6 +172,50 @@ def metadata_input_manage(sitelog_inp, force=False):
         )
         raise RinexModInputArgsError
 
+def metadata_input_manage_geodesyml(gml_path):
+    """
+    Manage GeodesyML file as metadata input
+    Return a list of MetaData
+
+    Parameters
+    ----------
+    gml_path : str
+        GeodesyML file path.
+
+    Returns
+    -------
+        list of MetaData objects.
+        (can be a singleton)
+
+    """
+    if isinstance(gml_path, rimo_mda.MetaData):
+        return [gml_path]
+    elif isinstance(gml_path, list) and isinstance(gml_path[0], rimo_mda.MetaData):
+        return gml_path
+    elif isinstance(gml_path, str) and os.path.isdir(gml_path):
+        gml_extension = ".xml"
+        gml_files = listfiles(gml_path, gml_extension)
+
+        logger.info("**** %i GeodesyML files detected (in %s)", len(gml_files), gml_path)
+
+        gml_pattern = re.compile(r"^\w{4}.*\.xml$")
+        gml_files = [f for f in gml_files if gml_pattern.match(os.path.basename(f))]
+
+        mdaobjs_lis = []
+        for gml_file in gml_files:
+            mdaobjs_lis.extend(geodesyml2mda_objs(gml_file))
+        return mdaobjs_lis
+    elif isinstance(gml_path, str) and os.path.isfile(gml_path):
+        return geodesyml2mda_objs(gml_path)
+    else:
+        logger.error(
+            "Wrong Input, expected a MEtaData object, a list of MetaData objects, "
+            "a GeodesyML file path, or a directory containing GeodesyML files. "
+            "Input given: %s, %s",
+            gml_path,
+            type(gml_path),
+        )
+        raise RinexModInputArgsError
 
 def gamit2mda_objs(
     station_info_inp,
@@ -411,6 +455,30 @@ def rinexs2mda_objs(rinex_paths, ninecharfile_inp=None):
 
     return mdaobjs_lis
 
+def geodesyml2mda_objs(gml_path):
+    """
+    Read a GeodesyML file and convert its content to MetaData objects
+
+    Parameters
+    ----------
+    gml_path : str
+        Path of a GeodesyML file containing GNSS\site metadata information.
+
+    Returns
+    -------
+    mdaobjs_lis : list
+        list of MetaData objects.
+
+    """
+    mdaobjs_lis = []
+
+    logger.info("Processing GeodesyML file: %s", gml_path)
+
+    mdaobj = rimo_mda.MetaData(sitelogfile=None)
+    mdaobj.set_from_gml(gml_path)
+    mdaobjs_lis.append(mdaobj)
+
+    return mdaobjs_lis
 
 def group_mda(mdaobj_list_inp):
     """

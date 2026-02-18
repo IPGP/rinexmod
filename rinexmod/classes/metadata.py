@@ -16,6 +16,8 @@ import pycountry
 
 import pandas as pd
 
+import xml.etree.ElementTree as ET
+
 import rinexmod.common.gamit_meta as rimo_gmm
 import rinexmod.classes as rimo_cls
 
@@ -137,6 +139,25 @@ class MetaData:
             self.instrus = None
             self.misc_meta = None
             self.site_id = self.filename[:4].lower()
+
+        return None
+    
+    def set_from_gml(self, gmlfile):
+        """
+        initialization method for metadata import from GeodesyML file
+        """
+        self.path = gmlfile
+        self.filename = os.path.basename(self.path)
+        self.raw_content = self.gml_file2raw()
+
+        if self.raw_content:
+            self.instrus = self.gml_raw2instrus()
+            self.misc_meta = self.gml_raw2misc_meta()
+            self.site_id = self.misc_meta["ID"]
+        else:
+            self.instrus = None
+            self.misc_meta = None
+            self.site_id = self.filename[:9].upper()
 
         return None
 
@@ -598,6 +619,72 @@ class MetaData:
                 slgdic[key]["Secondary Contact"].pop("Additional Information", None)
 
         return slgdic
+    
+    @staticmethod
+    def parse_element(element):
+        """
+        Recursive function that traverses an XML element and converts it into a dictionary.
+        """
+
+        if len(element) == 0:
+            return element.text
+        
+        result = {}
+        for child in element:
+            text = MetaData.parse_element(child)
+            # when the same tag already exists
+            if child.tag in result:
+                # convert to list if not already
+                if not isinstance(result[child.tag], list):
+                    result[child.tag] = [result[child.tag]]
+                result[child.tag].append(text)
+            # gnssReceiver and gnssAntenna need to be lists even if single entry
+            elif child.tag in ['gnssReceiver', 'gnssAntenna']:
+                result[child.tag] = [text]
+            # usual case, tag not existing yet
+            else:
+                result[child.tag] = text
+        return result       
+    
+    def gml_file2raw(self):
+        """
+        Function that reads a GeodesyML file and returns a dictionary.
+        """
+        if not os.path.isfile(self.path):
+            return None, 2
+
+        try:
+            tree = ET.parse(self.path)
+            root = tree.getroot()
+        except:
+            raise
+
+        # removing namespace
+        for elem in root.iter():
+            tag = elem.tag
+            if isinstance(tag, str) and tag.startswith('{'):
+                tag = tag.split('}', 1)[1]
+                elem.tag = tag
+
+        # removing antenna graphics if any
+        for elem in root.iter('moreInformation'):
+            if elem.find('antennaGraphicsWithDimensions') is not None:
+                elem.remove(elem.find('antennaGraphicsWithDimensions'))
+            if elem.find('insertTextGraphicFromAntenna') is not None:
+                elem.remove(elem.find('insertTextGraphicFromAntenna'))
+   
+        data_dict = {}
+        data_dict = self.parse_element(root.find('siteLog'))
+
+        # rounding float values of cartesian position to 3 decimals
+        if 'siteLocation' in data_dict.keys():
+            if 'approximatePositionITRF' in data_dict['siteLocation'].keys():
+                if 'cartesianPosition' in data_dict['siteLocation']['approximatePositionITRF'].keys():
+                    if 'Point' in data_dict['siteLocation']['approximatePositionITRF']['cartesianPosition'].keys():
+                        coords = data_dict['siteLocation']['approximatePositionITRF']['cartesianPosition']['Point']['pos'].split()
+                        coords_rounded = [round(float(c), 3) for c in coords]
+                        data_dict['siteLocation']['approximatePositionITRF']['cartesianPosition']['Point']['pos'] = ' '.join([str(c) for c in coords_rounded])
+        return data_dict
 
     def slg_raw2instrus(self):
         """
@@ -748,6 +835,7 @@ class MetaData:
             "%Y/%m/%dT%H:%MZ",
             "%Y-%m-%d %H:%M",
             "%Y-%m-%dT%H:%M",
+            "%Y-%m-%dT%H:%M:%SZ", # new one added for geodesyML
             "%d/%m/%YT%H:%MZ",
             "%d/%m/%Y %H:%M",
             "%d/%m/%YT%H:%M",
@@ -768,6 +856,54 @@ class MetaData:
             date = datetime.strptime("9999-01-01", "%Y-%m-%d")
 
         return date
+    
+    def gml_raw2instrus(self):
+        """
+        using raw_content a list of instruments with their periods is built
+        """
+
+        listdates = []
+
+        # parsing dates in gnssReceiver entries
+        for receiver in self.raw_content['gnssReceiver']:
+            receiver['GnssReceiver']['dateInstalled'] = self._tryparsedate(receiver['GnssReceiver'].get('dateInstalled'))
+            listdates.append(receiver['GnssReceiver']['dateInstalled'])
+            receiver['GnssReceiver']['dateRemoved'] = self._tryparsedate(receiver['GnssReceiver'].get('dateRemoved'))
+            listdates.append(receiver['GnssReceiver']['dateRemoved'])
+
+        # parsing dates in gnssAntenna entries
+        for antenna in self.raw_content['gnssAntenna']:
+            antenna['GnssAntenna']['dateInstalled'] = self._tryparsedate(antenna['GnssAntenna'].get('dateInstalled'))
+            listdates.append(antenna['GnssAntenna']['dateInstalled'])
+            antenna['GnssAntenna']['dateRemoved'] = self._tryparsedate(antenna['GnssAntenna'].get('dateRemoved'))
+            listdates.append(antenna['GnssAntenna']['dateRemoved'])
+
+        # remove duplicates and sort
+        listdates = sorted(set(listdates))
+
+        instrus = []
+
+        for i in range(0, len(listdates)-1):
+            dates = [listdates[i], listdates[i+1]]
+            ins = dict(dates=dates, receiver=None, antenna=None, metpack=None)
+            instrus.append(ins)
+
+        for ins in instrus:
+            for receiver in self.raw_content['gnssReceiver']:
+                date_installed = receiver['GnssReceiver']['dateInstalled']
+                date_removed = receiver['GnssReceiver']['dateRemoved']
+                if date_installed <= ins['dates'][0] and date_removed >= ins['dates'][1]:
+                    ins['receiver'] = receiver['GnssReceiver']
+                    break
+
+            for antenna in self.raw_content['gnssAntenna']:
+                date_installed = antenna['GnssAntenna']['dateInstalled']
+                date_removed = antenna['GnssAntenna']['dateRemoved']
+                if date_installed <= ins['dates'][0] and date_removed >= ins['dates'][1]:
+                    ins['antenna'] = antenna['GnssAntenna']
+                    break
+        
+        return instrus
 
     def slg_raw2misc_meta(self):
         """
@@ -826,6 +962,35 @@ class MetaData:
         self.misc_meta = dict()
         # We must initialize the misc_meta here
         # not initialized before (we are in the sitelog case)
+        mm_dic = self.set_misc_meta(
+            site_id=site_id,
+            domes=domes,
+            operator=operator,
+            agency=agency,
+            x=x,
+            y=y,
+            z=z,
+            date_prepared=date_prepared,
+            country=country,
+        )
+
+        return mm_dic
+    
+    def gml_raw2misc_meta(self):
+        """
+        generates the "misc meta" dictionary from raw_content 
+        """
+        
+        site_id = self.filename[:9].upper()
+        domes = self.raw_content['siteIdentification']['iersDOMESNumber']
+        operator = self.raw_content['siteContact']['name']
+        agency = self.raw_content['moreInformation']['dataCenter']
+        x, y, z = self.raw_content['siteLocation']['approximatePositionITRF']['cartesianPosition']['Point']['pos'].split(' ')
+        date_prepared = self._tryparsedate(self.raw_content['formInformation']['datePrepared'])
+        country = self.raw_content['siteLocation']['countryCodeISO']
+
+        self.misc_meta = dict()
+
         mm_dic = self.set_misc_meta(
             site_id=site_id,
             domes=domes,
@@ -1031,7 +1196,7 @@ class MetaData:
             for k in keys_inp:
                 if k not in dic_inp.keys():
                     errmsg = f"Missing '{k}' for instru. period {starttime}-{endtime} ({dic_inp})"
-                    logger.error(errmsg)
+                    # logger.error(errmsg)
                     raise KeyError(errmsg)
 
         ### get useful values in misc_meta
@@ -1039,17 +1204,21 @@ class MetaData:
 
         misc_meta = self.misc_meta
 
-        key_chk_instru(
-            misc_meta,
-            [
-                "IERS DOMES Number",
-                "X coordinate (m)",
-                "Y coordinate (m)",
-                "Z coordinate (m)",
-                "operator",
-                "agency",
-            ],
-        )
+        try:
+            key_chk_instru(
+                misc_meta,
+                [
+                    "IERS DOMES Number",
+                    "X coordinate (m)",
+                    "Y coordinate (m)",
+                    "Z coordinate (m)",
+                    "operator",
+                    "agency",
+                ],
+            )
+        except KeyError as e:
+            logger.error(e)
+            raise e
 
         domes_id = misc_meta["IERS DOMES Number"]
 
@@ -1067,10 +1236,30 @@ class MetaData:
         ### get useful values in instru_rec
         instru_rec = instru["receiver"]
 
-        key_chk_instru(
-            instru_rec,
-            ["Serial Number", "Receiver Type", "Firmware Version", "Satellite System"],
-        )
+        try:
+            key_chk_instru(
+                instru_rec,
+                ["Serial Number", "Receiver Type", "Firmware Version", "Satellite System"],
+            )
+        except KeyError as e:
+            try:
+                # try geodesyML keys
+                key_chk_instru(
+                    instru_rec,
+                    ["manufacturerSerialNumber", "igsModelCode", "firmwareVersion", "satelliteSystem"],
+                )
+                # remap keys
+                instru_rec["Serial Number"] = instru_rec["manufacturerSerialNumber"]
+                instru_rec["Receiver Type"] = instru_rec["igsModelCode"]
+                instru_rec["Firmware Version"] = instru_rec["firmwareVersion"]
+                # originally a list, transform to string with '+' separator like in sitelogs
+                if isinstance(instru_rec["satelliteSystem"], list):
+                    instru_rec["Satellite System"] = '+'.join(instru_rec["satelliteSystem"])
+                else:
+                    instru_rec["Satellite System"] = instru_rec["satelliteSystem"]
+            except KeyError as e2:
+                logger.error(e2)
+                raise e2
 
         receiver = {
             "serial": instru_rec["Serial Number"],
@@ -1082,16 +1271,39 @@ class MetaData:
         ### get useful values in instru_ant
         instru_ant = instru["antenna"]
 
-        key_chk_instru(
-            instru_ant,
-            [
-                "Serial Number",
-                "Antenna Type",
-                "Marker->ARP Up Ecc. (m)",
-                "Marker->ARP East Ecc(m)",
-                "Marker->ARP North Ecc(m)",
-            ],
-        )
+        try:
+            key_chk_instru(
+                instru_ant,
+                [
+                    "Serial Number",
+                    "Antenna Type",
+                    "Marker->ARP Up Ecc. (m)",
+                    "Marker->ARP East Ecc(m)",
+                    "Marker->ARP North Ecc(m)",
+                ],
+            )
+        except KeyError as e:
+            try:
+                # try geodesyML keys
+                key_chk_instru(
+                    instru_ant,
+                    [
+                        "manufacturerSerialNumber",
+                        "igsModelCode",
+                        "marker-arpUpEcc.",
+                        "marker-arpEastEcc.",
+                        "marker-arpNorthEcc.",
+                    ],
+                )
+                # remap keys
+                instru_ant["Serial Number"] = instru_ant["manufacturerSerialNumber"]
+                instru_ant["Antenna Type"] = instru_ant["igsModelCode"]
+                instru_ant["Marker->ARP Up Ecc. (m)"] = instru_ant["marker-arpUpEcc."]
+                instru_ant["Marker->ARP East Ecc(m)"] = instru_ant["marker-arpEastEcc."]
+                instru_ant["Marker->ARP North Ecc(m)"] = instru_ant["marker-arpNorthEcc."]
+            except KeyError as e2:
+                logger.error(e2)
+                raise e2
 
         antenna = {
             "serial": instru_ant["Serial Number"],

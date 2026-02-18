@@ -304,6 +304,14 @@ def main():
         default=False,
     )
 
+    optional.add_argument(
+        "-gml",
+        "--gml_path",
+        help="Path to a folder or a file containing geodesyML files to obtain GNSS site metadata information.",
+        type=str,
+        default="",
+    )
+
     args = parser.parse_args()
 
     rimo_api.rinexmod_cli(
@@ -337,6 +345,7 @@ def main():
         remove=args.remove,
         keep_rnx_rec=args.keep_rnx_rec,
         round_instru_dates=args.round_instru_dates,
+        gml_path=args.gml_path,
     )
 
 if __name__ == '__main__':

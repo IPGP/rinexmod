@@ -9,4 +9,4 @@ dist/
 build/
 *.egg-info/
 py3rimo_tests2a/
-
+.venv/
