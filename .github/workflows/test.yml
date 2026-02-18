@@ -2,7 +2,7 @@ name: Python Testing
 
 on:
   push:
-    branches: [ "dev_ps_from_ab_01a" ]
+    branches: [ "master" ]
 
 jobs:
   build:
