@@ -119,9 +119,11 @@ classifiers = [
 # https://stackoverflow.com/questions/73600082/how-to-reference-a-requirements-txt-in-the-pyproject-toml-of-a-setuptools-projec
 # NB: github links must have the form: mypackage @ git+https://github.com/myorg/myrepo@v1.0.0#egg=mypackage
 ### https://stackoverflow.com/questions/76784012/pip-install-e-fails-with-expected-end-or-semicolon-for-githttps-in-require
-dynamic = ["dependencies"]
-[tool.setuptools.dynamic]
+#dynamic = ["dependencies"]
+#[tool.setuptools.dynamic]
 #dependencies = {file = ["requirements.txt"]}
+
+#### for now on, 2026-02, no more requirements.txt, just list dependencies here in pyproject.toml
 dependencies = [
     'colorlog',
     'pandas',
