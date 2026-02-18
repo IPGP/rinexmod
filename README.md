@@ -5,7 +5,7 @@
 _rinexmod_ is a tool to batch modify the headers of GNSS data files in RINEX format and rename them correctly.  
 It supports Hatanaka-compressed and non-compressed files, RINEX versions 2 and 3/4, and short and long naming conventions.  
 It is developed in Python 3, and can be run from the command line or directly in API mode by calling a python function.  
-The required input metadata can come from a sitelog file, or be manually entered as arguments to the command line or the called function.  
+The required input metadata can come from (a) sitelog file(s), (a) GeodesyML files(s), or be manually entered as arguments to the command line or the called function.  
 It is available under the GNU license on the following GitHub repository: https://github.com/IPGP/rinexmod  
 
 v2+ - 2023-05-15 - Pierre Sakic - sakic@ipgp.fr  
@@ -17,13 +17,17 @@ Date: 2026-02-18
 **GitHub repository:** [https://github.com/IPGP/rinexmod](https://github.com/IPGP/rinexmod)  
 **PyPi project:** [https://pypi.org/project/rinexmod](https://pypi.org/project/rinexmod)
 
+## Contributors
+- @AriannaBoisseau
+- @skimprem
+
 ## Tools overview
 
 ### Main tool
 
 * `rinexmod_run` takes a list of RINEX Hatanaka compressed files (.d.Z or .d.gz or .rnx.gz),
 loops the rinex files list to modify the file's headers. It then writes them back to Hatanaka
-compressed format in an output folder. It also permits to rename the files, changing
+compressed format in an output folder. It can rename the files, changing
 the four first characters of the file name with another station code. It can write
 those files with the long name naming convention with the --longname option.
 
@@ -35,7 +39,7 @@ They are stored in `bin/misc_tools` folder.
 and write them in an observatory-dependent subfolder.
 
 * `crzmeta.py` will extract RINEX file's header information and prompt the result. 
-This permits to quickly access the header information without uncompressing the file manually. 
+This allows to quickly access the header information without uncompressing the file manually. 
 It's a teqc-free equivalent of teqc +meta.
 
 ## Installation
@@ -80,7 +84,7 @@ format in an output folder. It also allows to rename the files, changing
 the four first characters of the file name with another site code. It can write
 those files with the long name naming convention with the --longname option.
 
-Three ways of passing parameters to modify headers are possible: `sitelog`, `modification_kw` and `station_info`/`lfile_apriori` (from GAMIT/GLOBK software).
+Four ways of passing parameters to modify headers are possible: `sitelog`, `geodesyml`, `modification_kw` and `station_info`/`lfile_apriori` (from GAMIT/GLOBK software).
 
 * ```
    --sitelog : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
@@ -105,6 +109,11 @@ Three ways of passing parameters to modify headers are possible: `sitelog`, `mod
                        Marker->ARP North Ecc(m)
                        On-Site Agency Preferred Abbreviation
                        Responsible Agency Preferred Abbreviation
+
+* ```
+  -- geodesyml : Path to a folder or a file containing geodesyML files to obtain GNSS 
+  site metadata information.
+
 
 * ```
   --modification_kw : you pass as argument the field(s) that you want to modifiy and its value.
@@ -146,6 +155,10 @@ _rinexmod_ will add two comment lines, one indicating the source of the modifica
 
 
 ### Synopsis
+
+*NB*: The most recent synopsis is available with the `-h` or `--help` option of the `rinexmod_run` command line function. 
+The following synopsis reproduced here is for more readability but might not be the most up-to-date one.
+
 ```
 rinexmod_run [-h] -i RINEXINPUT [RINEXINPUT ...] -o OUTPUTFOLDER
              [-s SITELOG] [-k KEY=VALUE [KEY=VALUE ...]] [-m MARKER]
@@ -237,6 +250,9 @@ RinexMod 3.3.0 - GNU Public Licence v3 - P. Sakic et al. - IPGP-OVS - https://gi
 ```
 
 ## _rinexmod_ in API mode
+
+*NB*: The following docstring reproduced here is for more readability but might not be the most up-to-date one.
+
 
 _rinexmod_ can be launched directly as a Python function:
 
@@ -412,7 +428,7 @@ EXAMPLE:
 
 This script will get the last version of sitelogs from M3G repository and write them
 in an observatory dependent subfolder set in 'observatories'.
-The -d --delete option will delete the old version to get only the last version even
+The `-d/--delete` option will delete the old version to get only the last version even
 in a name-changing case.
 
 ```
