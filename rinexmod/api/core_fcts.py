@@ -233,7 +233,7 @@ def gamit2mda_objs(
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
 
     if not ninecharfile_inp is None:
-        nine_char_dict = rimo.rinexmod_api.read_ninecharfile(ninecharfile_inp)
+        nine_char_dict = rimo.api.read_ninecharfile(ninecharfile_inp)
     else:
         nine_char_dict = dict()
 

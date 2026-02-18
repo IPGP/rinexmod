@@ -155,10 +155,17 @@ class MetaData:
         """
 
         ##### This site_id management is very strange, must be clarified
-        self.site_id = site[:4].lower()
-        if len(site) == 9:
+        ##### It has been clarified (2026-02)
+        if len(site) == 4:
+            self.site_id = site[:4].lower()
+        elif len(site) == 9:
+            self.site_id = site[:9].upper()
             self.misc_meta["ID"] = site.upper()
             self.misc_meta["Country"] = site[-3:].upper()
+        else:
+            logger.error("site %s must be 4 or 9 char. long, bad things will occur", site)
+            self.site_id = site
+
 
         if isinstance(station_info, pd.DataFrame):
             self.raw_content = station_info
@@ -176,7 +183,7 @@ class MetaData:
 
         if self.raw_content is not None:
             self.instrus, self.misc_meta = rimo_gmm.gamit_df2instru_miscmeta(
-                site=self.site_id4,
+                site=self.site_id4, ### must remain site_id4
                 stinfo_df_inp=self.raw_content,
                 apr_df_inp=self.raw_content_apr,
                 force_fake_coords=force_fake_coords,
