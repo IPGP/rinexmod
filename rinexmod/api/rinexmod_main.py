@@ -52,6 +52,7 @@ def rinexmod(
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
+    geodesyml=None,
 ):
     """
     Parameters
@@ -78,6 +79,7 @@ def rinexmod(
          * comment
          * marker_name
          * marker_number
+         * marker_type
          * station (legacy alias for marker_name)
          * receiver_serial
          * receiver_type
@@ -309,9 +311,9 @@ def rinexmod(
         rnxobj.set_site(marker)
 
     ## warning if no metadata at all is not provided
-    if not sitelog and not modif_kw and (not station_info or not lfile_apriori):
+    if not sitelog and not modif_kw and (not station_info or not lfile_apriori) and not geodesyml:
         logger.warning(
-            "No sitelog nor keywords nor station.info+lfile provided. "
+            "No sitelog/keywords/station.info+lfile/geodesyML provided. "
             "Per default rec.'s header will remain & no new "
             "metdata will be written!"
         )
@@ -338,8 +340,11 @@ def rinexmod(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
+    if geodesyml:
+        mdaobjs_lis = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
+
     ### find the right MetaData object corresponding to the RINEX
-    if sitelog or (station_info and lfile_apriori):
+    if sitelog or (station_info and lfile_apriori) or geodesyml:
         mdaobj = rimo_cor.find_mda4site(rnxobj, mdaobjs_lis, force=force_sitelog)
         logger.debug("metadata used: %s", mdaobj)
     else:

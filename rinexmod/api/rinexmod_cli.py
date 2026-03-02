@@ -20,6 +20,8 @@ import rinexmod.api.core_fcts as rimo_cor
 import rinexmod.api.rinexmod_main as rimo_main
 
 import rinexmod.logger as rimo_log
+from rinexmod.api import geodesyml2mda_objs
+
 logger = rimo_log.logger_define("INFO")
 
 # *****************************************************************************
@@ -57,6 +59,7 @@ def rinexmod_cli(
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
+    geodesyml=None,
 ):
     """
     Main function for reading a Rinex list file. It processes the list, and apply
@@ -79,10 +82,11 @@ def rinexmod_cli(
         and not shortname
         and not station_info
         and not lfile_apriori
+        and not geodesyml
     ):
         logger.critical(
             "No action asked, provide at least one of the following args:"
-            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori"
+            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori, --geodesyml"
         )
         return None
 
@@ -186,6 +190,7 @@ def rinexmod_cli(
     if sort:
         rinexinput_use.sort()
 
+    gml_list = None
     ### load the sitelogs/GAMIT-files as a **list of MetaData objects**
     # from sitelogs
     if sitelog:
@@ -195,6 +200,10 @@ def rinexmod_cli(
         sitelogs_list_use = rimo_cor.gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
+    # from geodesyML files
+    elif geodesyml:
+        gml_list = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
+        sitelogs_list_use = None
     else:
         sitelogs_list_use = None
 
@@ -229,6 +238,7 @@ def rinexmod_cli(
             "remove": remove,
             "keep_rnx_rec": keep_rnx_rec,
             "round_instru_dates": round_instru_dates,
+            "geodesyml": gml_list,
         }
 
         rnxmod_kwargs_lis.append(rnxmod_kwargs)

@@ -18,6 +18,7 @@ import pandas as pd
 import rinexmod.api as rimo_api
 
 import rinexmod.logger as rimo_log
+
 logger = rimo_log.logger_define("INFO")
 
 
@@ -227,6 +228,7 @@ def read_gamit_station_info(station_info_inp, sort=True):
         widths=colsize_use,
         encoding="iso8859_1",
         header=None,
+        comment="#",
     )
 
     df.columns = col
@@ -268,11 +270,7 @@ def read_gamit_station_info(station_info_inp, sort=True):
     df["start"] = df_start
 
     df_end = doy2dt(
-        df["stop year"],
-        df["stop doy"],
-        df["stop hh"],
-        df["stop mm"],
-        df["stop ss"]
+        df["stop year"], df["stop doy"], df["stop hh"], df["stop mm"], df["stop ss"]
     )
 
     df["end"] = df_end
@@ -459,12 +457,12 @@ def doy2dt(year, days, hours=0, minutes=0, seconds=0):
 
         tempsecs = seconds + 60 * minutes + 3600 * hours
         # finalsecs = np.floor(tempsecs)
-        finalmicrosec = int(np.round(tempsecs * 10 ** 6))
+        finalmicrosec = int(np.round(tempsecs * 10**6))
 
         return (
-                dt.datetime(year, 1, 1)
-                + dt.timedelta(days - 1)
-                + dt.timedelta(microseconds=finalmicrosec)
+            dt.datetime(year, 1, 1)
+            + dt.timedelta(days - 1)
+            + dt.timedelta(microseconds=finalmicrosec)
         )
 
     else:

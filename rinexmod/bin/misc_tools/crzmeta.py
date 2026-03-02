@@ -17,7 +17,7 @@ pip install hatanaka
 2019-12-13 Félix Léger - leger@ipgp.fr
 """
 
-from rinexmod.rinexfile import RinexFile
+from rinexmod.classes import RinexFile
 
 
 def crzmeta(rinexfile, plot):
