@@ -159,7 +159,7 @@ def rinexmod(
         the RINEX's header as comment.
     filename_style : str, optional
         Set the RINEX filename style.
-        acceptable values : 'basic' (per default), 'flex', 'exact', 'manual'.
+        acceptable values : 'basic' (per default), 'flex', 'exact'.
         * 'basic': a simple mode to apply a strict filename period (01H or 01D),
         being compatible with the IGS conventions.
         e.g.: `FNG000GLP_R_20242220000_01D_30S_MO.crx.gz`
@@ -171,8 +171,6 @@ def rinexmod(
         first epoch in the RINEX.
         Useful for some specific cases needing splicing.
         e.g.: `FNG000GLP_R_20242221829_06H_30S_MO.crx.gz`
-        * 'manual': the filename is given by the user through the modif_kw argument
-         with the keywords filename_file_period & filename_data_freq.
         The default is 'basic'.
     return_lists : dict, optional
         Specific option for file distribution through a GLASS node.
@@ -426,6 +424,7 @@ def rinexmod(
 
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
+    get_file_period_from_data = True # This will be useful for generating the name
     if modif_kw:
         # Checking input keyword modification arguments
         rimo_cor.modif_kw_check(modif_kw)
@@ -439,7 +438,7 @@ def rinexmod(
             "filename_file_period" in modif_kw.keys()
             or "filename_data_freq" in modif_kw.keys()
         ):
-            filename_style = "manual"
+            get_file_period_from_data = False
 
     else:
         modif_source_kw = ""
@@ -499,6 +498,7 @@ def rinexmod(
             compression="",
             filename_style=filename_style,
             data_source=rnxobj.data_source,
+            get_file_period_from_data=get_file_period_from_data,
         )
     else:
         rnxobj.get_shortname(

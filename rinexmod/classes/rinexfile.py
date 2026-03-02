@@ -285,6 +285,7 @@ class RinexFile:
         ext="auto",
         compression="auto",
         filename_style="basic",
+        get_file_period_from_data=True,
         inplace_set=False,
     ):
         """
@@ -308,6 +309,10 @@ class RinexFile:
              Possible values are 'basic', 'flex', 'exact'.
              See the rinexmod main function's docstring/help for more details.
              Default is 'basic'.
+        get_file_period_from_data : bool, optional
+            If True, determines the file period based on the data content.
+            If False, relies on the already exisiting file period, which may be manually given
+            Default is True.
         inplace_set : bool, optional
             If True, stores the generated filename directly as the filename attribute.
             Default is False.
@@ -340,7 +345,8 @@ class RinexFile:
             compression = ""
 
         # +++++ set file period and session
-        self.mod_file_period(filename_style=filename_style)
+        self.mod_file_period(filename_style=filename_style,
+                             get_file_period_from_data=get_file_period_from_data)
 
         # +++++ set time format
         # default time format
@@ -519,7 +525,6 @@ class RinexFile:
                 rinex_data = hatanaka.decompress(self.content_input).decode("utf-8")
                 rinex_data = rinex_data.split("\n")
                 status = None
-
             except ValueError:
                 rinex_data = None
                 status = "03 - Invalid or empty compressed file"
@@ -1013,25 +1018,21 @@ class RinexFile:
         )
         return file_period, session
 
-    def mod_file_period(self, filename_style="basic"):
-        ### STEP 1: get file period from data if filename style is not "manual
-        if filename_style in ("basic", "flex", "exact"):
+    def mod_file_period(self, filename_style="basic", get_file_period_from_data=True):
+        if get_file_period_from_data:
             file_period, session = self.get_file_period_from_data()
             self.file_period = file_period
             self.session = session
-            # in "manual" style, the file period is the user choice
-            # and is not modified based on the data content
+            # it might be necessary to skip this because it can be forced manually by the modif_kw
 
-        ### STEP 2: modify file period to fit a conventional value if filename style is "basic"
         if filename_style in ("basic",):
             self.mod_file_period_basic()
-        elif filename_style in ("flex", "exact", "manual"):
+        elif filename_style in ("flex", "exact"):
             pass
             # it is the same as get_file_period_from_data() if filename_style is "flex" or "exact",
-            # and it is the user choice if filename_style is "manual"
         else:
             logger.error(
-                "style %s not recognized. Accepts only 'basic', 'flex', 'exact', 'manual'",
+                "style %s not recognized. Accepts only 'basic', 'flex', 'exact'",
                 filename_style,
             )
 
