@@ -8,7 +8,8 @@ Class
 import gzip
 import os
 import re
-from datetime import datetime, timedelta
+#from datetime import datetime, timedelta
+import datetime as dt
 from io import StringIO
 from pathlib import Path
 
@@ -421,11 +422,10 @@ class RinexFile:
             compression = "." + compression
 
         self.mod_file_period(filename_style=filename_style)
-        file_period_name = self.file_period
-        session_name = self.session
+        #file_period_name = self.file_period
 
         alphabet = list(map(chr, range(97, 123)))
-        if file_period_name[-1] == "H":
+        if self.file_period[-1] == "H":
             timeformat = (
                 "%j"
                 + alphabet[self.start_date.hour]
@@ -435,7 +435,7 @@ class RinexFile:
             )
             start_date_use = self.start_date
 
-        elif file_period_name[-1] == "M":
+        elif self.file_period[-1] == "M":
             timeformat = (
                 "%j"
                 + alphabet[self.start_date.hour]
@@ -445,7 +445,7 @@ class RinexFile:
                 + compression
             )
             start_date_use = rimo_cor.round_time(
-                self.start_date, timedelta(minutes=5), to="down"
+                self.start_date, dt.timedelta(minutes=5), to="down"
             )
 
         else:  # regular case file_period_name == "01D"
@@ -740,7 +740,7 @@ class RinexFile:
 
                 # Building a date string
                 epoc = f"{year} {m.group(2)} {m.group(3)} {m.group(4)} {m.group(5)} {m.group(6)}"
-                epoc = datetime.strptime(epoc, "%Y %m %d %H %M %S.%f")
+                epoc = dt.datetime.strptime(epoc, "%Y %m %d %H %M %S.%f")
             else:
                 epoc = None
 
@@ -775,7 +775,7 @@ class RinexFile:
                 date_out = None
             else:
                 date_out = line.split()
-                date_out = datetime.strptime(
+                date_out = dt.datetime.strptime(
                     " ".join(date_out[0:6]), "%Y %m %d %H %M %S.%f0"
                 )
             return date_out
@@ -834,7 +834,7 @@ class RinexFile:
         # Building a date string
         def _date_conv(spl):
             date = f"{year_prefix}{spl.group(1)} {spl.group(2)} {spl.group(3)} {spl.group(4)} {spl.group(5)} {spl.group(6)}"
-            date = datetime.strptime(date, "%Y %m %d %H %M %S.%f")
+            date = dt.datetime.strptime(date, "%Y %m %d %H %M %S.%f")
             return date
 
         # Format dates to datetime
@@ -844,7 +844,7 @@ class RinexFile:
         samples_rate_diff = [
             diff.total_seconds()
             for diff in samples_rate_diff
-            if diff != timedelta(seconds=0)
+            if diff != dt.timedelta(seconds=0)
         ]
 
         # If less than one interval after removing 0 values, can't get a sample rate
@@ -2154,7 +2154,8 @@ class RinexFile:
         if self.status:
             return
 
-        date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+        date = dt.datetime.now(dt.UTC).strftime("%Y%m%d %H%M%S UTC")
+        #date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
         new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.add_comment(new_line, add_as_first=True)
