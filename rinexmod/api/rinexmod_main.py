@@ -18,6 +18,7 @@ import rinexmod.api.core_fcts as rimo_cor
 
 
 import rinexmod.logger as rimo_log
+
 logger = rimo_log.logger_define("INFO")
 
 
@@ -156,7 +157,7 @@ def rinexmod(
         the RINEX's header as comment.
     filename_style : str, optional
         Set the RINEX filename style.
-        acceptable values : 'basic' (per default), 'flex', 'exact'.
+        acceptable values : 'basic' (per default), 'flex', 'exact', 'manual'.
         * 'basic': a simple mode to apply a strict filename period (01H or 01D),
         being compatible with the IGS conventions.
         e.g.: `FNG000GLP_R_20242220000_01D_30S_MO.crx.gz`
@@ -168,6 +169,8 @@ def rinexmod(
         first epoch in the RINEX.
         Useful for some specific cases needing splicing.
         e.g.: `FNG000GLP_R_20242221829_06H_30S_MO.crx.gz`
+        * 'manual': the filename is given by the user through the modif_kw argument
+         with the keywords filename_file_period & filename_data_freq.
         The default is 'basic'.
     return_lists : dict, optional
         Specific option for file distribution through a GLASS node.
@@ -363,9 +366,7 @@ def rinexmod(
         cntry = marker[6:]
     elif ninecharfile:
         if not rnx_4char in nine_char_dict:
-            logger.warning(
-                "Site's missing in the input 9-char. file: %s", rinexfile
-            )
+            logger.warning("Site's missing in the input 9-char. file: %s", rinexfile)
             monum = "00"
             cntry = "XXX"
         else:
@@ -407,7 +408,8 @@ def rinexmod(
     ########## Apply the MetaData object on the RinexFile object
     if mdaobj:
         rnxobj = rimo_cor.apply_mda2rnxobj(
-            rnxobj, mdaobj,
+            rnxobj,
+            mdaobj,
             ignore=ignore,
             keep_rnx_rec=keep_rnx_rec,
             round_instru_dates=round_instru_dates,
@@ -428,6 +430,12 @@ def rinexmod(
         logger.debug(
             "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_header()[0]
         )
+        if (
+            "filename_file_period" in modif_kw.keys()
+            or "filename_data_freq" in modif_kw.keys()
+        ):
+            filename_style = "manual"
+
     else:
         modif_source_kw = ""
 
@@ -444,8 +452,8 @@ def rinexmod(
 
     ###########################################################################
     ########## Add comment in the header
-    githash = rimo_cor.get_git_hash() # git hash is desactivated
-    vers_num = rimo.__version__ # + " " + githash[-3:]
+    githash = rimo_cor.get_git_hash()  # git hash is desactivated
+    vers_num = rimo.__version__  # + " " + githash[-3:]
     vers_num = vers_num.replace("beta", "b")
     rnxobj.add_prg_run_date_comment("RinexMod " + vers_num, "METADATA UPDATE")
     if githash != "xxxxxxx":
@@ -518,7 +526,9 @@ def rinexmod(
         )
         logger.info("# Out. file: " + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
-        errmsg ="{:110s} - {}".format("File could not be written - hatanaka exception", rinexfile)
+        errmsg = "{:110s} - {}".format(
+            "File could not be written - hatanaka exception", rinexfile
+        )
         logger.error(errmsg)
         outputfile = None
         raise e

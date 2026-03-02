@@ -89,9 +89,7 @@ class RinexFile:
             plot=False
         )
         # self.file_period, self.session = self.get_file_period_from_filename()
-        self.file_period, self.session = self.get_file_period_from_data(
-            inplace_set=False
-        )
+        self.file_period, self.session = self.get_file_period_from_data()
         ### NB: here, when we load the RINEX, we remain tolerant for the file period!!
 
     def __repr__(self):
@@ -127,7 +125,9 @@ class RinexFile:
             return ""
 
         # We get header
-        end_of_header_idx = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER") + 1
+        end_of_header_idx = (
+            rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER") + 1
+        )
         str_rinex_file = self.rinex_data[0:end_of_header_idx]
         # We add 20 lines of data
         str_rinex_file.extend(
@@ -331,45 +331,41 @@ class RinexFile:
             compression = "." + self.compression
         elif compression == "auto" and not self.compression:
             compression = ""
-        elif (
-            compression != ""
-        ):  # when a manual compression arg is given, and is not void
+        elif compression != "":
+            # when a manual compression arg is given, and is not void
             compression = "." + str(compression)
         else:
             compression = ""
 
         # +++++ set file period and session
         self.mod_file_period(filename_style=filename_style)
-        file_period_name = self.file_period
-        session_name = self.session
 
         # +++++ set time format
         # default time format
-        timeformat = "%Y%j%H%M"
+        timefmt = "%Y%j%H%M"
 
-        if file_period_name == "01D":  ## Daily case
-            if session_name:
-                timeformat = "%Y%j%H%M"
+        if self.file_period == "01D":  ## Daily case
+            if self.session:
+                timefmt = "%Y%j%H%M"
             else:
-                timeformat = "%Y%j0000"  # Start of the day
-        elif file_period_name[-1] == "M":  ### Subhourly case
-            timeformat = "%Y%j%H%M"
-        elif (
-            file_period_name == "00U"
-        ):  ## Unknown case: the filename deserves a full description to identify potential bug
-            timeformat = "%Y%j%H%M"
+                timefmt = "%Y%j0000"  # Start of the day
+        elif self.file_period[-1] == "M":  ## Subhourly case
+            timefmt = "%Y%j%H%M"
+        elif self.file_period == "00U":  ## Unknown case
+            # the filename deserves a full description to identify potential bug
+            timefmt = "%Y%j%H%M"
         else:  ## Hourly case
             if filename_style in ("basic", "flex"):
-                timeformat = "%Y%j%H00"  # Start of the hour
+                timefmt = "%Y%j%H00"  # Start of the hour
             elif filename_style == "exact":
-                timeformat = "%Y%j%H%M"  # start of the minute
+                timefmt = "%Y%j%H%M"  # start of the minute
 
         longname = "_".join(
             (
                 self.get_site(False, False),
                 data_source,
-                self.start_date.strftime(timeformat),
-                file_period_name,
+                self.start_date.strftime(timefmt),
+                self.file_period,
                 self.sample_rate_string,
                 self.get_sat_system() + obs_type + ext + compression,
             )
@@ -431,7 +427,11 @@ class RinexFile:
         alphabet = list(map(chr, range(97, 123)))
         if file_period_name[-1] == "H":
             timeformat = (
-                "%j" + alphabet[self.start_date.hour] + ".%y" + str(file_type) + compression
+                "%j"
+                + alphabet[self.start_date.hour]
+                + ".%y"
+                + str(file_type)
+                + compression
             )
             start_date_use = self.start_date
 
@@ -646,7 +646,9 @@ class RinexFile:
         if self.status:
             return None, None
 
-        version_header_idx = rimo_cor.search_idx_val(self.rinex_data, "RINEX VERSION / TYPE")
+        version_header_idx = rimo_cor.search_idx_val(
+            self.rinex_data, "RINEX VERSION / TYPE"
+        )
         version_header = self.rinex_data[version_header_idx]
         # Parse line
         rinex_ver_head_str = str(version_header[0:9].strip())
@@ -737,20 +739,7 @@ class RinexFile:
                 year = year_pattern + m.group(1)
 
                 # Building a date string
-                epoc = (
-                    year
-                    + " "
-                    + m.group(2)
-                    + " "
-                    + m.group(3)
-                    + " "
-                    + m.group(4)
-                    + " "
-                    + m.group(5)
-                    + " "
-                    + m.group(6)
-                )
-
+                epoc = f"{year} {m.group(2)} {m.group(3)} {m.group(4)} {m.group(5)} {m.group(6)}"
                 epoc = datetime.strptime(epoc, "%Y %m %d %H %M %S.%f")
             else:
                 epoc = None
@@ -843,22 +832,8 @@ class RinexFile:
             return None, None
 
         # Building a date string
-        def _date_conv(sample):
-            date = (
-                year_prefix
-                + sample.group(1)
-                + " "
-                + sample.group(2)
-                + " "
-                + sample.group(3)
-                + " "
-                + sample.group(4)
-                + " "
-                + sample.group(5)
-                + " "
-                + sample.group(6)
-            )
-
+        def _date_conv(spl):
+            date = f"{year_prefix}{spl.group(1)} {spl.group(2)} {spl.group(3)} {spl.group(4)} {spl.group(5)} {spl.group(6)}"
             date = datetime.strptime(date, "%Y %m %d %H %M %S.%f")
             return date
 
@@ -996,21 +971,16 @@ class RinexFile:
 
         return file_period, session
 
-    #         the RINEX file period is tolerant and stick to the actual data content,
-    #         but then can be odd (e.g. 07H, 14H...). A strict file period is applied
-    #         per default (01H or 01D), being compatible with the IGS conventions
+    # the RINEX file period is tolerant and stick to the actual data content,
+    # but then can be odd (e.g. 07H, 14H...). A strict file period is applied
+    # per default (01H or 01D), being compatible with the IGS conventions
 
-    def get_file_period_from_data(self, inplace_set=False):
+    def get_file_period_from_data(self):
         """
         Get the file period from the data themselves.
 
         see also mod_file_period_basic()
         to round this value to a conventional one
-
-        Parameters
-        ----------
-        inplace_set : bool, optional
-            change the values in the RinexFile object. The default is False.
 
         Returns
         -------
@@ -1024,24 +994,26 @@ class RinexFile:
         file_period, session = rimo_cor.file_period_from_timedelta(
             self.start_date, self.end_date
         )
-
-        if inplace_set:
-            self.file_period = file_period
-            self.session = session
-
         return file_period, session
 
     def mod_file_period(self, filename_style="basic"):
 
-        self.get_file_period_from_data(inplace_set=True)
+        if filename_style in ("basic", "flex", "exact"):
+            file_period, session = self.get_file_period_from_data()
+            self.file_period = file_period
+            self.session = session
+            # in "manual" style, the file period is the user choice
+            # and is not modified based on the data content
 
         if filename_style == "basic":
             self.mod_file_period_basic()
-        elif filename_style in ("flex", "exact"):
-            pass  ## it is the same as get_file_period_from_data()
+        elif filename_style in ("flex", "exact", "manual"):
+            pass
+            # it is the same as get_file_period_from_data() if filename_style is "flex" or "exact",
+            # and it is the user choice if filename_style is "manual"
         else:
             logger.error(
-                "style %s not recognized. Accepts only 'basic', 'flex', 'exact'",
+                "style %s not recognized. Accepts only 'basic', 'flex', 'exact', 'manual'",
                 filename_style,
             )
 
@@ -1270,6 +1242,52 @@ class RinexFile:
 
         return
 
+    def mod_marker_type(self, type_inp=None):
+        """
+        Modify within the RINEX header the marker type
+        (``MARKER TYPE`` line)
+
+        Parameters
+        ----------
+        type_inp : str, optional
+            Marker type (GEODETIC, NON_GEODETIC, SPACEBORNE, etc.).
+            The default is None.
+
+        Returns
+        -------
+        None.
+        """
+
+        if self.status:
+            return
+
+        if not type_inp:
+            return
+
+        marker_type_header_idx = rimo_cor.search_idx_val(self.rinex_data, "MARKER TYPE")
+
+        # Edit line
+        new_line = "{}".format(type_inp.ljust(60)) + "MARKER TYPE"
+
+        if marker_type_header_idx:  # The line exists
+            # Set line
+            self.rinex_data[marker_type_header_idx] = new_line
+        else:  # The line does not exist - insert after MARKER NUMBER
+            marker_number_header_idx = rimo_cor.search_idx_val(
+                self.rinex_data, "MARKER NUMBER"
+            )
+            if marker_number_header_idx:
+                self.rinex_data.insert(marker_number_header_idx + 1, new_line)
+            else:
+                # If no MARKER NUMBER, insert after MARKER NAME
+                marker_name_header_idx = rimo_cor.search_idx_val(
+                    self.rinex_data, "MARKER NAME"
+                )
+                if marker_name_header_idx:
+                    self.rinex_data.insert(marker_name_header_idx + 1, new_line)
+
+        return
+
     def mod_receiver(self, serial=None, type=None, firmware=None, keep_rnx_rec=False):
         """
         Modify within the RINEX header the receiver information
@@ -1300,7 +1318,9 @@ class RinexFile:
             return
 
         # Identify line that contains REC # / TYPE / VERS
-        receiver_header_idx = rimo_cor.search_idx_val(self.rinex_data, "REC # / TYPE / VERS")
+        receiver_header_idx = rimo_cor.search_idx_val(
+            self.rinex_data, "REC # / TYPE / VERS"
+        )
         receiver_head = self.rinex_data[receiver_header_idx]
         # Parse line
         serial_head = receiver_head[0:20]
@@ -1588,7 +1608,9 @@ class RinexFile:
             return
 
         # Identify line that contains OBSERVER / AGENCY
-        agencies_header_idx = rimo_cor.search_idx_val(self.rinex_data, "OBSERVER / AGENCY")
+        agencies_header_idx = rimo_cor.search_idx_val(
+            self.rinex_data, "OBSERVER / AGENCY"
+        )
 
         if not agencies_header_idx:  ##### THIS TEST SHOULD BE IN ALL MOD METHODS !!!!
             logger.warning(
@@ -1900,7 +1922,9 @@ class RinexFile:
             return
 
         # Identify line that contains STATION INFORMATION
-        station_info_header_idx = rimo_cor.search_idx_val(self.rinex_data, "STATION INFORMATION")
+        station_info_header_idx = rimo_cor.search_idx_val(
+            self.rinex_data, "STATION INFORMATION"
+        )
         # Edit line
         new_line = "{}".format(station_information.ljust(60)) + "STATION INFORMATION"
         if station_info_header_idx:
@@ -1913,7 +1937,6 @@ class RinexFile:
         self.version = "4.02"  # Update version to 4.02 if STATION INFORMATION is set
 
         return
-
 
     ##############################################################################
     ### mod methods. to change the RINEX filename
@@ -2006,12 +2029,15 @@ class RinexFile:
 
         if not no_hatanaka:  ## regular case, Hatanaka-compression of the RINEX
             output_data = hatanaka.compress(output_data, compression=comp_htnk_inp)
-        elif compression in ("Z", "gz"):  ## no Hatanaka, but low-level compression requested
+        elif compression in (
+            "Z",
+            "gz",
+        ):  ## no Hatanaka, but low-level compression requested
             # Apply low-level compression for non-Hatanaka files
             # Ensure data is bytes
             if isinstance(output_data, str):
-                output_data = output_data.encode('utf-8')
-            
+                output_data = output_data.encode("utf-8")
+
             if compression == "gz":
                 # Use gzip compression
                 output_data = gzip.compress(output_data)
@@ -2085,7 +2111,9 @@ class RinexFile:
         if not comment:
             return
 
-        end_of_header_idx = rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER") + 1
+        end_of_header_idx = (
+            rimo_cor.search_idx_val(self.rinex_data, "END OF HEADER") + 1
+        )
         idx = [
             i
             for i, e in enumerate(self.rinex_data[0:end_of_header_idx])
@@ -2130,6 +2158,23 @@ class RinexFile:
         new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.add_comment(new_line, add_as_first=True)
+
+    def add_map_sys_obs_comments(self, map_sys_obs_dic):
+        """
+        Add COMMENT lines describing the mapping of the observables in the RINEX header.
+        """
+
+        cmt_list = ["-" * 60, "OBSERVABLES MAPPING:"]
+        for sys in map_sys_obs_dic.keys():
+            for k in map_sys_obs_dic[sys].keys():
+                cmt_list.append(
+                    f"sys {sys} type/band/channel {str(k):>3s} mapped to {map_sys_obs_dic[sys][k]:>3s}"
+                )
+        cmt_list.append("-" * 60)
+
+        self.add_comments(cmt_list)
+
+        return
 
     def add_comments(self, comment_list):
         """
@@ -2280,5 +2325,3 @@ class RinexFile:
         except:
             logger.warning("unable to sort header's lines, action skipped (RNXv3 only)")
         return
-
-
