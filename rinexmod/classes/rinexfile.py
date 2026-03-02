@@ -345,28 +345,44 @@ class RinexFile:
         # +++++ set time format
         # default time format
         timefmt = "%Y%j%H%M"
+        delta_int = 0
 
-        if self.file_period == "01D":  ## Daily case
-            if self.session:
+        if filename_style == "exact":
+            timefmt = "%Y%j%H%M"
+            delta_int = 0
+        elif filename_style == "flex":
+            timefmt = "%Y%j%H00"
+            delta_int = 60
+        elif filename_style == "basic":
+            if self.file_period[-1] == "U":  ## Unknown case
+                # the filename deserves a full description to identify potential bug
                 timefmt = "%Y%j%H%M"
-            else:
-                timefmt = "%Y%j0000"  # Start of the day
-        elif self.file_period[-1] == "M":  ## Subhourly case
-            timefmt = "%Y%j%H%M"
-        elif self.file_period == "00U":  ## Unknown case
-            # the filename deserves a full description to identify potential bug
-            timefmt = "%Y%j%H%M"
-        else:  ## Hourly case
-            if filename_style in ("basic", "flex"):
+                delta_int = 0
+            elif self.file_period[-1] == "D":  ## Daily case
+                if self.session:
+                    timefmt = "%Y%j%H%M"
+                    delta_int = 60
+                else:
+                    timefmt = "%Y%j0000"  # Start of the day
+                    delta_int = 1440
+            elif self.file_period[-1] == "M":  ## Subhourly case
+                timefmt = "%Y%j%H%M"
+                delta_int = 15
+            else:  ## Hourly case
                 timefmt = "%Y%j%H00"  # Start of the hour
-            elif filename_style == "exact":
-                timefmt = "%Y%j%H%M"  # start of the minute
+                delta_int = 60
+
+        if delta_int != 0:
+            delta_td = dt.timedelta(minutes=delta_int)
+            srt_use = rimo_cor.round_time(self.start_date, delta_td, to="down")
+        else:
+            srt_use = self.start_date
 
         longname = "_".join(
             (
                 self.get_site(False, False),
                 data_source,
-                self.start_date.strftime(timefmt),
+                srt_use.strftime(timefmt),
                 self.file_period,
                 self.sample_rate_string,
                 self.get_sat_system() + obs_type + ext + compression,
@@ -998,7 +1014,7 @@ class RinexFile:
         return file_period, session
 
     def mod_file_period(self, filename_style="basic"):
-
+        ### STEP 1: get file period from data if filename style is not "manual
         if filename_style in ("basic", "flex", "exact"):
             file_period, session = self.get_file_period_from_data()
             self.file_period = file_period
@@ -1006,7 +1022,8 @@ class RinexFile:
             # in "manual" style, the file period is the user choice
             # and is not modified based on the data content
 
-        if filename_style == "basic":
+        ### STEP 2: modify file period to fit a conventional value if filename style is "basic"
+        if filename_style in ("basic",):
             self.mod_file_period_basic()
         elif filename_style in ("flex", "exact", "manual"):
             pass
