@@ -8,7 +8,8 @@ Class
 import gzip
 import os
 import re
-#from datetime import datetime, timedelta
+
+# from datetime import datetime, timedelta
 import datetime as dt
 from io import StringIO
 from pathlib import Path
@@ -422,7 +423,7 @@ class RinexFile:
             compression = "." + compression
 
         self.mod_file_period(filename_style=filename_style)
-        #file_period_name = self.file_period
+        # file_period_name = self.file_period
 
         alphabet = list(map(chr, range(97, 123)))
         if self.file_period[-1] == "H":
@@ -2155,7 +2156,7 @@ class RinexFile:
             return
 
         date = dt.datetime.now(dt.UTC).strftime("%Y%m%d %H%M%S UTC")
-        #date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
+        # date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
         new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
         self.add_comment(new_line, add_as_first=True)
