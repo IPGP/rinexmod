@@ -47,38 +47,22 @@ class RinexFile:
     """
 
     def __init__(self, rinex_input, force_rnx_load=False):
+        self.path_output = ""
+        self.status = None
 
-        ##### the RINEX input is a file, thus a string or a Path is given
-        if type(rinex_input) in (str, Path):
-            self.source_from_file = True
-            self.path = rinex_input.strip()
-            self.path_output = ""
-            self.content_input = self.path
-        ##### the RINEX input is directely data, in a StringIO
-        elif type(rinex_input) is StringIO:
-            self.source_from_file = False
-            self.path = ""
-            self.path_output = ""
-            self.content_input = bytes(
-                rinex_input.read(), "utf-8"
-            )  ## ready-to-read for hatanaka
-        else:
-            logger.error("input rinex_input is not str, Path, or StringIO")
+        self.path, self._loadable, self.source_is_file = self._resolve_input(rinex_input)
+        self.name_conv = self.get_naming_convention()
+        self.compression, self.hatanka_input = self.get_compression()
+        self.rinex_data, self.status = self._load_rinexdata(force=force_rnx_load)
 
-        self.rinex_data, self.status = self._load_rinexdata(
-            force_rnx_load=force_rnx_load
-        )
+        self.size = self.get_size()
+        self.filename = self.get_filename()
+        self.data_source = self.get_data_source()
 
         if not self.rinex_data:
             errmsg = f"RINEX data could not be loaded: {self.status}"
             logger.error(errmsg)
             raise rimo_cor.RinexFileError(errmsg)
-
-        self.size = self.get_size()
-        self.name_conv = self.get_naming_convention()
-        self.compression, self.hatanka_input = self.get_compression()
-        self.filename = self.get_filename()
-        self.data_source = self.get_data_source()
 
         #### site is an internal attribute, always 9char
         # (filled with 00XXX in nothing else is provided)
@@ -345,8 +329,10 @@ class RinexFile:
             compression = ""
 
         # +++++ set file period and session
-        self.mod_file_period(filename_style=filename_style,
-                             get_file_period_from_data=get_file_period_from_data)
+        self.mod_file_period(
+            filename_style=filename_style,
+            get_file_period_from_data=get_file_period_from_data,
+        )
 
         # +++++ set time format
         # default time format
@@ -502,58 +488,114 @@ class RinexFile:
     # *****************************************************************************
     ### internal methods
 
-    def _load_rinexdata(self, force_rnx_load=False):
+    def _resolve_input(self, rinex_input):
         """
-        Load the uncompressed rinex data into a list var using hatanaka library.
-        Will return a table of lines of the uncompressed file, a 'name_conv' var
-        that indicates if the file is named with the SHORT NAME convention or the
-        LONG NAME convetion, and a status. Status 0 is OK. The other ones
-        corresponds to the errors codes raised by rinexarchive and by rinexmod.
-        01 - The specified file does not exists
-        02 - Not an observation Rinex file
-        03 - Invalid  or empty Zip file
-        04 - Invalid Compressed Rinex file
-        """
+        Resolve the nature of *rinex_input* (file path or in-memory StringIO),
+        populate ``self.path`` and ``self.source_from_file``, and return the
+        raw bytes to be passed to :meth:`_load_rinexdata`.
 
-        ##### IF input is a file, checking if file exists
-        if self.source_from_file and not os.path.isfile(self.path):
-            rinex_data = None
-            status = "01 - The specified file does not exists"
-        ##### The input is a file
+        Parameters
+        ----------
+        rinex_input : str or Path or StringIO
+            The RINEX source.
+
+        Returns
+        -------
+        path : str
+            The file path if the source is a file, or an empty string if the source is in-memory.
+        _loadable : bytes
+            The raw bytes to be passed to :meth:`_load_rinexdata`.
+        source_from_file : bool
+            ``True`` if the source is a file, ``False`` if the source is in-memory.
+
+        """
+        if isinstance(rinex_input, (str, Path)):
+            self.path = str(rinex_input).strip()
+            self._loadable = open(rinex_input, "rb").read()
+            self.source_is_file = True
+        elif isinstance(rinex_input, StringIO):
+            self.path = ""
+            self._loadable = bytes(rinex_input.read(), "utf-8")
+            self.source_is_file = False
+        elif isinstance(rinex_input, bytes):
+            self.path = ""
+            self._loadable = rinex_input
+            self.source_is_file = False
         else:
+            errmsg = "rinex_input must be str, Path, StringIO or bytes, not %s"
+            logger.error(errmsg, type(rinex_input))
+            self.source_is_file = False
+            self.path = ""
+            self._loadable = None
+
+        return self.path, self._loadable, self.source_is_file
+
+    def _load_rinexdata(self, force=False):
+        """
+        Decompress and load the RINEX data into a list of text lines using the
+        hatanaka library.
+
+        it use the self._loadable attribute, which is set by the _resolve_input method,
+        which is a raw bytes.
+
+        Error status codes
+        ------------------
+        01 - The specified file does not exist
+        02 - Not an observation RINEX file
+        03 - Invalid or empty compressed file
+        04 - Invalid Compressed RINEX file
+        05 - Invalid or empty file
+
+        Parameters
+        ----------
+        force : bool, optional
+            When *True*, skip the observation-RINEX type check.
+
+        Returns
+        -------
+        tuple[list[str] | None, str | None]
+            ``(rinex_data, status)`` where *status* is ``None`` on success.
+        """
+        # --- file existence check (only relevant when input is a file path) ---
+        if self.source_is_file and not os.path.isfile(self.path):
+            status = "01 - The specified file does not exist"
+            logger.error(status)
+            return None, status
+
+        # --- decompress -------------------------------------------------------
+        if self.hatanka_input or self.compression:
             try:
-                rinex_data = hatanaka.decompress(self.content_input).decode("utf-8")
-                rinex_data = rinex_data.split("\n")
+                rinex_data = hatanaka.decompress(self._loadable).decode("utf-8").split("\n")
                 status = None
             except ValueError:
-                rinex_data = None
                 status = "03 - Invalid or empty compressed file"
-
-            except hatanaka.hatanaka.HatanakaException:
-                rinex_data = None
-                status = "04 - Invalid Compressed RINEX file"
-
-            if status:
                 logger.error(status)
+                return None, status
+            except hatanaka.hatanaka.HatanakaException:
+                status = "04 - Invalid Compressed RINEX file"
+                logger.error(status)
+                return None, status
+        else:
+            try:
+                rinex_data = self._loadable.decode("utf-8").split("\n")
+                status = None
+            except UnicodeDecodeError:
+                status = "05 - Invalid or empty file"
+                logger.error(status)
+                return None, status
 
-            if rinex_data:
-                bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
-                bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
-            else:
-                bool_l1_obs = False
-                bool_l1_crx = False
+        # --- RINEX observation type check -------------------------------------
+        bool_l1_obs = "OBSERVATION DATA" in rinex_data[0]
+        bool_l1_crx = "COMPACT RINEX FORMAT" in rinex_data[0]
 
-            if not force_rnx_load and not (bool_l1_obs or bool_l1_crx):
-                logger.error(
-                    "File's 1st line does not match an Observation RINEX: "
-                    + os.path.join(self.path)
-                )
-                logger.error("try to force the loading with force_rnx_load = True")
-                rinex_data = None
-                status = "02 - Not an observation RINEX file"
+        if not force and not (bool_l1_obs or bool_l1_crx):
+            logger.error("File's 1st line does not match an obs. RINEX: %s", self.path)
+            logger.error("try to force the loading with force_rnx_load = True")
+            status = "02 - Not an observation RINEX file"
+            return None, status
 
-        if status:
-            logger.error(status)
+        # self._loadable is not needed anymore, we can free the memory
+        self._loadable = None
 
         return rinex_data, status
 
@@ -596,7 +638,7 @@ class RinexFile:
         if self.status:
             return 0
 
-        if self.source_from_file:
+        if self.source_is_file:
             size = os.path.getsize(self.path)
         else:
             size = 0
@@ -2065,7 +2107,7 @@ class RinexFile:
                 output_data = ncompress.compress(output_data)
 
         ### The data source is an actual RINEX file
-        if self.source_from_file:
+        if self.source_is_file:
             if not no_hatanaka:
                 # manage hatanaka compression extension
                 # RNX3
