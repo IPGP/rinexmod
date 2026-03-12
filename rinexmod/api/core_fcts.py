@@ -462,7 +462,7 @@ def geodesyml2mda_objs(gml_path):
     Parameters
     ----------
     gml_path : str
-        Path of a GeodesyML file containing GNSS\site metadata information.
+        Path of a GeodesyML file containing GNSS site metadata information.
 
     Returns
     -------
