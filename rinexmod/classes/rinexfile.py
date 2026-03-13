@@ -2214,8 +2214,11 @@ class RinexFile:
         """
         if self.status:
             return
-
-        date = dt.datetime.now(dt.UTC).strftime("%Y%m%d %H%M%S UTC")
+        # < python 3.11
+        date = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d %H%M%S UTC")
+        # >= python 3.11
+        # date = dt.datetime.now(dt.UTC).strftime("%Y%m%d %H%M%S UTC")
+        # deprecated since python 3.12
         # date = datetime.utcnow().strftime("%Y%m%d %H%M%S UTC")
         new_line = "{:20}{:20}{:20}{:}".format(program, run_by, date, "COMMENT")
 
