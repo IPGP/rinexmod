@@ -44,6 +44,7 @@ def test_rinexmod_sitelog_gml(inputs, parameters, correct_out, tmp_path):
     rimo_api.rinexmod_cli(
         rinexinput=[str(current_pos_args[0])],
         outputfolder=current_pos_args[1],
+        debug=True,
         **current_params)
 
     output = list(tmp_path.glob("*.gz"))
