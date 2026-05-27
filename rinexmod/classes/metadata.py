@@ -1140,6 +1140,17 @@ class MetaData:
         else:
             return full_country
 
+    def get_xyz(self):
+        """
+        Return the X, Y, Z coordinates of the site as floats.
+        """
+
+        x = float(self.misc_meta["X coordinate (m)"])
+        y = float(self.misc_meta["Y coordinate (m)"])
+        z = float(self.misc_meta["Z coordinate (m)"])
+
+        return x, y, z
+
     def teqcargs(self, starttime, endtime, ignore=False):
         """
         Will return a string of teqc args containing all infos from the sitelog,
