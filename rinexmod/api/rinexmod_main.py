@@ -18,6 +18,7 @@ import rinexmod.api.core_fcts as rimo_cor
 
 
 import rinexmod.logger as rimo_log
+
 logger = rimo_log.logger_define("INFO")
 
 
@@ -51,6 +52,7 @@ def rinexmod(
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
+    geodesyml=None,
 ):
     """
     Parameters
@@ -77,6 +79,7 @@ def rinexmod(
          * comment
          * marker_name
          * marker_number
+         * marker_type
          * station (legacy alias for marker_name)
          * receiver_serial
          * receiver_type
@@ -306,9 +309,9 @@ def rinexmod(
         rnxobj.set_site(marker)
 
     ## warning if no metadata at all is not provided
-    if not sitelog and not modif_kw and (not station_info or not lfile_apriori):
+    if not sitelog and not modif_kw and (not station_info or not lfile_apriori) and not geodesyml:
         logger.warning(
-            "No sitelog nor keywords nor station.info+lfile provided. "
+            "No sitelog/keywords/station.info+lfile/geodesyML provided. "
             "Per default rec.'s header will remain & no new "
             "metdata will be written!"
         )
@@ -335,8 +338,11 @@ def rinexmod(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
+    if geodesyml:
+        mdaobjs_lis = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
+
     ### find the right MetaData object corresponding to the RINEX
-    if sitelog or (station_info and lfile_apriori):
+    if sitelog or (station_info and lfile_apriori) or geodesyml:
         mdaobj = rimo_cor.find_mda4site(rnxobj, mdaobjs_lis, force=force_sitelog)
         logger.debug("metadata used: %s", mdaobj)
     else:
@@ -363,9 +369,7 @@ def rinexmod(
         cntry = marker[6:]
     elif ninecharfile:
         if not rnx_4char in nine_char_dict:
-            logger.warning(
-                "Site's missing in the input 9-char. file: %s", rinexfile
-            )
+            logger.warning("Site's missing in the input 9-char. file: %s", rinexfile)
             monum = "00"
             cntry = "XXX"
         else:
@@ -407,7 +411,8 @@ def rinexmod(
     ########## Apply the MetaData object on the RinexFile object
     if mdaobj:
         rnxobj = rimo_cor.apply_mda2rnxobj(
-            rnxobj, mdaobj,
+            rnxobj,
+            mdaobj,
             ignore=ignore,
             keep_rnx_rec=keep_rnx_rec,
             round_instru_dates=round_instru_dates,
@@ -419,6 +424,7 @@ def rinexmod(
 
     ###########################################################################
     ########## Apply the modif_kw dictionnary on the RinexFile object
+    get_file_period_from_data = True # This will be useful for generating the name
     if modif_kw:
         # Checking input keyword modification arguments
         rimo_cor.modif_kw_check(modif_kw)
@@ -428,6 +434,12 @@ def rinexmod(
         logger.debug(
             "RINEX Manual Keywords-Modified Metadata:\n" + rnxobj.get_header()[0]
         )
+        if (
+            "filename_file_period" in modif_kw.keys()
+            or "filename_data_freq" in modif_kw.keys()
+        ):
+            get_file_period_from_data = False
+
     else:
         modif_source_kw = ""
 
@@ -444,8 +456,8 @@ def rinexmod(
 
     ###########################################################################
     ########## Add comment in the header
-    githash = rimo_cor.get_git_hash() # git hash is desactivated
-    vers_num = rimo.__version__ # + " " + githash[-3:]
+    githash = rimo_cor.get_git_hash()  # git hash is desactivated
+    vers_num = rimo.__version__  # + " " + githash[-3:]
     vers_num = vers_num.replace("beta", "b")
     rnxobj.add_prg_run_date_comment("RinexMod " + vers_num, "METADATA UPDATE")
     if githash != "xxxxxxx":
@@ -486,6 +498,7 @@ def rinexmod(
             compression="",
             filename_style=filename_style,
             data_source=rnxobj.data_source,
+            get_file_period_from_data=get_file_period_from_data,
         )
     else:
         rnxobj.get_shortname(
@@ -518,7 +531,9 @@ def rinexmod(
         )
         logger.info("# Out. file: " + outputfile)
     except hatanaka.hatanaka.HatanakaException as e:
-        errmsg ="{:110s} - {}".format("File could not be written - hatanaka exception", rinexfile)
+        errmsg = "{:110s} - {}".format(
+            "File could not be written - hatanaka exception", rinexfile
+        )
         logger.error(errmsg)
         outputfile = None
         raise e

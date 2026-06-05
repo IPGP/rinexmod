@@ -1,0 +1,499 @@
+     HOUZ00GLP Site Information Form (site log v2.0)
+     International GNSS Service
+     See Instructions at:
+       https://files.igs.org/pub/station/general/sitelog_instr_v2.0.txt
+
+
+0.   Form
+
+     Prepared by (full name)  : IPGP-VOLOBSIS Team (volobsis-support@ipgp.fr)
+     Date Prepared            : 2025-01-06
+     Report Type              : UPDATE
+     If Update:
+      Previous Site Log       : houz00glp_20241014.log
+      Modified/Added Sections : 3.9, 3.10, 3.11
+
+
+1.   Site Identification of the GNSS Monument
+
+     Site Name                : Le Houelmont
+     Nine Character ID        : HOUZ00GLP
+     Monument Inscription     : 
+     IERS DOMES Number        : 97102M001
+     CDP Number               : NONE
+     Monument Description     : PILLAR, stainless steel rod, brass adapter
+       Height of the Monument : 1.35 m
+       Monument Foundation    : CONCRETE
+       Foundation Depth       : 1 m
+     Marker Description       : Top centre of stainless steel rod
+     Date Installed           : 2000-05-13
+     Geologic Characteristic  : ANDESITIC DOME
+       Bedrock Type           : IGNEOUS
+       Bedrock Condition      : WEATHERED
+       Fracture Spacing       : 0 cm
+       Fault zones nearby     : Yes
+         Distance/activity    : few kilometers from active faults.
+                              : 25 km from the 2004 M=6.4 earthquake epicenter
+     Additional Information   : Site located at the Guadeloupe Volcanic and
+                              : Seismologic Observatory, at the top of a large
+                              : andesitic dome.
+                              : Concrete pier is build on the clay resulting
+                              : from andesitic dome alteration.
+                              : Site located at about 8 km from the top of La
+                              : Soufriere active volcano.
+                              : 
+                              : Second split receiver on the same antenna as
+                              : HOUE00GLP.
+                              : Thus, the present station is collocated with
+                              : HOUE00GLP.
+                              : 
+                              : HOUZ00GLP describes OVSG-IPGP's receiver.
+                              : HOUE00GLP describes TERIA's receiver, which was
+                              : historically maintained by OVSG-IPGP.
+                              : 
+                              : Teria's devices have been installed on
+                              : 2019-07-18.
+                              : Before this date, HOUE00GLP and HOUZ00GLP are
+                              : two aliases for the same receiver and thus the
+                              : same data.
+                              : 
+                              : Effective renaming of the IPGP-OVS's receiver
+                              : for HOUZ00GLP has been performed on 2023-09-11.
+                              : HOUZ00GLP's data before this date have been
+                              : generated retroactively.
+                              : This change is transparent for the end-users.
+                              : 
+
+
+2.   Site Location Information
+
+     City or Town             : Gourbeyre
+     State or Province        : Guadeloupe
+     Country or Region        : GLP
+     Tectonic Plate           : CARIBBEAN
+     Approximate Position (ITRF)
+       X coordinate (m)       : 2907580.100
+       Y coordinate (m)       : -5400653.400
+       Z coordinate (m)       : 1744663.100
+       Latitude (N is +)      : +155846.61
+       Longitude (E is +)     : -0614211.02
+       Elevation (m,ellips.)  : 377.0
+     Additional Information   : ITRF2014 POSITION (2024.0)
+                              : 
+                              : Previous Approx. Position before 2024-09-13:
+                              : X= 2907579.310
+                              : Y=-5400653.250
+                              : Z= 1744663.100
+                              : 
+                              : ARP IGS08 POSITION (2016-05-21)
+
+
+3.   GNSS Receiver Information
+
+3.1  Receiver Type            : ASHTECH Z-XII3
+     Satellite System         : GPS
+     Serial Number            : LP0346
+     Firmware Version         : 5J00-1C63
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2000-05-13T00:00Z
+     Date Removed             : 2000-05-13T16:00Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.2  Receiver Type            : ASHTECH Z-XII3
+     Satellite System         : GPS
+     Serial Number            : 700570B02356
+     Firmware Version         : CD00-1D02
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2000-05-13T16:00Z
+     Date Removed             : 2001-11-26T16:00Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.3  Receiver Type            : ASHTECH Z-XII3
+     Satellite System         : GPS
+     Serial Number            : LP0346
+     Firmware Version         : 6J00
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2001-11-26T16:00Z
+     Date Removed             : 2002-03-08T21:00Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.4  Receiver Type            : ASHTECH Z-XII3
+     Satellite System         : GPS
+     Serial Number            : 700570B02356
+     Firmware Version         : CD00-1D02
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2002-03-08T21:00Z
+     Date Removed             : 2004-10-29T20:58Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.5  Receiver Type            : ASHTECH UZ-12
+     Satellite System         : GPS
+     Serial Number            : ZR52001481
+     Firmware Version         : J10-0A16
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2004-10-29T20:58Z
+     Date Removed             : 2004-11-25T00:00Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.6  Receiver Type            : ASHTECH Z-XII3
+     Satellite System         : GPS
+     Serial Number            : 700570B02356
+     Firmware Version         : CD00-1D02
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2004-11-25T00:00Z
+     Date Removed             : 2005-09-04T23:59Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.7  Receiver Type            : ASHTECH Z-X
+     Satellite System         : GPS
+     Serial Number            : 1200439017
+     Firmware Version         : ZB00
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2005-09-05T00:00Z
+     Date Removed             : 2006-05-06T00:00Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.8  Receiver Type            : ASHTECH Z-XII3
+     Satellite System         : GPS
+     Serial Number            : 7008451Elp02702
+     Firmware Version         : CD00-1D02
+     Elevation Cutoff Setting : 15 deg
+     Date Installed           : 2006-05-06T00:00Z
+     Date Removed             : 2016-04-28T13:02Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.9  Receiver Type            : LEICA GR25
+     Satellite System         : GPS+GLO+GAL
+     Serial Number            : 1831786
+     Firmware Version         : 3.22/6.521
+     Elevation Cutoff Setting : 0 deg
+     Date Installed           : 2016-04-28T13:02Z
+     Date Removed             : 2018-12-15T00:00Z
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.10 Receiver Type            : LEICA GR50
+     Satellite System         : GPS+GLO+GAL
+     Serial Number            : 2090589
+     Firmware Version         : 4.31/6.525
+     Elevation Cutoff Setting : 0 deg
+     Date Installed           : 2018-12-15T00:00Z
+     Date Removed             : 2023-09-06T16:00Z
+     Temperature Stabiliz.    : (deg C) +/- (deg C)
+     Additional Information   : (multiple lines)
+
+3.11 Receiver Type            : LEICA GR50
+     Satellite System         : GPS+GLO+GAL
+     Serial Number            : 2090589
+     Firmware Version         : 4.52/7.711
+     Elevation Cutoff Setting : 0 deg
+     Date Installed           : 2023-09-06T16:00Z
+     Date Removed             : CCYY-MM-DDThh:mmZ
+     Temperature Stabiliz.    : none
+     Additional Information   : (multiple lines)
+
+3.x  Receiver Type            : (A20, from rcvr_ant.tab; see instructions)
+     Satellite System         : (GPS+GLO+GAL+BDS+QZSS+IRNSS+SBAS)
+     Serial Number            : (A20, but note the first A5 is used in SINEX)
+     Firmware Version         : (A11)
+     Elevation Cutoff Setting : (deg)
+     Date Installed           : (CCYY-MM-DDThh:mmZ)
+     Date Removed             : (CCYY-MM-DDThh:mmZ)
+     Temperature Stabiliz.    : (none or tolerance in degrees C)
+     Additional Information   : (multiple lines)
+
+
+4.   GNSS Antenna Information
+
+4.1  Antenna Type             : ASH700936E      NONE
+     Serial Number            : CR15865
+     Antenna Reference Point  : BPA
+     Marker->ARP Up Ecc. (m)  :   0.0250
+     Marker->ARP North Ecc(m) :   0.0000
+     Marker->ARP East Ecc(m)  :   0.0000
+     Alignment from True N    : 0 deg
+     Antenna Radome Type      : NONE
+     Radome Serial Number     : 
+     Antenna Cable Type       : N-N
+     Antenna Cable Length     : 50 m
+     Date Installed           : 2000-05-13T00:00Z
+     Date Removed             : 2000-05-13T16:00Z
+     Additional Information   : (multiple lines)
+
+4.2  Antenna Type             : ASH700936E      SNOW
+     Serial Number            : CR16689
+     Antenna Reference Point  : BPA
+     Marker->ARP Up Ecc. (m)  :   0.0250
+     Marker->ARP North Ecc(m) :   0.0000
+     Marker->ARP East Ecc(m)  :   0.0000
+     Alignment from True N    : 0 deg
+     Antenna Radome Type      : SNOW
+     Radome Serial Number     : 
+     Antenna Cable Type       : N-N
+     Antenna Cable Length     : 50 m
+     Date Installed           : 2000-05-13T16:00Z
+     Date Removed             : 2016-04-28T13:02Z
+     Additional Information   : (multiple lines)
+
+4.3  Antenna Type             : LEIAR10         NONE
+     Serial Number            : 18325020
+     Antenna Reference Point  : BAM
+     Marker->ARP Up Ecc. (m)  :   0.0250
+     Marker->ARP North Ecc(m) :   0.0000
+     Marker->ARP East Ecc(m)  :   0.0000
+     Alignment from True N    : 0 deg
+     Antenna Radome Type      : NONE
+     Radome Serial Number     : 
+     Antenna Cable Type       : TNC-TNC
+     Antenna Cable Length     : 50 m
+     Date Installed           : 2016-04-28T13:02Z
+     Date Removed             : 2019-07-18T10:00Z
+     Additional Information   : (multiple lines)
+
+4.4  Antenna Type             : AERAT1675_120   SPKE
+     Serial Number            : 5506
+     Antenna Reference Point  : BAM
+     Marker->ARP Up Ecc. (m)  :   0.0250
+     Marker->ARP North Ecc(m) :   0.0000
+     Marker->ARP East Ecc(m)  :   0.0000
+     Alignment from True N    : 0 deg
+     Antenna Radome Type      : SPKE
+     Radome Serial Number     : 
+     Antenna Cable Type       : TNC-TNC
+     Antenna Cable Length     : 50 m
+     Date Installed           : 2019-07-18T15:00Z
+     Date Removed             : 2023-09-06T15:00Z
+     Additional Information   : (multiple lines)
+
+4.5  Antenna Type             : AERAT1675_120   SPKE
+     Serial Number            : 5510
+     Antenna Reference Point  : BAM
+     Marker->ARP Up Ecc. (m)  :   0.0250
+     Marker->ARP North Ecc(m) :   0.0000
+     Marker->ARP East Ecc(m)  :   0.0000
+     Alignment from True N    : 0 deg
+     Antenna Radome Type      : SPKE
+     Radome Serial Number     : 
+     Antenna Cable Type       : TNC-TNC
+     Antenna Cable Length     : 50 m
+     Date Installed           : 2023-09-06T16:00Z
+     Date Removed             : CCYY-MM-DDThh:mmZ
+     Additional Information   : (multiple lines)
+
+4.x  Antenna Type             : (A20, from rcvr_ant.tab; see instructions)
+     Serial Number            : (A*, but note the first A5 is used in SINEX)
+     Antenna Reference Point  : (BPA/BCR/XXX from "antenna.gra"; see instr.)
+     Marker->ARP Up Ecc. (m)  : (F8.4)
+     Marker->ARP North Ecc(m) : (F8.4)
+     Marker->ARP East Ecc(m)  : (F8.4)
+     Alignment from True N    : (deg; + is clockwise/east)
+     Antenna Radome Type      : (A4 from rcvr_ant.tab; see instructions)
+     Radome Serial Number     : 
+     Antenna Cable Type       : (vendor & type number)
+     Antenna Cable Length     : (m)
+     Date Installed           : (CCYY-MM-DDThh:mmZ)
+     Date Removed             : (CCYY-MM-DDThh:mmZ)
+     Additional Information   : (multiple lines)
+
+
+5.   Surveyed Local Ties
+
+5.x  Tied Marker Name         : 
+     Tied Marker Usage        : (SLR/VLBI/LOCAL CONTROL/FOOTPRINT/etc)
+     Tied Marker CDP Number   : (A4)
+     Tied Marker DOMES Number : (A9)
+     Differential Components from GNSS Marker to the tied monument (ITRS)
+       dx (m)                 : (m)
+       dy (m)                 : (m)
+       dz (m)                 : (m)
+     Accuracy (mm)            : (mm)
+     Survey method            : (GPS CAMPAIGN/TRILATERATION/TRIANGULATION/etc)
+     Date Measured            : (CCYY-MM-DDThh:mmZ)
+     Additional Information   : (multiple lines)
+
+
+6.   Frequency Standard
+
+6.x  Standard Type            : (INTERNAL or EXTERNAL H-MASER/CESIUM/etc)
+       Input Frequency        : (if external)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Notes                  : (multiple lines)
+
+
+7.   Collocation Information
+
+7.x  Instrumentation Type     : (GPS/GLONASS/DORIS/PRARE/SLR/VLBI/TIME/etc)
+       Status                 : (PERMANENT/MOBILE)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Notes                  : (multiple lines)
+
+
+8.   Meteorological Instrumentation
+
+8.1.x  Humidity Sensor Model  : 
+       Manufacturer           : 
+       Serial Number          : 
+       Data Sampling Interval : (sec)
+       Accuracy (% rel h)     : (% rel h)
+       Aspiration             : (UNASPIRATED/NATURAL/FAN/etc)
+       Height Diff to Ant     : (m)
+       Calibration date       : (CCYY-MM-DD)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Notes                  : (multiple lines)
+
+8.2.x  Pressure Sensor Model  : 
+       Manufacturer           : 
+       Serial Number          : 
+       Data Sampling Interval : (sec)
+       Accuracy               : (hPa)
+       Height Diff to Ant     : (m)
+       Calibration date       : (CCYY-MM-DD)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Notes                  : (multiple lines)
+
+8.3.x  Temp. Sensor Model     : 
+       Manufacturer           : 
+       Serial Number          : 
+       Data Sampling Interval : (sec)
+       Accuracy               : (deg C)
+       Aspiration             : (UNASPIRATED/NATURAL/FAN/etc)
+       Height Diff to Ant     : (m)
+       Calibration date       : (CCYY-MM-DD)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Notes                  : (multiple lines)
+
+8.4.x  Water Vapor Radiometer : 
+       Manufacturer           : 
+       Serial Number          : 
+       Distance to Antenna    : (m)
+       Height Diff to Ant     : (m)
+       Calibration date       : (CCYY-MM-DD)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Notes                  : (multiple lines)
+
+8.5.x  Other Instrumentation  : (multiple lines)
+
+
+9.   Local Ongoing Conditions Possibly Affecting Computed Position
+
+9.1.x  Radio Interferences    : (TV/CELL PHONE ANTENNA/RADAR/etc)
+       Observed Degradations  : (SN RATIO/DATA GAPS/etc)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Additional Information : (multiple lines)
+
+9.2.x  Multipath Sources      : (METAL ROOF/DOME/VLBI ANTENNA/etc)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Additional Information : (multiple lines)
+
+9.3.x  Signal Obstructions    : (TREES/BUILDINGS/etc)
+       Effective Dates        : (CCYY-MM-DD/CCYY-MM-DD)
+       Additional Information : (multiple lines)
+
+
+10.  Local Episodic Effects Possibly Affecting Data Quality
+
+10.x  Date                    : (CCYY-MM-DD/CCYY-MM-DD)
+      Event                   : (TREE CLEARING/CONSTRUCTION/etc)
+
+
+11.  On-Site, Point of Contact Agency Information
+
+     Agency                   : Guadeloupe Seismic and Volcano Observatory
+     Preferred Abbreviation   : OVSG-IPGP
+     Mailing Address          : Le Houëlmont
+                              : 97113 Gourbeyre, Guadeloupe, FWI
+                              : France
+     Primary Contact
+       Contact Name           : OVSG-IPGP Team
+       Telephone (primary)    : +590 590 99 11 33
+       Telephone (secondary)  : 
+       Fax                    : +590 590 99 11 33
+       E-mail                 : equipe@ovsg.univ-ag.fr
+     Secondary Contact
+       Contact Name           : 
+       Telephone (primary)    : 
+       Telephone (secondary)  : 
+       Fax                    : 
+       E-mail                 : 
+     Additional Information   : (multiple lines)
+
+
+12.  Responsible Agency (if different from 11.)
+
+     Agency                   : Institut de Physique du Globe de Paris
+     Preferred Abbreviation   : IPGP
+     Mailing Address          : rue Jussieu 1
+                              : 75005 Paris
+                              : France
+     Primary Contact
+       Contact Name           : IPGP-VOLOBSIS Team
+       Telephone (primary)    : 
+       Telephone (secondary)  : 
+       Fax                    : 
+       E-mail                 : volobsis-support@ipgp.fr
+     Secondary Contact
+       Contact Name           : 
+       Telephone (primary)    : 
+       Telephone (secondary)  : 
+       Fax                    : 
+       E-mail                 : 
+     Additional Information   : (multiple lines)
+
+
+13.  More Information
+
+     Primary Data Center      : IPGP
+     Secondary Data Center    : 
+     URL for More Information : http://volobsis.ipgp.fr
+     Hardcopy on File
+       Site Map               : http://volobsis.ipgp.fr
+       Site Diagram           : (Y or URL)
+       Horizon Mask           : (Y or URL)
+       Monument Description   : (Y or URL)
+       Site Pictures          : (Y or URL)
+     Additional Information   : (multiple lines)
+     Antenna Graphics with Dimensions
+
+ASH700936E
+ASH700936E_C
+ASH700936F_C
+
+                      +---------+
+                     /           \
+                    |             |
+  +-----------------+-------------+-----------------+     <--  0.1008  TCR
+  |                                                 |
+  |                                                 |
+  |                                                 |
+  |                                                 |
++-+-------------------------------------------------+-+   <--  0.0378
++-------------------+-------------+-------------------+   <--  0.0348  BCR
+                    |             |
+                    |             |
+                    +------x------+                       <--  0.0000  BPA=ARP
+                                                                       NOM=NRP
+<--                      0.3794                     -->
+
+LEIAR10
+
+                        .  ^  .                           <--  0.1362
+                    .             .
+               .                       .
+           .                               .
+        .                                     .
+      /                                         \
+     |                                           |
+     |                                           |        <--  0.0362  Notch
+     +-----____                         ____-----+
+               -----____       ____-\ \-
+                        +--x--+      \_\                  <--  0.0000  BAM=ARP
+                                                                       NOM=NRP
+     <--                 0.2400                -->

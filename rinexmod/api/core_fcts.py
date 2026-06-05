@@ -24,7 +24,9 @@ import rinexmod.classes.rinexfile as rimo_rnx
 
 
 import rinexmod.logger as rimo_log
+
 logger = rimo_log.logger_define("INFO")
+
 
 # *****************************************************************************
 # define Python user-defined exceptions
@@ -46,7 +48,6 @@ class MetaDataError(RinexModError):
 
 class ReturnListError(RinexModError):
     pass
-
 
 
 # *****************************************************************************
@@ -171,6 +172,50 @@ def metadata_input_manage(sitelog_inp, force=False):
         )
         raise RinexModInputArgsError
 
+def metadata_input_manage_geodesyml(gml_path):
+    """
+    Manage GeodesyML file as metadata input
+    Return a list of MetaData
+
+    Parameters
+    ----------
+    gml_path : str
+        GeodesyML file path.
+
+    Returns
+    -------
+        list of MetaData objects.
+        (can be a singleton)
+
+    """
+    if isinstance(gml_path, rimo_mda.MetaData):
+        return [gml_path]
+    elif isinstance(gml_path, list) and isinstance(gml_path[0], rimo_mda.MetaData):
+        return gml_path
+    elif isinstance(gml_path, str) and os.path.isdir(gml_path):
+        gml_extension = ".xml"
+        gml_files = listfiles(gml_path, gml_extension)
+
+        logger.info("**** %i GeodesyML files detected (in %s)", len(gml_files), gml_path)
+
+        gml_pattern = re.compile(r"^\w{4}.*\.xml$")
+        gml_files = [f for f in gml_files if gml_pattern.match(os.path.basename(f))]
+
+        mdaobjs_lis = []
+        for gml_file in gml_files:
+            mdaobjs_lis.extend(geodesyml2mda_objs(gml_file))
+        return mdaobjs_lis
+    elif isinstance(gml_path, str) and os.path.isfile(gml_path):
+        return geodesyml2mda_objs(gml_path)
+    else:
+        logger.error(
+            "Wrong Input, expected a MEtaData object, a list of MetaData objects, "
+            "a GeodesyML file path, or a directory containing GeodesyML files. "
+            "Input given: %s, %s",
+            gml_path,
+            type(gml_path),
+        )
+        raise RinexModInputArgsError
 
 def gamit2mda_objs(
     station_info_inp,
@@ -232,7 +277,7 @@ def gamit2mda_objs(
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
 
     if not ninecharfile_inp is None:
-        nine_char_dict = rimo.rinexmod_api.read_ninecharfile(ninecharfile_inp)
+        nine_char_dict = rimo.api.read_ninecharfile(ninecharfile_inp)
     else:
         nine_char_dict = dict()
 
@@ -243,20 +288,12 @@ def gamit2mda_objs(
     n_sites_notin = len(sites_uniq) - sum(sites_isin_uniq)
 
     if n_sites_notin > 0 and not force_fake_coords:
-        logger.warning(
-            "%i/%i sites in %s are not in apr/lfile. They are skipped (you can force fake coords with -fc)",
-            n_sites_notin,
-            len(sites_uniq),
-            stinfo_name,
-        )
+        warnmsg = "%i/%i sites in %s are not in apr/lfile. They are skipped (you can force fake coords with -fc)"
+        logger.warning(warnmsg, n_sites_notin, len(sites_uniq), stinfo_name)
         df_stinfo = df_stinfo_raw[sites_isin]
     elif n_sites_notin > 0 and force_fake_coords:
-        logger.warning(
-            "%i/%i sites in %s are not in apr/lfile. Fake coords at (0°,0°) used",
-            n_sites_notin,
-            len(sites_uniq),
-            stinfo_name,
-        )
+        warnmsg = "%i/%i sites in %s are not in apr/lfile. Fake coords at (0°,0°) used"
+        logger.warning(warnmsg, n_sites_notin, len(sites_uniq), stinfo_name)
         df_stinfo = df_stinfo_raw
     else:  #### no missing coords, n_sites_notin == 0
         df_stinfo = df_stinfo_raw
@@ -418,6 +455,30 @@ def rinexs2mda_objs(rinex_paths, ninecharfile_inp=None):
 
     return mdaobjs_lis
 
+def geodesyml2mda_objs(gml_path):
+    """
+    Read a GeodesyML file and convert its content to MetaData objects
+
+    Parameters
+    ----------
+    gml_path : str
+        Path of a GeodesyML file containing GNSS site metadata information.
+
+    Returns
+    -------
+    mdaobjs_lis : list
+        list of MetaData objects.
+
+    """
+    mdaobjs_lis = []
+
+    logger.info("Processing GeodesyML file: %s", gml_path)
+
+    mdaobj = rimo_mda.MetaData(sitelogfile=None)
+    mdaobj.set_from_gml(gml_path)
+    mdaobjs_lis.append(mdaobj)
+
+    return mdaobjs_lis
 
 def group_mda(mdaobj_list_inp):
     """
@@ -438,7 +499,9 @@ def group_mda(mdaobj_list_inp):
     mdaobj_dic : dict
         A dictionary where keys are `site_id9` and values are the grouped MetaData objects.
     """
-    mdaobj_dic = dict()  # Initialize an empty dictionary to store grouped MetaData objects.
+    mdaobj_dic = (
+        dict()
+    )  # Initialize an empty dictionary to store grouped MetaData objects.
     for mda in mdaobj_list_inp:
         # Check if the current MetaData object's site_id9 is already in the dictionary.
         if not mda.site_id9 in mdaobj_dic.keys():
@@ -633,7 +696,9 @@ def find_mda4site(rnxobj_or_site4char, mdaobjs_lis, force):
     return mdaobj
 
 
-def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False, round_instru_dates=False):
+def apply_mda2rnxobj(
+    rnxobj, mdaobj, ignore=False, keep_rnx_rec=False, round_instru_dates=False
+):
     """
     apply a MetaData object on a RinexFile object
     to modify this RinexFile with the rights metadata
@@ -642,7 +707,7 @@ def apply_mda2rnxobj(rnxobj, mdaobj, ignore=False, keep_rnx_rec=False, round_ins
     ### do this check with 9 chars at one point
     rnx_4char = rnxobj.get_site(True, True)
     # Site name from the sitelog
-    mda_4char = mdaobj.site_id4 # misc_meta["ID"].lower()[:4]
+    mda_4char = mdaobj.site_id4  # misc_meta["ID"].lower()[:4]
 
     if rnx_4char != mda_4char:
         logger.warning(
@@ -712,6 +777,7 @@ def modif_kw_check(modif_kw):
         "station",
         "marker_name",
         "marker_number",
+        "marker_type",
         "receiver_serial",
         "receiver_type",
         "receiver_fw",
@@ -757,6 +823,7 @@ def apply_modifkw2rnxobj(rnxobj, modif_kw):
         return all([e in modif_kw.keys() for e in keys_in])
 
     rnxobj.mod_marker(modif_kw.get("marker_name"), modif_kw.get("marker_number"))
+    rnxobj.mod_marker_type(modif_kw.get("marker_type"))
 
     # legacy keyword, 'marker_name' should be used instead
     rnxobj.mod_marker(modif_kw.get("station"))
@@ -806,6 +873,7 @@ def apply_modifkw2rnxobj(rnxobj, modif_kw):
 
 # *****************************************************************************
 # dictionnary as output for gnss_delivery workflow
+
 
 def rtun_lsts_make(rnxobj_or_dict, return_lists=dict()):
     """
@@ -930,6 +998,7 @@ def read_ninecharfile(ninecharfile_inp):
 
     return nine_char_dict
 
+
 # *****************************************************************************
 # low level functions originaly from RinexFile class
 def search_idx_val(data, field):
@@ -1023,7 +1092,9 @@ def dates_from_rinex_filename(rnx_inp):
         peri_val = int(peri_inp[0:2])
         peri_unit = str(peri_inp[2])
 
-        if peri_unit == "M":
+        if peri_unit == "S":
+            unit_sec = 1
+        elif peri_unit == "M":
             unit_sec = 60
         elif peri_unit == "H":
             unit_sec = 3600
@@ -1037,8 +1108,8 @@ def dates_from_rinex_filename(rnx_inp):
 
     ##### LONG rinex name
     if re.search(pattern_longname, rinexname):
-        date_str = rinexname.split("_")[2]
-        period_str = rinexname.split("_")[3]
+        date_str = rinexname[12:23]  # rinexname.split("_")[2]
+        period_str = rinexname[24:27]  # rinexname.split("_")[3]
 
         yyyy = int(date_str[:4])
         doy = int(date_str[4:7])
@@ -1120,10 +1191,14 @@ def file_period_from_timedelta(start_date, end_date):
     rndtup = lambda x, t: round_time(x, timedelta(minutes=t), "up")
     rndtdown = lambda x, t: round_time(x, timedelta(minutes=t), "down")
     rndtaver = lambda x, t: round_time(x, timedelta(minutes=t), "average")
+
+    # end date minus 1sec is necessary to avoid a side effect for HH:30:00
+    end_date_m1s = end_date - timedelta(seconds=1)
+
     # rounded at the hour
     # maximum and average delta between start and end date
     delta_max = rndtup(end_date, 60) - rndtdown(start_date, 60)
-    delta_ave = rndtaver(end_date, 60) - rndtaver(start_date, 60)
+    delta_ave = rndtaver(end_date_m1s, 60) - rndtaver(start_date, 60)
 
     hours_ave = int(delta_ave.total_seconds() / 3600)
     delta_sec = (end_date - start_date).total_seconds()
@@ -1168,3 +1243,138 @@ def file_period_from_timedelta(start_date, end_date):
     #         and we must introduce hours_max rather than hours_ave
 
     return file_period, session
+
+
+def map_sys_obs(sys_obs_dic, map_sys_obs_dic, force=False):
+    """
+    Maps GNSS observation codes to standardized codes based on a provided mapping dictionary.
+
+    This function processes a dictionary of GNSS satellite system observation codes and applies
+    a mapping to standardize them according to receiver-specific conventions. It attempts to map
+    observation codes either directly or by their frequency band number.
+
+    Parameters
+    ----------
+    sys_obs_dic : dict
+        Dictionary of GNSS satellite systems and their observation codes.
+        Structure: {system: [obs_codes]}
+        where system is a single character (e.g., "G", "E", "R", "S") and
+        obs_codes are strings representing observation types (e.g., "C1C", "L1", "L2W").
+
+    map_sys_obs_dic : dict
+        Mapping dictionary for observation codes.
+        Structure: {system: {band_or_obs: mapped_code}}
+        where band_or_obs can be either an integer (frequency band) or a string (observation code),
+        and mapped_code is the standardized observation code to use.
+
+    force : bool, optional
+        If True, forces mapping even for 3-character observation codes that normally would be skipped.
+        Default is False.
+
+    Returns
+    -------
+    sys_obs_dic_new : dict
+        A new dictionary with the same structure as sys_obs_dic, containing mapped observation codes.
+        Structure: {system: [mapped_obs_codes]}
+
+    Notes
+    -----
+    sys_obs_dic_new will be used by RinexFile.mod_sys_obs_types()
+    map_sys_obs_dic_default function provides a default mapping dictionary for specific receiver types.
+
+    Exemple
+    -------
+    For Septentrio POLARX5 receiver, the mapping dictionary could be:
+            map_sys_obs_dic = {"E": {1: "C", 5 : "Q", 6: "B", 7 : "Q", 8: "Q"},
+                               "S": {5: "I", 1: "C"},
+                               "G": {5: "Q", "L1": "L1C", "L2" : "L2W"},
+                               "R": {5: "Q", 1: "C", "L1" : "L1C", "L2" : "L2P"}
+                               }
+    """
+
+    sys_obs_dic_new = dict()
+
+    for sys in sys_obs_dic.keys():
+        if sys not in map_sys_obs_dic.keys():
+            logger.warning(
+                f"Sys {sys} not in mapping dict. Keeping original obs for this sys."
+            )
+            sys_obs_dic_new[sys] = sys_obs_dic[sys]
+            continue
+
+        sys_obs_dic_new[sys] = []
+
+        for obs in sys_obs_dic[sys]:
+            typ = obs[0]
+            ban = int(obs[1])
+            cha = obs[2] if len(obs) == 3 else " "
+
+            if len(obs) == 3 and not force:
+                logger.debug(
+                    f"sys {sys} obs {obs} has 3 characters. Skipping mapping for this obs. (use force to override)"
+                )
+                sys_obs_dic_new[sys].append(obs)
+                continue
+
+            if obs in map_sys_obs_dic[sys].keys():
+                obs_new = map_sys_obs_dic[sys][obs]
+                logger.debug(f"Mapping sys {sys} obs {obs} to {obs_new}.")
+                sys_obs_dic_new[sys].append(obs_new)
+            elif ban in map_sys_obs_dic[sys].keys():
+                obs_new = typ + str(ban) + map_sys_obs_dic[sys][ban][-1]
+                logger.debug(
+                    f"Mapping sys {sys} obs {obs} to {obs_new} based on band {ban}."
+                )
+                sys_obs_dic_new[sys].append(obs_new)
+            else:
+                logger.debug(f"No mapping for sys {sys} obs {obs}. Keeping original.")
+                sys_obs_dic_new[sys].append(obs)
+
+    return sys_obs_dic_new
+
+
+def map_sys_obs_dic_default(rec="SEPT POLARX5"):
+    """
+    Returns a default mapping dictionary for GNSS observation codes based on receiver type.
+
+    This function provides a predefined mapping for GNSS satellite system observation codes
+    to standardize observable codes for specific receiver types. The mapping is used to convert
+    receiver-specific observation codes to standardized RINEX 3 observation codes.
+
+    Parameters
+    ----------
+    rec : str, optional
+        Receiver type identifier. Default is 'SEPT POLARX5'.
+        Currently only 'SEPT POLARX5' is supported.
+
+    Returns
+    -------
+    dict
+        A nested dictionary mapping GNSS satellite systems to observation code mappings.
+        Structure: {system: {band_or_obs: mapped_code}}
+
+        Keys represent GNSS systems:
+        - "E": Galileo
+        - "S": SBAS
+        - "G": GPS
+        - "R": GLONASS
+
+        Values are dictionaries mapping band numbers or observation codes to their
+        standardized counterparts (e.g., band 1 -> "C", "L1" -> "L1C").
+
+    Raises
+    ------
+    NotImplementedError
+    """
+    if rec == "SEPT POLARX5":
+        map_sys_obs_dic = {
+            "E": {1: "C", 5: "Q", 6: "B", 7: "Q", 8: "Q"},
+            "S": {5: "I", 1: "C"},
+            "G": {5: "Q", "L1": "L1C", "L2": "L2W"},
+            "R": {5: "Q", 1: "C", "L1": "L1C", "L2": "L2P"},
+        }
+
+    else:
+        raise NotImplementedError(f"Mapping for receiver {rec} not implemented.")
+
+    return map_sys_obs_dic
