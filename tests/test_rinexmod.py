@@ -4,11 +4,11 @@ import gzip
 import hatanaka
 import rinexmod.api as rimo_api
 
-rinex_in = Path(__file__).parent / "input" / "houz3000.25o"
-sitelog_in = Path(__file__).parent / "input" / "houz00glp_20250106.log"
-geodesy_gml_in = Path(__file__).parent / "input" / "HOUZ00GLP.xml"
-correct_stlg_out = Path(__file__).parent / "output" / "correct_stlg" / "houz3000.25d.gz"
-correct_gml_out = Path(__file__).parent / "output" / "correct_gml" / "houz3000.25d.gz"
+rinex_in = str(Path(__file__).parent / "input" / "houz3000.25o")
+sitelog_in = str(Path(__file__).parent / "input" / "houz00glp_20250106.log")
+geodesy_gml_in = str(Path(__file__).parent / "input" / "HOUZ00GLP.xml")
+correct_stlg_out = str(Path(__file__).parent / "output" / "correct_stlg" / "houz3000.25d.gz")
+correct_gml_out = str(Path(__file__).parent / "output" / "correct_gml" / "houz3000.25d.gz")
 
 TEST_CASES = [
     # rinex_in, rinex_out, parameters, correct_out
@@ -44,6 +44,7 @@ def test_rinexmod_sitelog_gml(inputs, parameters, correct_out, tmp_path):
     rimo_api.rinexmod_cli(
         rinexinput=[str(current_pos_args[0])],
         outputfolder=current_pos_args[1],
+        debug=True,
         **current_params)
 
     output = list(tmp_path.glob("*.gz"))
