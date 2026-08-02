@@ -159,6 +159,8 @@ def metadata_input_manage(sitelog_inp, force=False):
         sitelog_inp[0], rimo_mda.MetaData
     ):
         return sitelog_inp
+    elif isinstance(sitelog_inp, str) and os.path.basename(sitelog_inp).endswith(".csv"):
+        return rinexmod_info2mda_objs(sitelog_inp)
     # single string or list of string
     elif isinstance(sitelog_inp, str) or isinstance(sitelog_inp, list):
         return sitlgs2mda_objs(
@@ -340,12 +342,12 @@ def rinexmod_info2mda_objs(
     rev=False,
 ):
     """
-    Read a rinexmod.info CSV file and convert its content to MetaData objects.
+    Read a rinexmod_info CSV file and convert its content to MetaData objects.
 
     Parameters
     ----------
     rinexmod_info_inp : str or pd.DataFrame
-        Path of a rinexmod.info CSV file to obtain GNSS site metadata information.
+        Path of a rinexmod_info CSV file to obtain GNSS site metadata information.
     force_fake_coords : bool, optional
         If True, coordinates will be set to (0,0,0) and DOMES to 00000X000.
         The default is False.
@@ -365,7 +367,7 @@ def rinexmod_info2mda_objs(
 
     if isinstance(rinexmod_info_inp, pd.DataFrame):
         df_rinexmod_raw = rinexmod_info_inp
-        rinexmod_info_name = "rinexmod.info"
+        rinexmod_info_name = "rinexmod_info"
     else:
         df_rinexmod_raw = rimo_rmo.read_rinexmod_info(
             rinexmod_info_inp, sort=False
@@ -758,42 +760,31 @@ def find_mda4site(rnxobj_or_site4char, mdaobjs_lis, force):
     If is list, can not use force.
     If no metadata found, do not process.
     """
-    if type(rnxobj_or_site4char) is str:
+    if isinstance(rnxobj_or_site4char, str):
         rnx_4char = rnxobj_or_site4char[:4]
         err_label = rnxobj_or_site4char
     else:
         rnx_4char = rnxobj_or_site4char.get_site(True, True)
         err_label = rnxobj_or_site4char.filename
 
-    logger.debug("Searching corresponding metadata for site: " + rnx_4char)
+    logger.debug(f"Searching corresponding metadata for site: {rnx_4char}")
 
-    if len(mdaobjs_lis) == 0:
+    if not mdaobjs_lis:
         logger.warning("The metadata list provided is empty!")
 
-    mdaobj = None
-    if rnx_4char not in [mda.site_id4 for mda in mdaobjs_lis]:
-        if len(mdaobjs_lis) == 1:
-            if not force:
-                errmsg = "33 - RINEX name's site does not correspond to provided metadata, use -f option to force"
-                logger.error(f"{errmsg:110s} - {err_label:}")
-                raise RinexModInputArgsError
-            else:
-                errmsg = "34 - RINEX name's site does not correspond to provided metadata, forced processing anyway"
-                logger.warning(f"{errmsg:110s} - {err_label:}")
-        else:
-            errmsg = "33 - No metadata found for this RINEX"
-            logger.error(f"{errmsg:110s} - {err_label:}")
-            raise RinexModInputArgsError
-    else:
-        mdaobjs_site = [md for md in mdaobjs_lis if md.site_id4 == rnx_4char]
-        if len(mdaobjs_site) == 1:
-            mdaobj = mdaobjs_site[0]
-        else:
-            # the assumption that latest sitelog has been found in sitlgs2mda_objs is wrong!
-            # a second search with the preparation date is performed here
-            mdaobj = _mda_find_latest_prep(mdaobjs_site)[0]
+    mdaobjs_site = [md for md in mdaobjs_lis if md.site_id4 == rnx_4char]
 
-    return mdaobj
+    if not mdaobjs_site:
+        if len(mdaobjs_lis) == 1 and force:
+            errmsg = "34 - RINEX name's site does not correspond to provided metadata, forced processing anyway"
+            logger.warning(f"{errmsg:110s} - {err_label:}")
+            return None
+        
+        errmsg = "33 - No metadata found for this RINEX" if len(mdaobjs_lis) > 1 else "33 - RINEX name's site does not correspond to provided metadata, use -f option to force"
+        logger.error(f"{errmsg:110s} - {err_label:}")
+        raise RinexModInputArgsError
+    
+    return mdaobjs_site[0] if len(mdaobjs_site) == 1 else _mda_find_latest_prep(mdaobjs_site)[0]
 
 
 def apply_mda2rnxobj(

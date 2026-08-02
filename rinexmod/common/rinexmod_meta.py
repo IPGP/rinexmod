@@ -5,10 +5,10 @@ Created on 2026-01-XX
 
 @author: psakic
 
-Low-level functions to import rinexmod.info metadata file as pandas DataFrame
+Low-level functions to import rinexmod_info metadata file as pandas DataFrame
 and convert to RinexMod internal objects.
 
-The rinexmod.info is a CSV file containing metadata for GNSS sites
+The rinexmod_info is a CSV file containing metadata for GNSS sites
 with fields similar to sitelogs (ISO 19115 standard).
 One row per instrumental period per site.
 """
@@ -26,13 +26,13 @@ logger = rimo_log.logger_define("INFO")
 
 def read_rinexmod_info(rinexmod_info_inp, sort=True):
     """
-    Read a rinexmod.info CSV file (GNSS stations metadata)
+    Read a rinexmod_info CSV file (GNSS stations metadata)
     and store the data in a DataFrame.
 
     Parameters
     ----------
     rinexmod_info_inp : str
-        Path of the input rinexmod.info CSV file.
+        Path of the input rinexmod_info CSV file.
     sort : bool, optional
         Sort the DataFrame by site and start time.
         The default is True.
@@ -40,7 +40,7 @@ def read_rinexmod_info(rinexmod_info_inp, sort=True):
     Returns
     -------
     df : pandas DataFrame
-        The rinexmod.info data with standardized column names.
+        The rinexmod_info data with standardized column names.
 
     Note
     ----
@@ -71,7 +71,7 @@ def read_rinexmod_info(rinexmod_info_inp, sort=True):
     try:
         df = pd.read_csv(rinexmod_info_inp)
     except Exception as e:
-        logger.error("Error reading rinexmod.info CSV file: %s", e)
+        logger.error("Error reading rinexmod_info CSV file: %s", e)
         raise e
 
     # Normalize column names: lowercase, strip whitespace, replace common variants
@@ -105,11 +105,13 @@ def read_rinexmod_info(rinexmod_info_inp, sort=True):
         if len(existing_cols) > 0 and standard_name not in df.columns:
             df.rename(columns={existing_cols[0]: standard_name}, inplace=True)
 
+
     # Ensure required columns exist
     required_cols = ["site", "date_start", "date_end", "receiver_type", "antenna_type"]
     missing_cols = [c for c in required_cols if c not in df.columns]
     if missing_cols:
-        logger.error("Missing required columns in rinexmod.info: %s", missing_cols)
+        logger.debug("rinexmod_info loaded:", df.to_string())
+        logger.error("Missing required columns in rinexmod_info: %s", missing_cols)
         raise ValueError(f"Missing required columns: {missing_cols}")
 
     # Process dates: convert to datetime
@@ -117,8 +119,11 @@ def read_rinexmod_info(rinexmod_info_inp, sort=True):
         df["date_start"] = pd.to_datetime(df["date_start"])
         df["date_end"] = pd.to_datetime(df["date_end"])
     except Exception as e:
-        logger.error("Error converting dates in rinexmod.info: %s", e)
+        logger.debug("rinexmod_info loaded:", df.to_string())
+        logger.error("Error converting dates in rinexmod_info: %s", e)
         raise e
+
+    logger.info("rinexmod_info loaded with %d rows and %d columns", len(df), len(df.columns))
 
     # Standardize site codes to lowercase
     df["site"] = df["site"].str.lower()
@@ -178,7 +183,7 @@ def read_rinexmod_info(rinexmod_info_inp, sort=True):
 
 def rinexmod_df2instru_miscmeta(site, rinexmod_df_inp, force_fake_coords=False):
     """
-    Convert rinexmod.info DataFrame to RinexMod internal
+    Convert rinexmod_info DataFrame to RinexMod internal
     "instrus" and "misc_meta" dictionaries for a specific site.
 
     Parameters
@@ -186,7 +191,7 @@ def rinexmod_df2instru_miscmeta(site, rinexmod_df_inp, force_fake_coords=False):
     site : str
         4-char or 9-char site code to extract from DataFrame.
     rinexmod_df_inp : pd.DataFrame
-        rinexmod.info DataFrame.
+        rinexmod_info DataFrame.
     force_fake_coords : bool, optional
         If True, coordinates will be set to (0,0,0) and
         DOMES to 00000X000. The default is False.
@@ -208,9 +213,9 @@ def rinexmod_df2instru_miscmeta(site, rinexmod_df_inp, force_fake_coords=False):
     ].copy()
 
     if len(rinexmod_df_site) == 0:
-        logger.error("Site %s not found in rinexmod.info", site)
+        logger.error("Site %s not found in rinexmod_info", site)
         if not force_fake_coords:
-            raise rimo_api.RinexModError(f"Site {site} not found in rinexmod.info")
+            raise rimo_api.RinexModError(f"Site {site} not found in rinexmod_info")
         else:
             # Create dummy installation with fake coordinates
             inst_dic = {

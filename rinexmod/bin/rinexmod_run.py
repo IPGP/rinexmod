@@ -190,7 +190,7 @@ def main():
     optional.add_argument(
         "-ri",
         "--rinexmod_info",
-        help="Path of a rinexmod.info CSV file to obtain GNSS site metadata information. "
+        help="Path of a rinexmod_info CSV file to obtain GNSS site metadata information. "
         "CSV columns should correspond to sitelog fields (site, dates, receiver, antenna, coordinates, etc.).",
         type=str,
         default="",
