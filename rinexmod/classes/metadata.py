@@ -19,7 +19,7 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 
 import rinexmod.common.gamit_meta as rimo_gmm
-import rinexmod.common.rinexmod_meta as rimo_rmo
+import rinexmod.common.rinexmod_info_meta as rimo_rmo
 import rinexmod.classes as rimo_cls
 
 import rinexmod.api as rimo_api

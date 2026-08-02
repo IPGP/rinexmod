@@ -102,17 +102,17 @@ rimo_api.rinexmod_cli(
 To validate your rinexmod.info file before using it:
 
 ```python
-from rinexmod.common.rinexmod_meta import read_rinexmod_info
+from rinexmod.common.rinexmod_info_meta import read_rinexmod_info
 import pandas as pd
 
 # Read and validate
 try:
-    df = read_rinexmod_info('your_rinexmod.info')
-    print("✓ File is valid")
-    print(f"  Sites: {df['site'].unique()}")
-    print(f"  Periods: {len(df)}")
+   df = read_rinexmod_info('your_rinexmod.info')
+   print("✓ File is valid")
+   print(f"  Sites: {df['site'].unique()}")
+   print(f"  Periods: {len(df)}")
 except Exception as e:
-    print(f"✗ Validation error: {e}")
+   print(f"✗ Validation error: {e}")
 ```
 
 ---
