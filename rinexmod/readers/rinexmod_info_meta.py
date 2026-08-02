@@ -74,7 +74,7 @@ def read_rinexmod_info(rinexmod_info_inp, sort=True):
         logger.error("Error reading rinexmod_info CSV file: %s", e)
         raise e
 
-    # Normalize column names: lowercase, strip whitespace, replace common variants
+    # Normalize column names: lowercase, strip whitespace, replace readers variants
     column_mapping = {}
     for col in df.columns:
         col_lower = col.strip().lower().replace(" ", "_").replace("-", "_")
@@ -82,7 +82,7 @@ def read_rinexmod_info(rinexmod_info_inp, sort=True):
 
     df.rename(columns=column_mapping, inplace=True)
 
-    # Standardize column names (handle common variants)
+    # Standardize column names (handle readers variants)
     col_aliases = {
         "date_start": ["start", "start_date"],
         "date_end": ["end", "end_date"],

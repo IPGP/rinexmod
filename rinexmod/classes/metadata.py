@@ -14,10 +14,10 @@ import pycountry
 
 import pandas as pd
 
-import rinexmod.common.gamit_meta as rimo_gmm
-import rinexmod.common.rinexmod_info_meta as rimo_rmo
-import rinexmod.common.sitelog_meta as rimo_slm
-import rinexmod.common.geodesyml_meta as rimo_gml
+import rinexmod.readers.gamit_meta as rimo_gmm
+import rinexmod.readers.rinexmod_info_meta as rimo_rmo
+import rinexmod.readers.sitelog_meta as rimo_slm
+import rinexmod.readers.geodesyml_meta as rimo_gml
 import rinexmod.classes as rimo_cls
 
 import rinexmod.api as rimo_api

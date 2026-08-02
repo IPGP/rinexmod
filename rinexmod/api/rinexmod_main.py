@@ -11,8 +11,8 @@ from datetime import datetime
 import hatanaka
 
 import rinexmod as rimo
-import rinexmod.common.gamit_meta as rimo_gmm
-import rinexmod.common.rinexmod_info_meta as rimo_rmo
+import rinexmod.readers.gamit_meta as rimo_gmm
+import rinexmod.readers.rinexmod_info_meta as rimo_rmo
 import rinexmod.classes.metadata as rimo_mda
 import rinexmod.classes.rinexfile as rimo_rnx
 import rinexmod.api.core_fcts as rimo_cor
@@ -150,7 +150,7 @@ def rinexmod(
         The default is 'gz'.
     relative : str, optional
         Reconstruct files relative subfolders.
-        You have to indicate the common parent folder,
+        You have to indicate the readers parent folder,
         that will be replaced with the output folder. The default is ''.
     verbose : bool, optional
         set the level of verbosity
