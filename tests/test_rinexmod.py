@@ -7,8 +7,10 @@ import rinexmod.api as rimo_api
 rinex_in = str(Path(__file__).parent / "input" / "houz3000.25o")
 sitelog_in = str(Path(__file__).parent / "input" / "houz00glp_20250106.log")
 geodesy_gml_in = str(Path(__file__).parent / "input" / "HOUZ00GLP.xml")
+rinexmod_info_in = str(Path(__file__).parent / "input" / "houz.rinexmod.info")
 correct_stlg_out = str(Path(__file__).parent / "output" / "correct_stlg" / "houz3000.25d.gz")
 correct_gml_out = str(Path(__file__).parent / "output" / "correct_gml" / "houz3000.25d.gz")
+correct_rinexmodinfo_out = str(Path(__file__).parent / "output" / "correct_rinexmodinfo" / "houz3000.25d.gz")
 
 TEST_CASES = [
     # rinex_in, rinex_out, parameters, correct_out
@@ -21,6 +23,11 @@ TEST_CASES = [
         [rinex_in, "TMP"],
         {"geodesyml": geodesy_gml_in, "alone": True},
         correct_gml_out
+    ),
+    (
+        [rinex_in, "TMP"],
+        {"rinexmod_info": rinexmod_info_in, "alone": True},
+        correct_rinexmodinfo_out
     )
 ]
 

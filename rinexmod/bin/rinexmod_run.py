@@ -188,6 +188,14 @@ def main():
         default=False,
     )
     optional.add_argument(
+        "-ri",
+        "--rinexmod_info",
+        help="Path of a rinexmod.info CSV file to obtain GNSS site metadata information. "
+        "CSV columns should correspond to sitelog fields (site, dates, receiver, antenna, coordinates, etc.).",
+        type=str,
+        default="",
+    )
+    optional.add_argument(
         "-fr",
         "--force_rnx_load",
         help="Force the loading of the input RINEX. Useful if its name is not standard.",
@@ -342,6 +350,7 @@ def main():
         station_info=args.station_info,
         lfile_apriori=args.lfile_apriori,
         force_fake_coords=args.force_fake_coords,
+        rinexmod_info=args.rinexmod_info,
         remove=args.remove,
         keep_rnx_rec=args.keep_rnx_rec,
         round_instru_dates=args.round_instru_dates,

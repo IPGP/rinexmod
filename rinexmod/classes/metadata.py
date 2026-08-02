@@ -19,6 +19,7 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 
 import rinexmod.common.gamit_meta as rimo_gmm
+import rinexmod.common.rinexmod_meta as rimo_rmo
 import rinexmod.classes as rimo_cls
 
 import rinexmod.api as rimo_api
@@ -209,6 +210,50 @@ class MetaData:
                 site=self.site_id4, ### must remain site_id4
                 stinfo_df_inp=self.raw_content,
                 apr_df_inp=self.raw_content_apr,
+                force_fake_coords=force_fake_coords,
+            )
+        else:
+            self.instrus, self.misc_meta = None, None
+
+        return None
+
+    def set_from_rinexmod_info(
+        self,
+        site,
+        rinexmod_info,
+        force_fake_coords=False,
+        rinexmod_info_name="rinexmod.info",
+    ):
+        """
+        Initialization method for metadata import from rinexmod.info CSV file.
+
+        site can be 4 char or 9 char
+        """
+
+        # Site ID management (same as for GAMIT)
+        if len(site) == 4:
+            self.site_id = site[:4].lower()
+        elif len(site) == 9:
+            self.site_id = site[:9].upper()
+            self.misc_meta["ID"] = site.upper()
+            self.misc_meta["Country"] = site[-3:].upper()
+        else:
+            logger.error("site %s must be 4 or 9 char. long, bad things will occur", site)
+            self.site_id = site
+
+        if isinstance(rinexmod_info, pd.DataFrame):
+            self.raw_content = rinexmod_info
+            self.path = None
+            self.filename = rinexmod_info_name
+        else:
+            self.raw_content = rimo_rmo.read_rinexmod_info(rinexmod_info)
+            self.path = rinexmod_info
+            self.filename = os.path.basename(self.path)
+
+        if self.raw_content is not None:
+            self.instrus, self.misc_meta = rimo_rmo.rinexmod_df2instru_miscmeta(
+                site=self.site_id4,  ### must remain site_id4
+                rinexmod_df_inp=self.raw_content,
                 force_fake_coords=force_fake_coords,
             )
         else:

@@ -56,6 +56,7 @@ def rinexmod_cli(
     station_info=None,
     lfile_apriori=None,
     force_fake_coords=False,
+    rinexmod_info=None,
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
@@ -82,11 +83,12 @@ def rinexmod_cli(
         and not shortname
         and not station_info
         and not lfile_apriori
+        and not rinexmod_info
         and not geodesyml
     ):
         logger.critical(
             "No action asked, provide at least one of the following args:"
-            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori, --geodesyml"
+            "--sitelog, --modif_kw, --marker, --longname, --shortname, --station_info, --lfile_apriori, --rinexmod_info, --geodesyml"
         )
         return None
 
@@ -117,6 +119,24 @@ def rinexmod_cli(
     if station_info and lfile_apriori and sitelog:
         logger.critical(
             "both sitelogs and GAMIT files given as metadata input. Managing both is not implemented yet"
+        )
+        return None
+
+    if rinexmod_info and sitelog:
+        logger.critical(
+            "both sitelogs and rinexmod.info given as metadata input. Use only one source."
+        )
+        return None
+
+    if rinexmod_info and (station_info or lfile_apriori):
+        logger.critical(
+            "both GAMIT files and rinexmod.info given as metadata input. Use only one source."
+        )
+        return None
+
+    if rinexmod_info and geodesyml:
+        logger.critical(
+            "both rinexmod.info and geodesyML given as metadata input. Use only one source."
         )
         return None
 
@@ -191,7 +211,7 @@ def rinexmod_cli(
         rinexinput_use.sort()
 
     gml_list = None
-    ### load the sitelogs/GAMIT-files as a **list of MetaData objects**
+    ### load the sitelogs/GAMIT-files/rinexmod.info as a **list of MetaData objects**
     # from sitelogs
     if sitelog:
         sitelogs_list_use = rimo_cor.metadata_input_manage(sitelog, force_sitelog)
@@ -199,6 +219,11 @@ def rinexmod_cli(
     elif station_info and lfile_apriori:
         sitelogs_list_use = rimo_cor.gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
+        )
+    # from rinexmod.info
+    elif rinexmod_info:
+        sitelogs_list_use = rimo_cor.rinexmod_info2mda_objs(
+            rinexmod_info, force_fake_coords=force_fake_coords
         )
     # from geodesyML files
     elif geodesyml:

@@ -84,7 +84,7 @@ format in an output folder. It also allows to rename the files, changing
 the four first characters of the file name with another site code. It can write
 those files with the long name naming convention with the --longname option.
 
-Four ways of passing parameters to modify headers are possible: `sitelog`, `geodesyml`, `modification_kw` and `station_info`/`lfile_apriori` (from GAMIT/GLOBK software).
+Four ways of passing parameters to modify headers are possible: `sitelog`, `geodesyml`, `modification_kw`, `station_info`/`lfile_apriori` (from GAMIT/GLOBK software), and `rinexmod_info` (CSV metadata file).
 
 * ```
    --sitelog : you pass sitelogs file. The argument must be a sitelog path or the path of a folder
@@ -148,13 +148,57 @@ Four ways of passing parameters to modify headers are possible: `sitelog`, `geod
                         Path of a GAMIT apriori apr/L-File to obtain GNSS site
                         position and DOMES information (needs also -sti
                         option)
-`--modification_kw` values will orverride the ones obtained with `--sitelog` and `--station_info`/`--lfile_apriori`.
+  -ri RINEXMOD_INFO, --rinexmod_info RINEXMOD_INFO
+                        Path of a rinexmod.info CSV file to obtain GNSS site
+                        metadata information. The CSV should have columns 
+                        corresponding to sitelog fields (site, date_start, 
+                        date_end, receiver_type, antenna_type, x_coord, 
+                        y_coord, z_coord, domes_number, etc.).
+                        One row per instrumental period per site.
+* ```
+`--modification_kw` values will orverride the ones obtained with `--sitelog`, `--station_info`/`--lfile_apriori`, and `--rinexmod_info`.
 
 _rinexmod_ will add two comment lines, one indicating the source of the modification
 (sitelog or arguments) and the other the modification timestamp.
 
 
-### Synopsis
+### rinexmod.info CSV format
+
+The `--rinexmod_info` option allows you to pass metadata from a CSV file called `rinexmod.info`. 
+This is useful when you have multiple sites and need to manage their metadata in a tabular format.
+
+**CSV Structure:**
+The CSV file should contain one row per instrumental period per site, with the following columns (case-insensitive):
+
+- `site`: 4-character site code (mandatory)
+- `date_start`: Start date/time in ISO 8601 format (mandatory)
+- `date_end`: End date/time in ISO 8601 format (mandatory)
+- `receiver_type`: Receiver model name (mandatory)
+- `receiver_sn`: Receiver serial number
+- `receiver_firmware`: Receiver firmware version
+- `antenna_type`: Antenna model name (mandatory)
+- `antenna_sn`: Antenna serial number
+- `antenna_ecc_up`: Antenna height above marker in meters (optional, default: 0.0)
+- `antenna_ecc_north`: Antenna north offset in meters (optional, default: 0.0)
+- `antenna_ecc_east`: Antenna east offset in meters (optional, default: 0.0)
+- `antenna_daz`: Antenna alignment from True North in degrees (optional, default: 0.0)
+- `antenna_radome`: Antenna radome type
+- `x_coord`: X coordinate in ECEF (meters) (optional, required if not using force_fake_coords)
+- `y_coord`: Y coordinate in ECEF (meters)
+- `z_coord`: Z coordinate in ECEF (meters)
+- `domes_number`: IERS DOMES number
+- `operator`: Station operator
+- `agency`: Station agency
+- `country`: ISO 3-letter country code
+
+**Example CSV content:**
+```csv
+site,date_start,date_end,receiver_type,receiver_sn,receiver_firmware,antenna_type,antenna_sn,antenna_ecc_up,antenna_ecc_north,antenna_ecc_east,antenna_daz,antenna_radome,x_coord,y_coord,z_coord,domes_number,operator,agency,country
+houz,2020-01-01T00:00:00,2025-12-31T23:59:59,TRIMBLE NETR9,12345,5.41,ASH700936D_M,S123456,1.2,0.0,0.0,0.0,NONE,4000894.7571,611081.9633,4966890.0318,10002M001,OVS,IPGP,FRA
+test,2021-01-01T00:00:00,2022-06-30T23:59:59,SEPT POLARX5,67890,5.2.0,LEIAR25.R4,S654321,0.0,0.0,0.0,0.0,LEIS,4500000.0,3500000.0,4000000.0,12345A001,IPGP,IPGP,FRA
+```
+
+
 
 *NB*: The most recent synopsis is available with the `-h` or `--help` option of the `rinexmod_run` command line function. 
 The following synopsis reproduced here is for more readability but might not be the most up-to-date one.

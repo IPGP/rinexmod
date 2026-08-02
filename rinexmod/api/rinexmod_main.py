@@ -12,6 +12,7 @@ import hatanaka
 
 import rinexmod as rimo
 import rinexmod.common.gamit_meta as rimo_gmm
+import rinexmod.common.rinexmod_meta as rimo_rmo
 import rinexmod.classes.metadata as rimo_mda
 import rinexmod.classes.rinexfile as rimo_rnx
 import rinexmod.api.core_fcts as rimo_cor
@@ -49,6 +50,7 @@ def rinexmod(
     station_info=None,
     lfile_apriori=None,
     force_fake_coords=False,
+    rinexmod_info=None,
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
@@ -186,9 +188,14 @@ def rinexmod(
     force_fake_coords: bool, optional
         When using GAMIT station.info metadata without apriori coordinates
         in the L-File, gives fake coordinates at (0°,0°) to the site
+    rinexmod_info: str, optional
+        Path of a rinexmod.info CSV file to obtain GNSS site metadata
+        information. CSV columns should correspond to sitelog fields
+        (site, dates, receiver, antenna, coordinates, DOMES, etc.)
     remove: bool, optional
         Remove input RINEX file if the output RINEX is correctly written
         The default is False.
+
     keep_rnx_rec: bool, optional
         Keep the RINEX receiver header record in the output RINEX.
         Metadata from the external source (e.g. sitelogs) will not be modded.
@@ -309,9 +316,9 @@ def rinexmod(
         rnxobj.set_site(marker)
 
     ## warning if no metadata at all is not provided
-    if not sitelog and not modif_kw and (not station_info or not lfile_apriori) and not geodesyml:
+    if not sitelog and not modif_kw and (not station_info or not lfile_apriori) and not rinexmod_info and not geodesyml:
         logger.warning(
-            "No sitelog/keywords/station.info+lfile/geodesyML provided. "
+            "No sitelog/keywords/station.info+lfile/rinexmod.info/geodesyML provided. "
             "Per default rec.'s header will remain & no new "
             "metdata will be written!"
         )
@@ -332,13 +339,18 @@ def rinexmod(
         logger.critical(errmsg)
         raise rimo_cor.RinexModInputArgsError(errmsg)
 
-    ### load the metadata from sitelog or GAMIT files if any
+    ### load the metadata from sitelog or GAMIT files or rinexmod.info if any
     if (station_info and lfile_apriori) and not sitelog:
         mdaobjs_lis = rimo_cor.gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
-    if geodesyml:
+    if rinexmod_info and not sitelog and not (station_info and lfile_apriori):
+        mdaobjs_lis = rimo_cor.rinexmod_info2mda_objs(
+            rinexmod_info, force_fake_coords=force_fake_coords
+        )
+
+    if geodesyml and not sitelog and not (station_info and lfile_apriori) and not rinexmod_info:
         mdaobjs_lis = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
 
     ### find the right MetaData object corresponding to the RINEX

@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 
 import rinexmod as rimo
 import rinexmod.common.gamit_meta as rimo_gmm
+import rinexmod.common.rinexmod_meta as rimo_rmo
 import rinexmod.classes.metadata as rimo_mda
 import rinexmod.classes.rinexfile as rimo_rnx
 
@@ -328,6 +329,105 @@ def gamit2mda_objs(
         mdaobjs_lis.append(mdaobj)
 
     logger.info("%i sites have been extracted from %s", len(mdaobjs_lis), stinfo_name)
+
+    return mdaobjs_lis
+
+
+def rinexmod_info2mda_objs(
+    rinexmod_info_inp,
+    force_fake_coords=False,
+    ninecharfile_inp=None,
+    rev=False,
+):
+    """
+    Read a rinexmod.info CSV file and convert its content to MetaData objects.
+
+    Parameters
+    ----------
+    rinexmod_info_inp : str or pd.DataFrame
+        Path of a rinexmod.info CSV file to obtain GNSS site metadata information.
+    force_fake_coords : bool, optional
+        If True, coordinates will be set to (0,0,0) and DOMES to 00000X000.
+        The default is False.
+    ninecharfile_inp : str, optional
+        Path of a file that contains 9-char. site names.
+        The default is None.
+    rev : bool, optional
+        Reverse order of inputs for instrumental changes
+        (from newest to oldest).
+        The default is False.
+
+    Returns
+    -------
+    mdaobjs_lis : list
+        List of MetaData objects.
+    """
+
+    if isinstance(rinexmod_info_inp, pd.DataFrame):
+        df_rinexmod_raw = rinexmod_info_inp
+        rinexmod_info_name = "rinexmod.info"
+    else:
+        df_rinexmod_raw = rimo_rmo.read_rinexmod_info(
+            rinexmod_info_inp, sort=False
+        )
+        rinexmod_info_name = os.path.basename(rinexmod_info_inp)
+
+    if ninecharfile_inp is not None:
+        nine_char_dict = rimo.api.read_ninecharfile(ninecharfile_inp)
+    else:
+        nine_char_dict = dict()
+
+    # Filter for sites that have coordinates (if not force_fake_coords)
+    if not force_fake_coords:
+        has_coords = df_rinexmod_raw[["x_coord", "y_coord", "z_coord"]].notna().all(axis=1)
+        sites_with_coords = df_rinexmod_raw.loc[has_coords, "site"].unique()
+        sites_uniq = pd.Series(df_rinexmod_raw["site"].unique())
+        sites_missing_coords = ~sites_uniq.isin(sites_with_coords)
+        n_sites_nocoords = sites_missing_coords.sum()
+
+        if n_sites_nocoords > 0:
+            logger.warning(
+                "%i/%i sites in %s are missing coordinates. They are skipped "
+                "(you can force fake coords with -fc)",
+                n_sites_nocoords,
+                len(sites_uniq),
+                rinexmod_info_name,
+            )
+            df_rinexmod = df_rinexmod_raw[df_rinexmod_raw["site"].isin(sites_with_coords)]
+        else:
+            df_rinexmod = df_rinexmod_raw
+    else:
+        df_rinexmod = df_rinexmod_raw
+
+    df_rinexmod_grp = df_rinexmod.groupby("site")
+
+    mdaobjs_lis = []
+
+    logger.info("%i sites will be extracted from %s", len(df_rinexmod_grp), rinexmod_info_name)
+
+    for site, site_info in df_rinexmod_grp:
+        logger.debug("extract %s from %s", site, rinexmod_info_name)
+
+        # Search in ninecharfile
+        if site in nine_char_dict.keys():
+            site_use = nine_char_dict[site]
+            logger.debug("4 > 9 char. conversion: %s > %s", site, site_use)
+        else:
+            site_use = site
+
+        mdaobj = rimo_mda.MetaData(sitelogfile=None)
+        mdaobj.set_from_rinexmod_info(
+            site_use,
+            df_rinexmod,
+            force_fake_coords=force_fake_coords,
+            rinexmod_info_name=rinexmod_info_name,
+        )
+        if rev:
+            mdaobj.instrus.reverse()
+            logger.info("Reversing order of instrumental changes")
+        mdaobjs_lis.append(mdaobj)
+
+    logger.info("%i sites have been extracted from %s", len(mdaobjs_lis), rinexmod_info_name)
 
     return mdaobjs_lis
 

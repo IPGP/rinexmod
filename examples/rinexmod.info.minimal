@@ -1,0 +1,2 @@
+site,date_start,date_end,receiver_type,antenna_type,x_coord,y_coord,z_coord
+mysite,2020-01-01T00:00:00,2025-12-31T23:59:59,TRIMBLE NETR9,ASH700936D_M,4000000.0,3000000.0,4500000.0
