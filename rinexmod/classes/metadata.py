@@ -507,15 +507,6 @@ class MetaData:
 
         return self.instrus
 
-    #  _____               _                __                  _   _
-    # |  __ \             (_)              / _|                | | (_)
-    # | |__) |_ _ _ __ ___ _ _ __   __ _  | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
-    # |  ___/ _` | '__/ __| | '_ \ / _` | |  _| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
-    # | |  | (_| | |  \__ \ | | | | (_| | | | | |_| | | | | (__| |_| | (_) | | | \__ \
-    # |_|   \__,_|_|  |___/_|_| |_|\__, | |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
-    #                               __/ |
-    #                              |___/
-
     #  ______                         _   _   _                __                  _   _
     # |  ____|                       | | | | (_)              / _|                | | (_)
     # | |__ ___  _ __ _ __ ___   __ _| |_| |_ _ _ __   __ _  | |_ _   _ _ __   ___| |_ _  ___  _ __  ___
@@ -931,89 +922,3 @@ def equal_instru(instru1, instru2, compare_dates=False):
         return False
 
     return True
-
-    # def stationinfo(self, output = None):
-    #     '''
-    #     Attempt of writing a function that will write a stationinfo file from a
-    #     list of sitelogs. This function writes a list of almost- stationinfo compatible
-    #     entries, plus a header. To work, you have to write the XXX-marked lines that are
-    #     not yet complient with stationinfo format, and make an external function to
-    #     combine the lines from differetn sitelogs and add the header line.
-    #     '''
-    #
-    #     if output:
-    #         if not os.path.isdir(output):
-    #             print("error, output folder incorrect " + output)
-    #             return None
-    #
-    #     header = []
-    #
-    #     now = datetime.strftime(datetime.now(), '%Y-%m-%d %H%M')
-    #
-    #     header.append("# Station.raw_content written by Rinexmod user             on ".format(now))
-    #     header.append("* Reference file : station.raw_content")
-    #     header.append("*")
-    #     header.append("*")
-    #     header.append("*SITE  Station Name      Session Start      Session Stop       Ant Ht   HtCod  Ant N    Ant E    Receiver Type         Vers                  SwVer  Receiver SN           Antenna Type     Dome   Antenna SN")
-    #
-    #     stationinfo = []
-    #
-    #     SITE = self.raw_content['1.']['Four Character ID']
-    #     Station_Name = self.raw_content['1.']['Site Name']
-    #
-    #     pattern = re.compile(r'[ 0](0+)[0-9]')
-    #
-    #     for installation in self.instrus:
-    #
-    #         Session_Start = installation['dates'][0]
-    #         # print(type(Session_Start))
-    #         Session_Start = datetime.strftime(Session_Start, '%Y %j %H %M %S')
-    #         Session_Start = re.sub(pattern, ' ', Session_Start)
-    #
-    #         # Session_Start = Session_Start.replace(' 00', '   ')
-    #         # Session_Start = Session_Start.replace(' 0', '  ')
-    #         # Session_Start = Session_Start.replace('  00', '   0')
-    #         # Session_Start = Session_Start.replace(' 00', '  0')
-    #
-    #         Session_Stop = installation['dates'][1]
-    #         # print(type(Session_Stop))
-    #
-    #         # Session_Stop = Session_Stop - timedelta(seconds=1)
-    #         Session_Stop = datetime.strftime(Session_Stop, '%Y %j %H %M %S')
-    #         Session_Stop = re.sub(pattern, ' ', Session_Stop)
-    #         # Session_Stop = Session_Stop.replace(' 0', '  ')
-    #         #
-    #         # Session_Start = Session_Start.replace('  00', '   0')
-    #         # Session_Stop = Session_Stop.replace(' 00', '  0')
-    #
-    #         Ant_Ht = installation['antenna']['Marker->ARP Up Ecc. (m)']
-    #         HtCod = None #installation['antenna'][''] #
-    #         Ant_N = installation['antenna']['Marker->ARP North Ecc(m)']
-    #         Ant_E = installation['antenna']['Marker->ARP East Ecc(m)']
-    #         Receiver_Type = installation['receiver']['Receiver Type']
-    #         Vers = None #installation['receiver'][''] #
-    #         SwVer = installation['receiver']['Firmware Version']
-    #         Receiver_SN = installation['receiver']['Serial Number']
-    #         Antenna_Type = installation['antenna']['Antenna Type']
-    #         Dome = installation['antenna']['Antenna Radome Type']
-    #         Antenna_SN = installation['antenna']['Serial Number']
-    #
-    #         info_line = [SITE,
-    #                      Station_Name,
-    #                      Session_Start,
-    #                      Session_Stop,
-    #                      Ant_Ht,
-    #                      HtCod,
-    #                      Ant_N,
-    #                      Ant_E,
-    #                      Receiver_Type,
-    #                      Vers,
-    #                      SwVer,
-    #                      Receiver_SN,
-    #                      Antenna_Type,
-    #                      Dome,
-    #                      Antenna_SN]
-    #
-    #         stationinfo.append(info_line)
-    #
-    #     return stationinfo

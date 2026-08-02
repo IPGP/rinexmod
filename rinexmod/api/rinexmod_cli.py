@@ -20,7 +20,6 @@ import rinexmod.api.core_fcts as rimo_cor
 import rinexmod.api.rinexmod_main as rimo_main
 
 import rinexmod.logger as rimo_log
-from rinexmod.api import geodesyml2mda_objs
 
 logger = rimo_log.logger_define("INFO")
 

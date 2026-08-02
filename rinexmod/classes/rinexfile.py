@@ -21,7 +21,7 @@ import ncompress
 import numpy as np
 
 import rinexmod.logger as rimo_log
-import rinexmod.api.core_fcts as rimo_cor
+import rinexmod.core as rimo_cor
 
 logger = rimo_log.logger_define("INFO")
 
