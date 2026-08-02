@@ -102,7 +102,7 @@ rimo_api.rinexmod_cli(
 To validate your rinexmod.info file before using it:
 
 ```python
-from rinexmod.readers.rinexmod_info_meta import read_rinexmod_info
+from rinexmod.readers.rinexmod_info import read_rinexmod_info
 import pandas as pd
 
 # Read and validate

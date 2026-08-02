@@ -11,9 +11,6 @@ from datetime import datetime
 import hatanaka
 
 import rinexmod as rimo
-import rinexmod.readers.gamit_meta as rimo_gmm
-import rinexmod.readers.rinexmod_info_meta as rimo_rmo
-import rinexmod.classes.metadata as rimo_mda
 import rinexmod.classes.rinexfile as rimo_rnx
 import rinexmod.api.core_fcts as rimo_cor
 
