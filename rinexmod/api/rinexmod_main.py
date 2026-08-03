@@ -324,7 +324,7 @@ def rinexmod(
     mdaobjs_lis = []
     ## sitelogs
     if sitelog:
-        mdaobjs_lis = rimo_cor.metadata_input_manage(sitelog, force=force_sitelog)
+        mdaobjs_lis = rimo_cor.load_metadata(sitelog, force=force_sitelog)
     ## GAMIT files
     # We read the GAMIT files only if no input 'sitelog' variable is given.
     # Indeed, the GAMIT files might have been read outside this function
@@ -348,7 +348,7 @@ def rinexmod(
         )
 
     if geodesyml and not sitelog and not (station_info and lfile_apriori) and not rinexmod_info:
-        mdaobjs_lis = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
+        mdaobjs_lis = rimo_cor.load_metadata_gml(geodesyml)
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori) or geodesyml:

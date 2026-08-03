@@ -210,7 +210,7 @@ def rinexmod_cli(
     ### load the sitelogs/GAMIT-files/rinexmod.info as a **list of MetaData objects**
     # from sitelogs
     if sitelog:
-        sitelogs_list_use = rimo_cor.metadata_input_manage(sitelog, force_sitelog)
+        sitelogs_list_use = rimo_cor.load_metadata(sitelog, force_sitelog)
     # from GAMIT files
     elif station_info and lfile_apriori:
         sitelogs_list_use = rimo_cor.gamit2mda_objs(
@@ -223,7 +223,7 @@ def rinexmod_cli(
         )
     # from geodesyML files
     elif geodesyml:
-        gml_list = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
+        gml_list = rimo_cor.load_metadata_gml(geodesyml)
         sitelogs_list_use = None
     else:
         sitelogs_list_use = None

@@ -77,22 +77,22 @@ def make_site_id9(site_id_inp):
         return site_id_inp[:4].upper() + "00XXX"
 
 
-def metadata_input_manage(sitelog_inp, force=False):
+def load_metadata(mda_inp, force=False):
     """
     Manage the multiple types possible for metadata inputs
     Return a list of MetaData to be handeled by find_mda4site
 
     Possible inputs are:
      * list of string (sitelog file paths),
-     * single string (single sitelog file path)
+     * single string (single sitelog file path OR rinexmod_info with .csv extension)
      * single string (directory containing the sitelogs)
      * list of MetaData objects
      * single MetaData object
 
     Parameters
     ----------
-    sitelog_inp : list of str, str, list of MetaData. single MetaData
-        Various Input sitelogs.
+    mda_inp : list of str, str, list of MetaData. single MetaData
+        Various Input types.
     force : bool
         Force a single sitelog file path.
 
@@ -103,40 +103,40 @@ def metadata_input_manage(sitelog_inp, force=False):
 
     """
     # single MetaData object
-    if isinstance(sitelog_inp, rimo_mda.MetaData):
-        return [sitelog_inp]
+    if isinstance(mda_inp, rimo_mda.MetaData):
+        return [mda_inp]
     # list of MetaData objects
-    elif isinstance(sitelog_inp, list) and isinstance(
-        sitelog_inp[0], rimo_mda.MetaData
+    elif isinstance(mda_inp, list) and isinstance(
+        mda_inp[0], rimo_mda.MetaData
     ):
-        return sitelog_inp
-    elif isinstance(sitelog_inp, str) and os.path.basename(sitelog_inp).endswith(
+        return mda_inp
+    elif isinstance(mda_inp, str) and os.path.basename(mda_inp).endswith(
         ".csv"
     ):
-        return rinexmod_info2mda_objs(sitelog_inp)
+        return rinexmod_info2mda_objs(mda_inp)
     # single string or list of string
-    elif isinstance(sitelog_inp, str) or isinstance(sitelog_inp, list):
+    elif isinstance(mda_inp, str) or isinstance(mda_inp, list):
         return sitlgs2mda_objs(
-            sitelog_inp, force=force, return_list_even_if_single_input=True
+            mda_inp, force=force, return_list_even_if_single_input=True
         )
     else:
         logger.error(
             "Wrong Input, must be a list of string (path), a single string (path),"
             "a MetaData object, or a list of MetaData objects. Input given: %s, %s",
-            sitelog_inp,
-            type(sitelog_inp),
+            mda_inp,
+            type(mda_inp),
         )
         raise rimo_exc.RinexModInputArgsError
 
 
-def metadata_input_manage_geodesyml(gml_path):
+def load_metadata_gml(gml_inp):
     """
     Manage GeodesyML file as metadata input
     Return a list of MetaData
 
     Parameters
     ----------
-    gml_path : str
+    gml_inp : str
         GeodesyML file path.
 
     Returns
@@ -146,16 +146,16 @@ def metadata_input_manage_geodesyml(gml_path):
 
     """
 
-    if isinstance(gml_path, list) and isinstance(gml_path[0], rimo_mda.MetaData):
-        return gml_path
-    elif isinstance(gml_path, rimo_mda.MetaData):
-        return [gml_path]
-    elif isinstance(gml_path, str) and os.path.isdir(gml_path):
+    if isinstance(gml_inp, list) and isinstance(gml_inp[0], rimo_mda.MetaData):
+        return gml_inp
+    elif isinstance(gml_inp, rimo_mda.MetaData):
+        return [gml_inp]
+    elif isinstance(gml_inp, str) and os.path.isdir(gml_inp):
         gml_extension = ".xml"
-        gml_files = _list_files(gml_path, gml_extension)
+        gml_files = _list_files(gml_inp, gml_extension)
 
         logger.info(
-            "**** %i GeodesyML files detected (in %s)", len(gml_files), gml_path
+            "**** %i GeodesyML files detected (in %s)", len(gml_files), gml_inp
         )
 
         gml_pattern = re.compile(r"^\w{4}.*\.xml$")
@@ -165,15 +165,15 @@ def metadata_input_manage_geodesyml(gml_path):
         for gml_file in gml_files:
             mdaobjs_lis.extend(geodesyml2mda_objs(gml_file))
         return mdaobjs_lis
-    elif isinstance(gml_path, str) and os.path.isfile(gml_path):
-        return geodesyml2mda_objs(gml_path)
+    elif isinstance(gml_inp, str) and os.path.isfile(gml_inp):
+        return geodesyml2mda_objs(gml_inp)
     else:
         logger.error(
             "Wrong Input, expected a MEtaData object, a list of MetaData objects, "
             "a GeodesyML file path, or a directory containing GeodesyML files. "
             "Input given: %s, %s",
-            gml_path,
-            type(gml_path),
+            gml_inp,
+            type(gml_inp),
         )
         raise rimo_exc.RinexModInputArgsError
 
