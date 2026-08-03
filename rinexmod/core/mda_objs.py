@@ -1,7 +1,6 @@
 import os
 import re
 
-import _crypt
 import pandas as pd
 from datetime import datetime
 
@@ -77,112 +76,165 @@ def make_site_id9(site_id_inp):
         return site_id_inp[:4].upper() + "00XXX"
 
 
+def _is_geodesyml_file(file_path):
+    r"""
+    Check if a file is a GeodesyML file based on extension and naming pattern.
+    
+    Parameters
+    ----------
+    file_path : str
+        Path to the file to check.
+    
+    Returns
+    -------
+    bool
+        True if file matches GeodesyML pattern (^\w{4}.*\.xml$), False otherwise.
+    """
+    if not file_path.lower().endswith('.xml'):
+        return False
+    gml_pattern = re.compile(r"^\w{4}.*\.xml$")
+    return bool(gml_pattern.match(os.path.basename(file_path)))
+
+
+def _load_from_dir(dir_path, force=False):
+    """
+    Load metadata from a directory, auto-detecting whether it contains
+    GeodesyML files or sitelog files.
+    
+    Parameters
+    ----------
+    dir_path : str
+        Path to the directory.
+    force : bool
+        Force a single sitelog file path (only used for sitelogs).
+    
+    Returns
+    -------
+    list of MetaData objects.
+    """
+    # Check if directory contains GeodesyML files
+    xml_files = _list_files(dir_path, ".xml", recursive=False)
+    gml_pattern = re.compile(r"^\w{4}.*\.xml$")
+    gml_files = [f for f in xml_files if gml_pattern.match(os.path.basename(f))]
+    
+    if gml_files:
+        # Directory contains GeodesyML files, use geodesyml2mda_objs
+        return geodesymls2mda_objs(dir_path, return_list_even_if_single_input=True)
+    else:
+        # Directory contains sitelogs, use sitlgs2mda_objs
+        return sitlgs2mda_objs(
+            dir_path, force=force, return_list_even_if_single_input=True
+        )
+
+
 def load_metadata(mda_inp, force=False):
     """
-    Manage the multiple types possible for metadata inputs
-    Return a list of MetaData to be handeled by find_mda4site
+    Manage multiple types of metadata inputs and return a list of MetaData objects.
+    
+    Handles both sitelog and GeodesyML formats transparently.
 
     Possible inputs are:
-     * list of string (sitelog file paths),
-     * single string (single sitelog file path OR rinexmod_info with .csv extension)
-     * single string (directory containing the sitelogs)
+     * list of string (sitelog/GeodesyML file paths),
+     * single string (file path OR directory containing files)
+     * single string (rinexmod_info with .csv extension)
      * list of MetaData objects
      * single MetaData object
 
     Parameters
     ----------
-    mda_inp : list of str, str, list of MetaData. single MetaData
-        Various Input types.
+    mda_inp : list of str, str, list of MetaData, MetaData
+        Various input types.
     force : bool
-        Force a single sitelog file path.
+        Force a single sitelog file path (for sitelog processing).
 
     Returns
     -------
-        list of MetaData objects.
+    list of MetaData objects.
         (can be a singleton)
 
     """
     # single MetaData object
     if isinstance(mda_inp, rimo_mda.MetaData):
         return [mda_inp]
+    
     # list of MetaData objects
-    elif isinstance(mda_inp, list) and isinstance(
-        mda_inp[0], rimo_mda.MetaData
-    ):
+    if isinstance(mda_inp, list) and mda_inp and isinstance(mda_inp[0], rimo_mda.MetaData):
         return mda_inp
-    elif isinstance(mda_inp, str) and os.path.basename(mda_inp).endswith(
-        ".csv"
-    ):
+    
+    # CSV file (rinexmod_info format)
+    if isinstance(mda_inp, str) and os.path.basename(mda_inp).endswith(".csv"):
         return rinexmod_info2mda_objs(mda_inp)
-    # single string or list of string
-    elif isinstance(mda_inp, str) or isinstance(mda_inp, list):
-        return sitlgs2mda_objs(
-            mda_inp, force=force, return_list_even_if_single_input=True
-        )
-    else:
-        logger.error(
-            "Wrong Input, must be a list of string (path), a single string (path),"
-            "a MetaData object, or a list of MetaData objects. Input given: %s, %s",
-            mda_inp,
-            type(mda_inp),
-        )
-        raise rimo_exc.RinexModInputArgsError
+    
+    # Directory
+    if isinstance(mda_inp, str) and os.path.isdir(mda_inp):
+        return _load_from_dir(mda_inp, force=force)
+    
+    # Single file (GeodesyML or sitelog)
+    if isinstance(mda_inp, str) and os.path.isfile(mda_inp):
+        if _is_geodesyml_file(mda_inp):
+            return geodesymls2mda_objs(mda_inp, return_list_even_if_single_input=True)
+        else:
+            return sitlgs2mda_objs(
+                mda_inp, force=force, return_list_even_if_single_input=True
+            )
+    
+    # List of strings (file paths)
+    if isinstance(mda_inp, list):
+        # Separate GeodesyML and sitelog files
+        gml_files = [f for f in mda_inp if isinstance(f, str) and _is_geodesyml_file(f)]
+        sitelog_files = [f for f in mda_inp if isinstance(f, str) and not _is_geodesyml_file(f)]
+        
+        mdaobjs_lis = []
+        
+        # Process GeodesyML files
+        if gml_files:
+            mdaobjs_lis.extend(geodesymls2mda_objs(gml_files, return_list_even_if_single_input=True))
+        
+        # Process sitelog files
+        if sitelog_files:
+            mdaobjs_lis.extend(sitlgs2mda_objs(
+                sitelog_files, force=force, return_list_even_if_single_input=True
+            ))
+        
+        return mdaobjs_lis
+    
+    logger.error(
+        "Wrong Input, must be a list of paths, a single path (file/directory), "
+        "a MetaData object, or a list of MetaData objects. Input given: %s, %s",
+        mda_inp,
+        type(mda_inp),
+    )
+    raise rimo_exc.RinexModInputArgsError
 
 
 def load_metadata_gml(gml_inp):
     """
-    Manage GeodesyML file as metadata input
-    Return a list of MetaData
-
+    DEPRECATED: Use load_metadata() instead.
+    
+    load_metadata() now handles both sitelog and GeodesyML formats automatically.
+    This function is kept for backward compatibility.
+    
     Parameters
     ----------
-    gml_inp : str
-        GeodesyML file path.
+    gml_inp : str, list of MetaData, MetaData
+        GeodesyML file path, list of MetaData objects, or single MetaData object.
 
     Returns
     -------
-        list of MetaData objects.
-        (can be a singleton)
-
+    list of MetaData objects.
     """
-
-    if isinstance(gml_inp, list) and isinstance(gml_inp[0], rimo_mda.MetaData):
-        return gml_inp
-    elif isinstance(gml_inp, rimo_mda.MetaData):
-        return [gml_inp]
-    elif isinstance(gml_inp, str) and os.path.isdir(gml_inp):
-        gml_extension = ".xml"
-        gml_files = _list_files(gml_inp, gml_extension)
-
-        logger.info(
-            "**** %i GeodesyML files detected (in %s)", len(gml_files), gml_inp
-        )
-
-        gml_pattern = re.compile(r"^\w{4}.*\.xml$")
-        gml_files = [f for f in gml_files if gml_pattern.match(os.path.basename(f))]
-
-        mdaobjs_lis = []
-        for gml_file in gml_files:
-            mdaobjs_lis.extend(geodesyml2mda_objs(gml_file))
-        return mdaobjs_lis
-    elif isinstance(gml_inp, str) and os.path.isfile(gml_inp):
-        return geodesyml2mda_objs(gml_inp)
-    else:
-        logger.error(
-            "Wrong Input, expected a MEtaData object, a list of MetaData objects, "
-            "a GeodesyML file path, or a directory containing GeodesyML files. "
-            "Input given: %s, %s",
-            gml_inp,
-            type(gml_inp),
-        )
-        raise rimo_exc.RinexModInputArgsError
+    logger.warning(
+        "load_metadata_gml() is deprecated. Use load_metadata() instead, "
+        "which now handles both sitelog and GeodesyML formats automatically."
+    )
+    return load_metadata(gml_inp)
 
 
 def gamit2mda_objs(
-    station_info_inp,
-    lfile_inp=None,
+    station_info_path,
+    lfile_path=None,
     force_fake_coords=False,
-    ninecharfile_inp=None,
+    ninecharfile_path=None,
     rev=False,
 ):
     """
@@ -190,17 +242,17 @@ def gamit2mda_objs(
 
     Parameters
     ----------
-    station_info_inp : str or pd.DataFrame
+    station_info_path : str or pd.DataFrame
         Path of a GAMIT station.info file to obtain
         GNSS site metadata information.
-    lfile_inp : str or pd.DataFrame
+    lfile_path : str or pd.DataFrame
         Path of a GAMIT apriori apr/L-File to obtain
         GNSS site position and DOMES information.
     force_fake_coords : bool, optional
         hen using GAMIT station.info metadata without apriori coordinates in
         the L-File, gives fake coordinates at (0°,0°) to the site.
         The default is False.
-    ninecharfile_inp : str, optional
+    ninecharfile_path : str, optional
         Path of a file that contains 9-char. site names.
         The default is None.
     rev : bool, optional
@@ -216,29 +268,29 @@ def gamit2mda_objs(
         list of MetaData objects.
 
     """
-    if isinstance(station_info_inp, pd.DataFrame):
-        df_stinfo_raw = station_info_inp
+    if isinstance(station_info_path, pd.DataFrame):
+        df_stinfo_raw = station_info_path
         stinfo_name = "station.info"
     else:
         df_stinfo_raw = rimo_gmm.read_gamit_station_info(
-            station_info_inp, sort=False
+            station_info_path, sort=False
         )  # sort = not rev if rev, no sort
-        stinfo_name = os.path.basename(station_info_inp)
+        stinfo_name = os.path.basename(station_info_path)
 
-    if not lfile_inp:
+    if not lfile_path:
         df_apr = pd.DataFrame(columns=["site"])
         logger.warning(
             "No L-File provided, fake coordinates will be used! "
             "(force_fake_coords forced to True)"
         )
         force_fake_coords = True
-    elif isinstance(lfile_inp, pd.DataFrame):
-        df_apr = lfile_inp
+    elif isinstance(lfile_path, pd.DataFrame):
+        df_apr = lfile_path
     else:
-        df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
+        df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_path)
 
-    if not ninecharfile_inp is None:
-        nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile_inp)
+    if not ninecharfile_path is None:
+        nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile_path)
     else:
         nine_char_dict = dict()
 
@@ -294,9 +346,9 @@ def gamit2mda_objs(
 
 
 def rinexmod_info2mda_objs(
-    rinexmod_info_inp,
+    rinexmod_info_path,
     force_fake_coords=False,
-    ninecharfile_inp=None,
+    ninecharfile_path=None,
     rev=False,
 ):
     """
@@ -304,12 +356,12 @@ def rinexmod_info2mda_objs(
 
     Parameters
     ----------
-    rinexmod_info_inp : str or pd.DataFrame
+    rinexmod_info_path : str or pd.DataFrame
         Path of a rinexmod_info CSV file to obtain GNSS site metadata information.
     force_fake_coords : bool, optional
         If True, coordinates will be set to (0,0,0) and DOMES to 00000X000.
         The default is False.
-    ninecharfile_inp : str, optional
+    ninecharfile_path : str, optional
         Path of a file that contains 9-char. site names.
         The default is None.
     rev : bool, optional
@@ -323,15 +375,15 @@ def rinexmod_info2mda_objs(
         List of MetaData objects.
     """
 
-    if isinstance(rinexmod_info_inp, pd.DataFrame):
-        df_rinexmod_raw = rinexmod_info_inp
+    if isinstance(rinexmod_info_path, pd.DataFrame):
+        df_rinexmod_raw = rinexmod_info_path
         rinexmod_info_name = "rinexmod_info"
     else:
-        df_rinexmod_raw = rimo_rmo.read_rinexmod_info(rinexmod_info_inp, sort=False)
-        rinexmod_info_name = os.path.basename(rinexmod_info_inp)
+        df_rinexmod_raw = rimo_rmo.read_rinexmod_info(rinexmod_info_path, sort=False)
+        rinexmod_info_name = os.path.basename(rinexmod_info_path)
 
-    if ninecharfile_inp is not None:
-        nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile_inp)
+    if ninecharfile_path is not None:
+        nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile_path)
     else:
         nine_char_dict = dict()
 
@@ -399,14 +451,14 @@ def rinexmod_info2mda_objs(
 
 
 def sitlgs2mda_objs(
-    sitelog_filepath, force=False, return_list_even_if_single_input=True
+    sitelog_path, force=False, return_list_even_if_single_input=True
 ):
     """
     Read a set of sitelog files and convert them to MetaData objects
 
     Parameters
     ----------
-    sitelog_filepath : str or list of str
+    sitelog_path : str or list of str
         path of a single sitelog file or a set of sitelogs (stored in a list).
     force : bool, optional
         if it is not possible to read a sitelog (bad format), we skip it.
@@ -429,28 +481,28 @@ def sitlgs2mda_objs(
 
     #### differenciating cases
     # Case of a list of sitelogs
-    if type(sitelog_filepath) is list:
-        slgs_all = sitelog_filepath
-        sitelog_filepath = "input sitelog list"
+    if type(sitelog_path) is list:
+        slgs_all = sitelog_path
+        sitelog_path = "input sitelog list"
     # Case of one single sitelog
-    elif os.path.isfile(sitelog_filepath):
-        slgs_all = [sitelog_filepath]
+    elif os.path.isfile(sitelog_path):
+        slgs_all = [sitelog_path]
     # Case of a folder
-    elif os.path.isdir(sitelog_filepath):
+    elif os.path.isdir(sitelog_path):
         sitelog_extension = ".log"
-        slgs_all = _list_files(sitelog_filepath, sitelog_extension)
+        slgs_all = _list_files(sitelog_path, sitelog_extension)
 
         sitelog_pattern = re.compile(r"\w{4,9}_\d{8}.log")
         slgs_all = [f for f in slgs_all if sitelog_pattern.match(os.path.basename(f))]
     ### case of no file nor folder
     else:
         logger.error(
-            "unable to handle file/directory. Does it exists?: %s", sitelog_filepath
+            "unable to handle file/directory. Does it exists?: %s", sitelog_path
         )
         raise rimo_exc.RinexModInputArgsError
 
     #### Read the sitelogs
-    logger.info("**** %i sitelogs detected (in %s)", len(slgs_all), sitelog_filepath)
+    logger.info("**** %i sitelogs detected (in %s)", len(slgs_all), sitelog_path)
     for sl in slgs_all:
         logger.debug(sl)
     # Get last version of sitelogs if multiple available
@@ -521,29 +573,65 @@ def rinexs2mda_objs(rinex_paths, ninecharfile_inp=None):
     return mdaobjs_lis
 
 
-def geodesyml2mda_objs(gml_path):
-    """
-    Read a GeodesyML file and convert its content to MetaData objects
+def geodesymls2mda_objs(gml_path, return_list_even_if_single_input=True):
+    r"""
+    Read GeodesyML file(s) and convert their content to MetaData objects.
+    
+    Supports reading single files, multiple files, or directories (recursive search).
 
     Parameters
     ----------
-    gml_path : str
-        Path of a GeodesyML file containing GNSS site metadata information.
+    gml_path : str or list of str
+        Path of a single GeodesyML file, a list of GeodesyML file paths,
+        or a directory containing GeodesyML files.
+    return_list_even_if_single_input : bool, optional
+        If a single file is given, return the corresponding MetaData object
+        into a list (singleton). The default is True.
 
     Returns
     -------
     mdaobjs_lis : list
-        list of MetaData objects.
+        List of MetaData objects.
 
     """
+    # Case of a list of GeodesyML files
+    if isinstance(gml_path, list):
+        gml_files = gml_path
+        gml_path_display = "input GeodesyML list"
+    # Case of one single file
+    elif os.path.isfile(gml_path):
+        gml_files = [gml_path]
+        gml_path_display = gml_path
+    # Case of a folder
+    elif os.path.isdir(gml_path):
+        gml_extension = ".xml"
+        gml_files = _list_files(gml_path, gml_extension)
+        
+        # Filter by GeodesyML naming pattern
+        gml_pattern = re.compile(r"^\w{4}.*\.xml$")
+        gml_files = [f for f in gml_files if gml_pattern.match(os.path.basename(f))]
+        
+        gml_path_display = gml_path
+    else:
+        logger.error(
+            "unable to handle file/directory. Does it exists?: %s", gml_path
+        )
+        raise rimo_exc.RinexModInputArgsError
+    
+    logger.info("**** %i GeodesyML files detected (in %s)", len(gml_files), gml_path_display)
+    for gf in gml_files:
+        logger.debug(gf)
+    
     mdaobjs_lis = []
-
-    logger.info("Processing GeodesyML file: %s", gml_path)
-
-    mdaobj = rimo_mda.MetaData(sitelogfile=None)
-    mdaobj.set_from_gml(gml_path)
-    mdaobjs_lis.append(mdaobj)
-
+    for gml_file in gml_files:
+        logger.info("Processing GeodesyML file: %s", gml_file)
+        mdaobj = rimo_mda.MetaData(sitelogfile=None)
+        mdaobj.set_from_gml(gml_file)
+        mdaobjs_lis.append(mdaobj)
+    
+    if len(mdaobjs_lis) <= 1 and not return_list_even_if_single_input:
+        mdaobjs_lis = mdaobjs_lis[0]
+    
     return mdaobjs_lis
 
 

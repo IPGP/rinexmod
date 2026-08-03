@@ -1,5 +1,6 @@
 import re
 import rinexmod.logger as rimo_log
+import rinexmod.exceptions as rimo_exc
 logger = rimo_log.logger_define("INFO")
 
 # *****************************************************************************
@@ -47,7 +48,7 @@ def modif_kw_check(modif_kw):
             logger.error(
                 "'{}' is not an acceptable keyword for header modification.".format(kw)
             )
-            return RinexModInputArgsError
+            return rimo_exc.RinexModInputArgsError
 
     return None
 

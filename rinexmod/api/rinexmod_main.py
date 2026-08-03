@@ -348,7 +348,7 @@ def rinexmod(
         )
 
     if geodesyml and not sitelog and not (station_info and lfile_apriori) and not rinexmod_info:
-        mdaobjs_lis = rimo_cor.load_metadata_gml(geodesyml)
+       mdaobjs_lis = rimo_cor.load_metadata(geodesyml)
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori) or geodesyml:

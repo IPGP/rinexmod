@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import rinexmod.classes.rinexfile as rimo_rnx
+import rinexmod.exceptions as rimo_exc
 
 import rinexmod.logger as rimo_log
 logger = rimo_log.logger_define("INFO")
@@ -64,7 +65,7 @@ def rtun_lsts_make(rnxobj_or_dict, return_lists=dict()):
             rnxobj_or_dict,
             type(rnxobj_or_dict),
         )
-        raise ReturnListError
+        raise rimo_exc.ReturnListError
 
     # Dict ordered as : RINEX_VERSION, SAMPLE_RATE, FILE_PERIOD
     if major_rinex_version not in return_lists:

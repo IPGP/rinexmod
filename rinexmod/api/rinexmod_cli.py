@@ -223,7 +223,7 @@ def rinexmod_cli(
         )
     # from geodesyML files
     elif geodesyml:
-        gml_list = rimo_cor.load_metadata_gml(geodesyml)
+        gml_list = rimo_cor.load_metadata(geodesyml)
         sitelogs_list_use = None
     else:
         sitelogs_list_use = None
