@@ -12,7 +12,7 @@ import hatanaka
 
 import rinexmod as rimo
 import rinexmod.classes.rinexfile as rimo_rnx
-import rinexmod.api.core_fcts as rimo_cor
+import rinexmod.core as rimo_cor
 
 
 import rinexmod.logger as rimo_log

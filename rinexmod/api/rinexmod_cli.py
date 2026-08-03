@@ -9,15 +9,12 @@ Created on 26/06/2025 18:26:58
 import argparse
 import multiprocessing as mp
 import os
-import re
-import subprocess
 from datetime import datetime
-import hatanaka
-import pandas as pd
 
-import rinexmod.api as rimo_api
-import rinexmod.api.core_fcts as rimo_cor
+
+import rinexmod.core as rimo_cor
 import rinexmod.api.rinexmod_main as rimo_main
+import rinexmod.exceptions as rimo_exc
 
 import rinexmod.logger as rimo_log
 
@@ -186,24 +183,24 @@ def rinexmod_cli(
     if len(rinexinput) == 1 and not alone:
         try:
             rinexinput_use = [line.strip() for line in open(rinexinput[0]).readlines()]
-        except:
+        except Exception as e:
             errmsg = f"Something went wrong while reading: {str(rinexinput[0])}"
             logger.error(errmsg)
             logger.error("Did you forget -a/--alone option?")
-            return rimo_cor.RinexModInputArgsError(errmsg)
+            return rimo_exc.RinexModInputArgsError(errmsg)
     else:
         rinexinput_use = rinexinput
 
     if not rinexinput_use:
         errmsg = f"The input file is empty: {str(rinexinput)}"
         logger.error(errmsg)
-        return rimo_cor.RinexModInputArgsError(errmsg)
+        return rimo_exc.RinexModInputArgsError(errmsg)
 
     if rinexinput_use[0].endswith("RINEX VERSION / TYPE"):
         errmsg = f"The input file is not a file list but a RINEX: {str(rinexinput[0])}"
         logger.error(errmsg)
         logger.error("Did you forget -a/--alone option?")
-        return rimo_cor.RinexModInputArgsError(errmsg)
+        return rimo_exc.RinexModInputArgsError(errmsg)
 
     # sort the RINEX list
     if sort:
@@ -294,7 +291,7 @@ def rinexmod_cli(
     for return_lists_mono in results:
         try:
             rimo_cor.rtun_lsts_make(return_lists_mono, return_lists)
-        except rimo_cor.ReturnListError:
+        except rimo_exc.ReturnListError:
             logger.warning(
                 "one file has been skipped because of an odd individual return list"
             )

@@ -1,17 +1,15 @@
 import os
 import re
-import subprocess
-import string
+
+import _crypt
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 
-
-import rinexmod as rimo
 import rinexmod.readers.gamit as rimo_gmm
 import rinexmod.readers.rinexmod_info as rimo_rmo
 import rinexmod.classes.metadata as rimo_mda
-import rinexmod.classes.rinexfile as rimo_rnx
-
+import rinexmod.core as rimo_cor
+import rinexmod.exceptions as rimo_exc
 
 import rinexmod.logger as rimo_log
 
@@ -21,7 +19,7 @@ logger = rimo_log.logger_define("INFO")
 # Metadata import
 
 
-def listfiles(directory, extension, recursive=True):
+def _list_files(directory, extension, recursive=True):
     # returns list of paths
     liste = []
     extension = extension.lower()
@@ -128,7 +126,7 @@ def metadata_input_manage(sitelog_inp, force=False):
             sitelog_inp,
             type(sitelog_inp),
         )
-        raise RinexModInputArgsError
+        raise rimo_exc.RinexModInputArgsError
 
 
 def metadata_input_manage_geodesyml(gml_path):
@@ -147,13 +145,14 @@ def metadata_input_manage_geodesyml(gml_path):
         (can be a singleton)
 
     """
-    if isinstance(gml_path, rimo_mda.MetaData):
-        return [gml_path]
-    elif isinstance(gml_path, list) and isinstance(gml_path[0], rimo_mda.MetaData):
+
+    if isinstance(gml_path, list) and isinstance(gml_path[0], rimo_mda.MetaData):
         return gml_path
+    elif isinstance(gml_path, rimo_mda.MetaData):
+        return [gml_path]
     elif isinstance(gml_path, str) and os.path.isdir(gml_path):
         gml_extension = ".xml"
-        gml_files = listfiles(gml_path, gml_extension)
+        gml_files = _list_files(gml_path, gml_extension)
 
         logger.info(
             "**** %i GeodesyML files detected (in %s)", len(gml_files), gml_path
@@ -176,7 +175,7 @@ def metadata_input_manage_geodesyml(gml_path):
             gml_path,
             type(gml_path),
         )
-        raise RinexModInputArgsError
+        raise rimo_exc.RinexModInputArgsError
 
 
 def gamit2mda_objs(
@@ -239,7 +238,7 @@ def gamit2mda_objs(
         df_apr = rimo_gmm.read_gamit_apr_lfile(lfile_inp)
 
     if not ninecharfile_inp is None:
-        nine_char_dict = rimo.api.read_ninecharfile(ninecharfile_inp)
+        nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile_inp)
     else:
         nine_char_dict = dict()
 
@@ -332,7 +331,7 @@ def rinexmod_info2mda_objs(
         rinexmod_info_name = os.path.basename(rinexmod_info_inp)
 
     if ninecharfile_inp is not None:
-        nine_char_dict = rimo.api.read_ninecharfile(ninecharfile_inp)
+        nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile_inp)
     else:
         nine_char_dict = dict()
 
@@ -439,7 +438,7 @@ def sitlgs2mda_objs(
     # Case of a folder
     elif os.path.isdir(sitelog_filepath):
         sitelog_extension = ".log"
-        slgs_all = listfiles(sitelog_filepath, sitelog_extension)
+        slgs_all = _list_files(sitelog_filepath, sitelog_extension)
 
         sitelog_pattern = re.compile(r"\w{4,9}_\d{8}.log")
         slgs_all = [f for f in slgs_all if sitelog_pattern.match(os.path.basename(f))]
@@ -448,7 +447,7 @@ def sitlgs2mda_objs(
         logger.error(
             "unable to handle file/directory. Does it exists?: %s", sitelog_filepath
         )
-        raise RinexModInputArgsError
+        raise rimo_exc.RinexModInputArgsError
 
     #### Read the sitelogs
     logger.info("**** %i sitelogs detected (in %s)", len(slgs_all), sitelog_filepath)
@@ -458,7 +457,7 @@ def sitlgs2mda_objs(
     # (1st gross search based on date in filename)
     slgs_latest = _slg_find_latest_name(slgs_all)
     # load the sitelogs as metadata objects
-    mdaobjs_lis, slgs_bad_lis = load_sitelogs(slgs_latest, force)
+    mdaobjs_lis, slgs_bad_lis = _load_sitelogs(slgs_latest, force)
     # Get last version of sitelogs if multiple available
     # (2nd fine search based on date in "Date Prepared" field)
     mdaobjs_lis = _mda_find_latest_prep(mdaobjs_lis)
@@ -475,7 +474,6 @@ def sitlgs2mda_objs(
         mdaobjs_lis = mdaobjs_lis[0]
 
     return mdaobjs_lis
-
 
 def rinexs2mda_objs(rinex_paths, ninecharfile_inp=None):
     """
@@ -592,7 +590,7 @@ def group_mda(mdaobj_list_inp):
     return mdaobj_lis, mdaobj_dic
 
 
-def load_sitelogs(sitelogs_inp, force=False):
+def _load_sitelogs(sitelogs_inp, force=False):
     """
     Process a list of sitelogs and return a list of MetaData objects and a list of bad sitelogs.
 
@@ -611,7 +609,7 @@ def load_sitelogs(sitelogs_inp, force=False):
         List of sitelogs that could not be parsed.
     """
 
-    def _load_slg(sitelog_filepath, force_load):
+    def _load_slg_mono(sitelog_filepath, force_load):
         # Creating MetaData object
         try:
             mdaobj_load = rimo_mda.MetaData(sitelog_filepath)
@@ -623,7 +621,7 @@ def load_sitelogs(sitelogs_inp, force=False):
                 str(e),
             )
             if not force_load:
-                raise MetaDataError
+                raise rimo_exc.MetaDataError
             else:
                 mdaobj_load = None
 
@@ -632,7 +630,7 @@ def load_sitelogs(sitelogs_inp, force=False):
     mdaobjs_lis = []
     bad_sitelogs_lis = []
     for sta_sitelog in sitelogs_inp:
-        mdaobj = _load_slg(sta_sitelog, force)
+        mdaobj = _load_slg_mono(sta_sitelog, force)
         # Appending to list
         if mdaobj:
             mdaobjs_lis.append(mdaobj)
@@ -753,7 +751,7 @@ def find_mda4site(rnxobj_or_site4char, mdaobjs_lis, force):
             else "33 - RINEX name's site does not correspond to provided metadata, use -f option to force"
         )
         logger.error(f"{errmsg:110s} - {err_label:}")
-        raise RinexModInputArgsError
+        raise rimo_exc.RinexModInputArgsError
 
     return (
         mdaobjs_site[0]
@@ -794,7 +792,7 @@ def apply_mda2rnxobj(
             "35 - No instrumentation corresponding to the RINEX epoch - %s",
             rnxobj.filename,
         )
-        raise MetaDataError
+        raise rimo_exc.MetaDataError
 
     if ignored:
         logger.warning(
