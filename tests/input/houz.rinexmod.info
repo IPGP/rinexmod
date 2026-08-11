@@ -1,0 +1,2 @@
+site,date_start,date_end,receiver_type,receiver_sn,receiver_firmware,antenna_type,antenna_sn,antenna_ecc_up,antenna_ecc_north,antenna_ecc_east,antenna_daz,antenna_radome,x_coord,y_coord,z_coord,domes_number,operator,agency,country
+houz,2000-01-01T00:00:00,2025-12-31T23:59:59,TRIMBLE NETR9,12345,5.41,ASH700936D_M,S123456,1.2,0.0,0.0,0.0,NONE,4000894.7571,611081.9633,4966890.0318,10002M001,OVS,IPGP,FRA
