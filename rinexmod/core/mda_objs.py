@@ -19,6 +19,24 @@ logger = rimo_log.logger_define("INFO")
 
 
 def _list_files(directory, extension, recursive=True):
+    """
+    List files in a directory.
+
+    Parameters
+    ----------
+    directory: str
+        Path to the directory.
+    extension: str
+        File extension.
+    recursive: bool
+        Whether to search recursively.
+
+    Returns
+    -------
+    list
+    List of file paths.
+
+    """
     # returns list of paths
     liste = []
     extension = extension.lower()
@@ -33,6 +51,19 @@ def _list_files(directory, extension, recursive=True):
 
 
 def read_ninecharfile(ninecharfile_inp):
+    """
+    Read a nine character file and convert it to a dictionary.
+
+    Parameters
+    ----------
+    ninecharfile_inp: str
+        Path to the file containing 9-character site names.
+
+    Returns
+    -------
+    nine_char_dict: dict
+        A dictionary with the first 4 characters of each line as keys and the full lines as values.
+    """
     nine_char_dict = dict()
 
     if isinstance(ninecharfile_inp, str):
