@@ -11,15 +11,14 @@ from datetime import datetime
 import hatanaka
 
 import rinexmod as rimo
-import rinexmod.common.gamit_meta as rimo_gmm
-import rinexmod.classes.metadata as rimo_mda
 import rinexmod.classes.rinexfile as rimo_rnx
-import rinexmod.api.core_fcts as rimo_cor
+import rinexmod.core as rimo_cor
+import rinexmod.exceptions as rimo_exc
 
 
 import rinexmod.logger as rimo_log
 
-logger = rimo_log.logger_define("INFO")
+logger_glb = rimo_log.logger_define("INFO")
 
 
 # *****************************************************************************
@@ -49,6 +48,7 @@ def rinexmod(
     station_info=None,
     lfile_apriori=None,
     force_fake_coords=False,
+    rinexmod_info=None,
     remove=False,
     keep_rnx_rec=False,
     round_instru_dates=False,
@@ -148,7 +148,7 @@ def rinexmod(
         The default is 'gz'.
     relative : str, optional
         Reconstruct files relative subfolders.
-        You have to indicate the common parent folder,
+        You have to indicate the readers parent folder,
         that will be replaced with the output folder. The default is ''.
     verbose : bool, optional
         set the level of verbosity
@@ -186,9 +186,14 @@ def rinexmod(
     force_fake_coords: bool, optional
         When using GAMIT station.info metadata without apriori coordinates
         in the L-File, gives fake coordinates at (0°,0°) to the site
+    rinexmod_info: str, optional
+        Path of a rinexmod.info CSV file to obtain GNSS site metadata
+        information. CSV columns should correspond to sitelog fields
+        (site, dates, receiver, antenna, coordinates, DOMES, etc.)
     remove: bool, optional
         Remove input RINEX file if the output RINEX is correctly written
         The default is False.
+
     keep_rnx_rec: bool, optional
         Keep the RINEX receiver header record in the output RINEX.
         Metadata from the external source (e.g. sitelogs) will not be modded.
@@ -232,7 +237,7 @@ def rinexmod(
                 rinexfile,
             )
             logger.error(errmsg)
-            raise rimo_cor.RinexModInputArgsError(errmsg)
+            raise rimo_exc.RinexModInputArgsError(errmsg)
 
         # We construct the output path with relative path between file name and parameter
         relpath = os.path.relpath(os.path.dirname(rinexfile), relative)
@@ -255,7 +260,7 @@ def rinexmod(
             "Input and output folders are the same!", rinexfile
         )
         logger.error(errmsg)
-        raise rimo_cor.RinexFileError(errmsg)
+        raise rimo_exc.RinexFileError(errmsg)
 
     if outputfolder == "IDEM":
         logger.warning("The output folder is forced as the same one as the input one")
@@ -267,7 +272,7 @@ def rinexmod(
     if longname and shortname:
         errmsg = "longname and shortname are mutually exclusive"
         logger.error(errmsg)
-        raise rimo_cor.RinexModInputArgsError(errmsg)
+        raise rimo_exc.RinexModInputArgsError(errmsg)
 
     ###########################################################################
     ########## Open the rinex file as an object
@@ -276,7 +281,7 @@ def rinexmod(
     if rnxobj.status:
         errmsg = "{:110s} - {}".format(rnxobj.status, rinexfile)
         logger.error(errmsg)
-        raise rimo_cor.RinexFileError(errmsg)
+        raise rimo_exc.RinexFileError(errmsg)
 
     logger.debug("RINEX Origin Metadata :\n" + rnxobj.get_header()[0])
 
@@ -288,7 +293,7 @@ def rinexmod(
     if marker and (len(marker) != 4 and len(marker) != 9):
         errmsg = "The site name provided is not 4 or 9-char valid: " + marker
         logger.error(errmsg)
-        raise rimo_cor.RinexModInputArgsError(errmsg)
+        raise rimo_exc.RinexModInputArgsError(errmsg)
 
     # Get the 4 char > 9 char dictionnary from the input list
     nine_char_dict = dict()  # in any case, nine_char_dict is initialized
@@ -296,7 +301,7 @@ def rinexmod(
         if not os.path.isfile(ninecharfile):
             errmsg = "The specified 9-chars. list file does not exists: " + ninecharfile
             logger.error(errmsg)
-            raise rimo_cor.RinexModInputArgsError(errmsg)
+            raise rimo_exc.RinexModInputArgsError(errmsg)
 
         nine_char_dict = rimo_cor.read_ninecharfile(ninecharfile)
 
@@ -309,9 +314,9 @@ def rinexmod(
         rnxobj.set_site(marker)
 
     ## warning if no metadata at all is not provided
-    if not sitelog and not modif_kw and (not station_info or not lfile_apriori) and not geodesyml:
+    if not sitelog and not modif_kw and (not station_info or not lfile_apriori) and not rinexmod_info and not geodesyml:
         logger.warning(
-            "No sitelog/keywords/station.info+lfile/geodesyML provided. "
+            "No sitelog/keywords/station.info+lfile/rinexmod.info/geodesyML provided. "
             "Per default rec.'s header will remain & no new "
             "metdata will be written!"
         )
@@ -320,7 +325,7 @@ def rinexmod(
     mdaobjs_lis = []
     ## sitelogs
     if sitelog:
-        mdaobjs_lis = rimo_cor.metadata_input_manage(sitelog, force=force_sitelog)
+        mdaobjs_lis = rimo_cor.load_metadata(sitelog, force=force_sitelog)
     ## GAMIT files
     # We read the GAMIT files only if no input 'sitelog' variable is given.
     # Indeed, the GAMIT files might have been read outside this function
@@ -330,16 +335,21 @@ def rinexmod(
     if (station_info and not lfile_apriori) or (not station_info and lfile_apriori):
         errmsg = "station_info and lfile_apriori must be provided together"
         logger.critical(errmsg)
-        raise rimo_cor.RinexModInputArgsError(errmsg)
+        raise rimo_exc.RinexModInputArgsError(errmsg)
 
-    ### load the metadata from sitelog or GAMIT files if any
+    ### load the metadata from sitelog or GAMIT files or rinexmod.info if any
     if (station_info and lfile_apriori) and not sitelog:
         mdaobjs_lis = rimo_cor.gamit2mda_objs(
             station_info, lfile_apriori, force_fake_coords=force_fake_coords
         )
 
-    if geodesyml:
-        mdaobjs_lis = rimo_cor.metadata_input_manage_geodesyml(geodesyml)
+    if rinexmod_info and not sitelog and not (station_info and lfile_apriori):
+        mdaobjs_lis = rimo_cor.rinexmod_info2mda_objs(
+            rinexmod_info, force_fake_coords=force_fake_coords
+        )
+
+    if geodesyml and not sitelog and not (station_info and lfile_apriori) and not rinexmod_info:
+       mdaobjs_lis = rimo_cor.load_metadata(geodesyml)
 
     ### find the right MetaData object corresponding to the RINEX
     if sitelog or (station_info and lfile_apriori) or geodesyml:
@@ -535,7 +545,7 @@ def rinexmod(
             "File could not be written - hatanaka exception", rinexfile
         )
         logger.error(errmsg)
-        outputfile = None
+        #outputfile = None
         raise e
 
     if remove and os.path.isfile(outputfile):
